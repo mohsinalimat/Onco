@@ -79,7 +79,13 @@ frappe.ui.form.on('Incoming Check Report', {
 // Item table events
 frappe.ui.form.on('Incoming Check Report Item', {
     received_quantity: function(frm, cdt, cdn) {
+        calculate_shortage_quantity(frm, cdt, cdn);
         calculate_accepted_quantity(frm, cdt, cdn);
+        calculate_totals(frm);
+    },
+    
+    invoice_quantity: function(frm, cdt, cdn) {
+        calculate_shortage_quantity(frm, cdt, cdn);
         calculate_totals(frm);
     },
     
@@ -91,6 +97,18 @@ frappe.ui.form.on('Incoming Check Report Item', {
     damage_quantity: function(frm, cdt, cdn) {
         calculate_accepted_quantity(frm, cdt, cdn);
         calculate_totals(frm);
+    },
+    
+    item_code: function(frm, cdt, cdn) {
+        // Fetch item name when item code changes
+        let row = locals[cdt][cdn];
+        if (row.item_code) {
+            frappe.db.get_value('Item', row.item_code, 'item_name', (r) => {
+                if (r && r.item_name) {
+                    frappe.model.set_value(cdt, cdn, 'item_name', r.item_name);
+                }
+            });
+        }
     },
     
     items_remove: function(frm) {
@@ -182,51 +200,64 @@ function fetch_items_from_stock_entry(frm) {
                     let batch_no = se_item.batch_no;
                     let qty = se_item.qty;
                     
-                    // Get batch details if batch exists
-                    let manufacturing_date = null;
-                    let expiry_date = null;
-                    
-                    if (batch_no) {
-                        frappe.db.get_value('Batch', batch_no, ['manufacturing_date', 'expiry_date'])
-                            .then(batch_r => {
+                    // Get item name
+                    frappe.db.get_value('Item', item_code, 'item_name', (item_r) => {
+                        let item_name = item_r.message ? item_r.message.item_name : '';
+                        
+                        // Get batch details if batch exists
+                        let manufacturing_date = null;
+                        let expiry_date = null;
+                        
+                        if (batch_no) {
+                            frappe.db.get_value('Batch', batch_no, ['manufacturing_date', 'expiry_date'], (batch_r) => {
                                 if (batch_r.message) {
                                     manufacturing_date = batch_r.message.manufacturing_date;
                                     expiry_date = batch_r.message.expiry_date;
                                 }
                             });
-                    }
-                    
-                    // Add item to table
-                    let row = frm.add_child('items');
-                    row.item_code = item_code;
-                    row.batch_no = batch_no;
-                    row.invoice_quantity = qty;
-                    row.received_quantity = qty;
-                    row.over_quantity = 0;
-                    row.damage_quantity = 0;
-                    row.accepted_quantity = qty;
-                    row.manufacturing_date = manufacturing_date;
-                    row.expiry_date = expiry_date;
-                    
-                    // Try to get shipment and invoice info
-                    if (frm.doc.shipment) {
-                        row.shipment_no = frm.doc.shipment;
-                    }
-                    if (frm.doc.purchase_invoice) {
-                        frappe.db.get_value('Purchase Invoice', frm.doc.purchase_invoice, 'name')
-                            .then(inv_r => {
-                                if (inv_r.message) {
-                                    row.invoice_no = inv_r.message.name;
-                                }
-                            });
-                    }
+                        }
+                        
+                        // Add item to table
+                        let row = frm.add_child('items');
+                        row.item_code = item_code;
+                        row.item_name = item_name;
+                        row.batch_no = batch_no;
+                        row.invoice_quantity = qty;
+                        row.received_quantity = qty;
+                        row.shortage_quantity = 0;
+                        row.over_quantity = 0;
+                        row.damage_quantity = 0;
+                        row.accepted_quantity = qty;
+                        row.manufacturing_date = manufacturing_date;
+                        row.expiry_date = expiry_date;
+                        
+                        // Try to get shipment and invoice info
+                        if (frm.doc.shipment) {
+                            row.shipment_no = frm.doc.shipment;
+                        }
+                        if (frm.doc.purchase_invoice) {
+                            row.invoice_no = frm.doc.purchase_invoice;
+                        }
+                        
+                        frm.refresh_field('items');
+                        calculate_totals(frm);
+                    });
                 });
-                
-                frm.refresh_field('items');
-                calculate_totals(frm);
             }
         }
     });
+}
+
+function calculate_shortage_quantity(frm, cdt, cdn) {
+    let row = locals[cdt][cdn];
+    
+    let invoice = row.invoice_quantity || 0;
+    let received = row.received_quantity || 0;
+    
+    // Shortage = Invoice - Received (if positive)
+    row.shortage_quantity = Math.max(0, invoice - received);
+    
+    frm.refresh_field('items');
 }
 
 function calculate_accepted_quantity(frm, cdt, cdn) {
@@ -252,6 +283,7 @@ function calculate_totals(frm) {
     let total_over = 0;
     let total_damage = 0;
     let total_accepted = 0;
+    let total_shortage = 0;
     
     if (frm.doc.items) {
         frm.doc.items.forEach(function(item) {
@@ -260,6 +292,7 @@ function calculate_totals(frm) {
             total_over += item.over_quantity || 0;
             total_damage += item.damage_quantity || 0;
             total_accepted += item.accepted_quantity || 0;
+            total_shortage += item.shortage_quantity || 0;
         });
     }
     
@@ -268,6 +301,7 @@ function calculate_totals(frm) {
     frm.set_value('total_over_qty', total_over);
     frm.set_value('total_damage_qty', total_damage);
     frm.set_value('total_accepted_qty', total_accepted);
+    frm.set_value('total_shortage_qty', total_shortage);
 }
 
 function update_inspection_result(frm) {

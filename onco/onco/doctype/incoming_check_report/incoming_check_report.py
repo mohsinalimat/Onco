@@ -37,26 +37,9 @@ class IncomingCheckReport(Document):
         if not self.stock_entry:
             return
         
-        # Get Purchase Receipt from Stock Entry
-        # Stock Entry may have custom field linking to Purchase Receipt
-        # Or we can get it from the items table
+        # Get Purchase Receipt from Stock Entry custom field
         stock_entry = frappe.get_doc("Stock Entry", self.stock_entry)
-        
-        # Try to get purchase_receipt from Stock Entry custom field
-        purchase_receipt = stock_entry.get("purchase_receipt") or stock_entry.get("custom_purchase_receipt")
-        
-        # If not found, try to get from Stock Entry items
-        if not purchase_receipt and stock_entry.items:
-            for item in stock_entry.items:
-                if item.get("purchase_receipt_item"):
-                    # Get parent Purchase Receipt from item
-                    purchase_receipt = frappe.db.get_value(
-                        "Purchase Receipt Item",
-                        item.purchase_receipt_item,
-                        "parent"
-                    )
-                    if purchase_receipt:
-                        break
+        purchase_receipt = stock_entry.get("custom_purchase_receipt")
         
         if purchase_receipt:
             self.purchase_receipt = purchase_receipt
@@ -66,32 +49,37 @@ class IncomingCheckReport(Document):
             if shipment:
                 self.shipment = shipment
                 
-                # Get Purchase Invoice from Shipment
-                # Shipment has custom_invoices child table
-                shipment_doc = frappe.get_doc("Shipments", shipment)
-                if shipment_doc.custom_invoices:
-                    # Get first invoice
-                    self.purchase_invoice = shipment_doc.custom_invoices[0].purchase_invoice
+                # Get Purchase Invoice from Purchase Receipt items
+                pr_items = frappe.get_all("Purchase Receipt Item",
+                    filters={"parent": purchase_receipt},
+                    fields=["purchase_invoice"],
+                    limit=1
+                )
+                if pr_items and pr_items[0].purchase_invoice:
+                    self.purchase_invoice = pr_items[0].purchase_invoice
                     
                     # Get Importation Approval from Purchase Invoice
-                    if self.purchase_invoice:
-                        importation_approval = frappe.db.get_value(
-                            "Purchase Invoice",
-                            self.purchase_invoice,
-                            "custom_importation_approval"
-                        )
-                        if importation_approval:
-                            self.importation_approval = importation_approval
+                    importation_approval = frappe.db.get_value(
+                        "Purchase Invoice",
+                        self.purchase_invoice,
+                        "custom_importation_approval"
+                    )
+                    if importation_approval:
+                        self.importation_approval = importation_approval
     
     def calculate_quantities(self):
-        """Calculate accepted and damage quantities"""
+        """Calculate accepted, shortage, and damage quantities"""
         total_invoice = 0
         total_received = 0
         total_over = 0
         total_damage = 0
         total_accepted = 0
+        total_shortage = 0
         
         for item in self.items:
+            # Calculate shortage quantity
+            item.shortage_quantity = max(0, (item.invoice_quantity or 0) - (item.received_quantity or 0))
+            
             # Calculate accepted quantity
             item.accepted_quantity = (
                 (item.received_quantity or 0) - 
@@ -109,6 +97,7 @@ class IncomingCheckReport(Document):
             total_over += item.over_quantity or 0
             total_damage += item.damage_quantity or 0
             total_accepted += item.accepted_quantity or 0
+            total_shortage += item.shortage_quantity or 0
         
         # Update parent totals
         self.total_invoice_qty = total_invoice
@@ -116,6 +105,7 @@ class IncomingCheckReport(Document):
         self.total_over_qty = total_over
         self.total_damage_qty = total_damage
         self.total_accepted_qty = total_accepted
+        self.total_shortage_qty = total_shortage
     
     def validate_inspection_completion(self):
         """Ensure all required inspections are completed"""
@@ -250,6 +240,29 @@ def make_incoming_check_report(source_name, target_doc=None):
         target.inspection_warehouse = source.to_warehouse
         target.inspection_date = frappe.utils.today()
         
+        # Get Purchase Receipt from Stock Entry custom field
+        purchase_receipt = source.get("custom_purchase_receipt")
+        
+        if not purchase_receipt:
+            frappe.msgprint(_("Warning: No Purchase Receipt linked to this Stock Entry. Some data may not be available."))
+        
+        # Get Shipment and Purchase Invoice from Purchase Receipt
+        shipment_no = None
+        purchase_invoice = None
+        
+        if purchase_receipt:
+            # Get Shipment reference from Purchase Receipt
+            shipment_no = frappe.db.get_value("Purchase Receipt", purchase_receipt, "custom_shipment_ref")
+            
+            # Get Purchase Invoice from Purchase Receipt items
+            pr_items = frappe.get_all("Purchase Receipt Item",
+                filters={"parent": purchase_receipt},
+                fields=["purchase_invoice"],
+                limit=1
+            )
+            if pr_items and pr_items[0].purchase_invoice:
+                purchase_invoice = pr_items[0].purchase_invoice
+        
         # Fetch items from Stock Entry and populate
         if source.items:
             target.items = []
@@ -257,43 +270,33 @@ def make_incoming_check_report(source_name, target_doc=None):
                 # Get item details
                 item_code = se_item.item_code
                 batch_no = se_item.batch_no
-                qty = se_item.qty
+                received_qty = se_item.qty
                 
-                # Try to get Purchase Receipt Item details
-                pr_item = None
-                if se_item.get("purchase_receipt_item"):
-                    pr_item = frappe.db.get_value(
-                        "Purchase Receipt Item",
-                        se_item.purchase_receipt_item,
-                        ["parent", "qty", "purchase_invoice", "purchase_invoice_item"],
+                # Get item name from Item master
+                item_name = frappe.db.get_value("Item", item_code, "item_name")
+                
+                # Get invoice quantity from Purchase Invoice
+                invoice_qty = received_qty  # Default to received qty
+                invoice_no = purchase_invoice
+                
+                if purchase_invoice:
+                    # Find matching item in Purchase Invoice
+                    pi_item = frappe.db.get_value(
+                        "Purchase Invoice Item",
+                        {
+                            "parent": purchase_invoice,
+                            "item_code": item_code
+                        },
+                        ["qty", "parent"],
                         as_dict=True
                     )
-                
-                # Get invoice quantity and other details
-                invoice_qty = qty
-                invoice_no = None
-                shipment_no = None
-                manufacturing_date = None
-                expiry_date = None
-                
-                if pr_item:
-                    # Get Purchase Invoice details
-                    if pr_item.purchase_invoice:
-                        invoice_no = frappe.db.get_value("Purchase Invoice", pr_item.purchase_invoice, "name")
-                        
-                        # Get invoice item quantity
-                        if pr_item.purchase_invoice_item:
-                            invoice_qty = frappe.db.get_value(
-                                "Purchase Invoice Item",
-                                pr_item.purchase_invoice_item,
-                                "qty"
-                            ) or qty
-                    
-                    # Get Shipment from Purchase Receipt
-                    if pr_item.parent:
-                        shipment_no = frappe.db.get_value("Purchase Receipt", pr_item.parent, "custom_shipment_ref")
+                    if pi_item:
+                        invoice_qty = pi_item.qty
+                        invoice_no = pi_item.parent
                 
                 # Get batch details if batch exists
+                manufacturing_date = None
+                expiry_date = None
                 if batch_no:
                     batch_details = frappe.db.get_value(
                         "Batch",
@@ -305,17 +308,22 @@ def make_incoming_check_report(source_name, target_doc=None):
                         manufacturing_date = batch_details.manufacturing_date
                         expiry_date = batch_details.expiry_date
                 
+                # Calculate shortage
+                shortage_qty = max(0, invoice_qty - received_qty)
+                
                 # Add item to Incoming Check Report
                 target.append("items", {
                     "item_code": item_code,
+                    "item_name": item_name,
                     "batch_no": batch_no,
                     "shipment_no": shipment_no,
                     "invoice_no": invoice_no,
                     "invoice_quantity": invoice_qty,
-                    "received_quantity": qty,
+                    "received_quantity": received_qty,
+                    "shortage_quantity": shortage_qty,
                     "over_quantity": 0,
                     "damage_quantity": 0,
-                    "accepted_quantity": qty,
+                    "accepted_quantity": received_qty,
                     "manufacturing_date": manufacturing_date,
                     "expiry_date": expiry_date
                 })
@@ -324,7 +332,8 @@ def make_incoming_check_report(source_name, target_doc=None):
         "Stock Entry": {
             "doctype": "Incoming Check Report",
             "field_map": {
-                "name": "stock_entry"
+                "name": "stock_entry",
+                "custom_purchase_receipt": "purchase_receipt"
             }
         }
     }, target_doc, set_missing_values)

@@ -76,7 +76,7 @@
    "reqd": 1
   },
   {
-   "fetch_from": "stock_entry.purchase_receipt",
+   "fetch_from": "stock_entry.custom_purchase_receipt",
    "fieldname": "purchase_receipt",
    "fieldtype": "Link",
    "label": "Purchase Receipt",
@@ -306,6 +306,12 @@
    "fieldname": "total_over_qty",
    "fieldtype": "Float",
    "label": "Total Over Qty",
+   "read_only": 1
+  },
+  {
+   "fieldname": "total_shortage_qty",
+   "fieldtype": "Float",
+   "label": "Total Shortage Qty",
    "read_only": 1
   },
   {

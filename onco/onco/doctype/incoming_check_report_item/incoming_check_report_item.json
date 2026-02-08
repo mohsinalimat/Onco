@@ -14,6 +14,7 @@
   "column_break_1",
   "invoice_quantity",
   "received_quantity",
+  "shortage_quantity",
   "over_quantity",
   "damage_quantity",
   "accepted_quantity",
@@ -47,7 +48,6 @@
    "reqd": 1
   },
   {
-   "fetch_from": "item_code.item_name",
    "fieldname": "item_name",
    "fieldtype": "Data",
    "in_list_view": 1,
@@ -74,7 +74,13 @@
   {
    "fieldname": "received_quantity",
    "fieldtype": "Float",
-   "label": "Received Quantity",
+   "label": "Received Quantity"
+  },
+  {
+   "default": "0",
+   "fieldname": "shortage_quantity",
+   "fieldtype": "Float",
+   "label": "Shortage Quantity",
    "read_only": 1
   },
   {

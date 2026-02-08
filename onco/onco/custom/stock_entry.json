@@ -1,5 +1,15 @@
 {
- "custom_fields": [],
+ "custom_fields": [
+  {
+   "fieldname": "custom_purchase_receipt",
+   "fieldtype": "Link",
+   "label": "Purchase Receipt",
+   "options": "Purchase Receipt",
+   "insert_after": "from_warehouse",
+   "read_only": 1,
+   "no_copy": 1
+  }
+ ],
  "custom_perms": [],
  "doctype": "Stock Entry",
  "links": [],
