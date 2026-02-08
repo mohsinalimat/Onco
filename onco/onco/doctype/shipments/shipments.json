@@ -54,6 +54,9 @@
         "received_warehouse",
         "received_by",
         "third_party_name",
+        "inspection_section",
+        "custom_inspection_status",
+        "custom_inspection_date",
         "warehouse_transit_section",
         "source_warehouse",
         "target_warehouse",
@@ -363,6 +366,24 @@
             "fieldtype": "Data",
             "label": "Third Party Name",
             "depends_on": "eval:doc.received_by=='Third Party'"
+        },
+        {
+            "fieldname": "inspection_section",
+            "fieldtype": "Section Break",
+            "label": "Inspection Status",
+            "collapsible": 1
+        },
+        {
+            "fieldname": "custom_inspection_status",
+            "fieldtype": "Data",
+            "label": "Inspection Status",
+            "read_only": 1
+        },
+        {
+            "fieldname": "custom_inspection_date",
+            "fieldtype": "Date",
+            "label": "Inspection Date",
+            "read_only": 1
         },
         {
             "fieldname": "warehouse_transit_section",
