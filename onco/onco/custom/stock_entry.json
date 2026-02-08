@@ -1,6 +1,7 @@
 {
  "custom_fields": [
   {
+   "dt": "Stock Entry",
    "fieldname": "custom_purchase_receipt",
    "fieldtype": "Link",
    "label": "Purchase Receipt",
