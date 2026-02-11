@@ -9,6 +9,17 @@
    "insert_after": "from_warehouse",
    "read_only": 1,
    "no_copy": 1
+  },
+  {
+   "dt": "Stock Entry",
+   "fieldname": "custom_shipment_ref",
+   "fieldtype": "Link",
+   "label": "Shipment Ref",
+   "options": "Shipments",
+   "insert_after": "custom_purchase_receipt",
+   "read_only": 1,
+   "no_copy": 1,
+   "fetch_from": "custom_purchase_receipt.custom_shipment_ref"
   }
  ],
  "custom_perms": [],

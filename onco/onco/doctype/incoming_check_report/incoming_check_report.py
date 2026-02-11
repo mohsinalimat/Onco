@@ -41,13 +41,23 @@ class IncomingCheckReport(Document):
         stock_entry = frappe.get_doc("Stock Entry", self.stock_entry)
         purchase_receipt = stock_entry.get("custom_purchase_receipt")
         
-        if purchase_receipt:
-            self.purchase_receipt = purchase_receipt
-            
-            # Get Shipment from Purchase Receipt
-            shipment = frappe.db.get_value("Purchase Receipt", purchase_receipt, "custom_shipment_ref")
-            if shipment:
-                self.shipment = shipment
+        if not purchase_receipt:
+            frappe.msgprint(
+                _("Warning: No Purchase Receipt linked to this Stock Entry. Some data may not be available.<br><br>"
+                  "To fix this issue:<br>"
+                  "1. Go to the Stock Entry and manually set the 'Purchase Receipt' field, OR<br>"
+                  "2. Ensure the Stock Entry was created from a Purchase Receipt using the standard ERPNext flow"),
+                indicator='orange',
+                title=_('Missing Purchase Receipt Link')
+            )
+            return
+        
+        self.purchase_receipt = purchase_receipt
+        
+        # Get Shipment from Purchase Receipt
+        shipment = frappe.db.get_value("Purchase Receipt", purchase_receipt, "custom_shipment_ref")
+        if shipment:
+            self.shipment = shipment
                 
                 # Get Purchase Invoice from Purchase Receipt items
                 pr_items = frappe.get_all("Purchase Receipt Item",
@@ -240,19 +250,35 @@ def make_incoming_check_report(source_name, target_doc=None):
         target.inspection_warehouse = source.to_warehouse
         target.inspection_date = frappe.utils.today()
         
-        # Get Purchase Receipt from Stock Entry custom field
+        # Get Purchase Receipt from Stock Entry custom field OR from items
         purchase_receipt = source.get("custom_purchase_receipt")
         
-        if not purchase_receipt:
-            frappe.msgprint(_("Warning: No Purchase Receipt linked to this Stock Entry. Some data may not be available."))
+        # If not found in custom field, check Stock Entry items
+        if not purchase_receipt and source.items:
+            for item in source.items:
+                if item.get("purchase_receipt"):
+                    purchase_receipt = item.purchase_receipt
+                    break
         
-        # Get Shipment and Purchase Invoice from Purchase Receipt
+        if not purchase_receipt:
+            frappe.msgprint(
+                _("Warning: No Purchase Receipt linked to this Stock Entry. Some data may not be available."),
+                indicator='orange',
+                title=_('Missing Purchase Receipt')
+            )
+        
+        # Get Shipment reference - try multiple sources
         shipment_no = None
         purchase_invoice = None
         
         if purchase_receipt:
+            # Set Purchase Receipt on parent
+            target.purchase_receipt = purchase_receipt
+            
             # Get Shipment reference from Purchase Receipt
             shipment_no = frappe.db.get_value("Purchase Receipt", purchase_receipt, "custom_shipment_ref")
+            if shipment_no:
+                target.shipment = shipment_no
             
             # Get Purchase Invoice from Purchase Receipt items
             pr_items = frappe.get_all("Purchase Receipt Item",
@@ -262,6 +288,12 @@ def make_incoming_check_report(source_name, target_doc=None):
             )
             if pr_items and pr_items[0].purchase_invoice:
                 purchase_invoice = pr_items[0].purchase_invoice
+                target.purchase_invoice = purchase_invoice
+        
+        # Also check Stock Entry custom_shipment_ref field
+        if not shipment_no and source.get("custom_shipment_ref"):
+            shipment_no = source.custom_shipment_ref
+            target.shipment = shipment_no
         
         # Fetch items from Stock Entry and populate
         if source.items:
@@ -277,7 +309,7 @@ def make_incoming_check_report(source_name, target_doc=None):
                 
                 # Get invoice quantity from Purchase Receipt (the actual receipt document)
                 invoice_qty = received_qty  # Default to received qty
-                invoice_no = purchase_receipt  # Reference the Purchase Receipt, not Purchase Invoice
+                invoice_no = purchase_receipt  # Reference the Purchase Receipt
                 
                 if purchase_receipt:
                     # Find matching item in Purchase Receipt to get the original ordered quantity
@@ -310,13 +342,13 @@ def make_incoming_check_report(source_name, target_doc=None):
                 # Calculate shortage
                 shortage_qty = max(0, invoice_qty - received_qty)
                 
-                # Add item to Incoming Check Report
+                # Add item to Incoming Check Report with shipment and purchase receipt references
                 target.append("items", {
                     "item_code": item_code,
                     "item_name": item_name,
                     "batch_no": batch_no,
-                    "shipment_no": shipment_no,
-                    "invoice_no": invoice_no,
+                    "shipment_no": shipment_no,  # This will populate the child table
+                    "invoice_no": invoice_no,    # This is the Purchase Receipt reference
                     "invoice_quantity": invoice_qty,
                     "received_quantity": received_qty,
                     "shortage_quantity": shortage_qty,
@@ -332,7 +364,8 @@ def make_incoming_check_report(source_name, target_doc=None):
             "doctype": "Incoming Check Report",
             "field_map": {
                 "name": "stock_entry",
-                "custom_purchase_receipt": "purchase_receipt"
+                "custom_purchase_receipt": "purchase_receipt",
+                "custom_shipment_ref": "shipment"
             }
         }
     }, target_doc, set_missing_values)
