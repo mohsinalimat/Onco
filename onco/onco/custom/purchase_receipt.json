@@ -1,13 +1,19 @@
 {
     "custom_fields": [
         {
+            "dt": "Purchase Receipt",
             "fieldname": "custom_shipment_ref",
             "fieldtype": "Link",
             "label": "Shipment Ref",
             "options": "Shipments",
+            "insert_after": "supplier",
             "read_only": 1,
             "no_copy": 1
         }
     ],
-    "doctype": "Purchase Receipt"
+    "custom_perms": [],
+    "doctype": "Purchase Receipt",
+    "links": [],
+    "property_setters": [],
+    "sync_on_migrate": 1
 }
