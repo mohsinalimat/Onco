@@ -345,7 +345,8 @@
   {
    "fieldname": "rejected_warehouse",
    "fieldtype": "Link",
-   "label": "Rejected Warehouse"
+   "label": "Rejected Warehouse",
+   "options": "Warehouse"
   },
   {
    "collapsible": 1,
