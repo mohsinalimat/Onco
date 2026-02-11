@@ -58,21 +58,24 @@ class IncomingCheckReport(Document):
         shipment = frappe.db.get_value("Purchase Receipt", purchase_receipt, "custom_shipment_ref")
         if shipment:
             self.shipment = shipment
-                
-                # Get Purchase Invoice from Purchase Receipt items
-                pr_items = frappe.get_all("Purchase Receipt Item",
-                    filters={"parent": purchase_receipt},
-                    fields=["purchase_invoice"],
-                    limit=1
-                )
-                if pr_items and pr_items[0].purchase_invoice:
-                    self.purchase_invoice = pr_items[0].purchase_invoice
-                    
-                    # Get Importation Approval from Purchase Invoice
-                    importation_approval = frappe.db.get_value(
-                        "Purchase Invoice",
-                        self.purchase_invoice,
-                        "custom_importation_approval"
+        
+        # Get Purchase Invoice from Purchase Receipt items
+        pr_items = frappe.get_all("Purchase Receipt Item",
+            filters={"parent": purchase_receipt},
+            fields=["purchase_invoice"],
+            limit=1
+        )
+        if pr_items and pr_items[0].purchase_invoice:
+            self.purchase_invoice = pr_items[0].purchase_invoice
+            
+            # Get Importation Approval from Purchase Invoice
+            importation_approval = frappe.db.get_value(
+                "Purchase Invoice",
+                self.purchase_invoice,
+                "custom_importation_approval"
+            )
+            if importation_approval:
+                self.importation_approval = importation_approval
                     )
                     if importation_approval:
                         self.importation_approval = importation_approval
