@@ -79,13 +79,11 @@ frappe.ui.form.on('Incoming Check Report', {
 // Item table events
 frappe.ui.form.on('Incoming Check Report Item', {
     received_quantity: function(frm, cdt, cdn) {
-        calculate_shortage_quantity(frm, cdt, cdn);
         calculate_accepted_quantity(frm, cdt, cdn);
         calculate_totals(frm);
     },
     
     invoice_quantity: function(frm, cdt, cdn) {
-        calculate_shortage_quantity(frm, cdt, cdn);
         calculate_totals(frm);
     },
     

@@ -275,24 +275,23 @@ def make_incoming_check_report(source_name, target_doc=None):
                 # Get item name from Item master
                 item_name = frappe.db.get_value("Item", item_code, "item_name")
                 
-                # Get invoice quantity from Purchase Invoice
+                # Get invoice quantity from Purchase Receipt (the actual receipt document)
                 invoice_qty = received_qty  # Default to received qty
-                invoice_no = purchase_invoice
+                invoice_no = purchase_receipt  # Reference the Purchase Receipt, not Purchase Invoice
                 
-                if purchase_invoice:
-                    # Find matching item in Purchase Invoice
-                    pi_item = frappe.db.get_value(
-                        "Purchase Invoice Item",
+                if purchase_receipt:
+                    # Find matching item in Purchase Receipt to get the original ordered quantity
+                    pr_item = frappe.db.get_value(
+                        "Purchase Receipt Item",
                         {
-                            "parent": purchase_invoice,
+                            "parent": purchase_receipt,
                             "item_code": item_code
                         },
-                        ["qty", "parent"],
+                        ["qty"],
                         as_dict=True
                     )
-                    if pi_item:
-                        invoice_qty = pi_item.qty
-                        invoice_no = pi_item.parent
+                    if pr_item:
+                        invoice_qty = pr_item.qty
                 
                 # Get batch details if batch exists
                 manufacturing_date = None
