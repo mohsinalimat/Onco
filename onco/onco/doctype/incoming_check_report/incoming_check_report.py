@@ -76,9 +76,6 @@ class IncomingCheckReport(Document):
             )
             if importation_approval:
                 self.importation_approval = importation_approval
-                    )
-                    if importation_approval:
-                        self.importation_approval = importation_approval
     
     def calculate_quantities(self):
         """Calculate accepted, shortage, and damage quantities"""
