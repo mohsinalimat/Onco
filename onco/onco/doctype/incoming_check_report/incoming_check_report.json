@@ -46,6 +46,7 @@
   "total_invoice_qty",
   "total_received_qty",
   "total_over_qty",
+  "total_shortage_qty",
   "column_break_totals",
   "total_damage_qty",
   "total_accepted_qty",
