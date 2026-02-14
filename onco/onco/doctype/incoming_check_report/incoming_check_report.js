@@ -10,6 +10,40 @@ frappe.ui.form.on('Incoming Check Report', {
         if (!frm.doc.inspector_name && frappe.session.user) {
             frm.set_value('inspector_name', frappe.session.user);
         }
+        
+        // Add button to view created Stock Entries if submitted
+        if (frm.doc.docstatus === 1) {
+            frm.add_custom_button(__('View Stock Entries'), function() {
+                frappe.route_options = {
+                    "custom_purchase_receipt": frm.doc.purchase_receipt,
+                    "docstatus": 1,
+                    "posting_date": [">=", frm.doc.inspection_date]
+                };
+                frappe.set_route("List", "Stock Entry");
+            }, __('View'));
+            
+            // Add button to create Purchase Receipt Report
+            frappe.db.get_value('Purchase Receipt Report', 
+                {'purchase_receipt': frm.doc.purchase_receipt}, 
+                'name',
+                (r) => {
+                    if (!r || !r.name) {
+                        // No Purchase Receipt Report exists, show create button
+                        frm.add_custom_button(__('Create Purchase Receipt Report'), function() {
+                            frappe.model.open_mapped_doc({
+                                method: "onco.onco.doctype.incoming_check_report.incoming_check_report.make_purchase_receipt_report",
+                                frm: frm
+                            });
+                        }, __('Create'));
+                    } else {
+                        // Purchase Receipt Report exists, show view button
+                        frm.add_custom_button(__('View Purchase Receipt Report'), function() {
+                            frappe.set_route('Form', 'Purchase Receipt Report', r.name);
+                        }, __('View'));
+                    }
+                }
+            );
+        }
     },
 
     stock_entry: function (frm) {

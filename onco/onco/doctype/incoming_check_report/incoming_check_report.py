@@ -157,7 +157,7 @@ class IncomingCheckReport(Document):
             self.status = 'Draft'
     
     def on_submit(self):
-        """Send notifications and update related documents"""
+        """Send notifications, update related documents, and create stock entries"""
         # Send email notification if requested
         if self.send_shipment_receipt_notification:
             self.send_notification_email()
@@ -172,6 +172,9 @@ class IncomingCheckReport(Document):
                 self.shipment,
                 'custom_inspection_date',
                 self.inspection_date)
+        
+        # Create Stock Entries based on inspection results
+        self.create_stock_entries_for_inspection()
     
     def send_notification_email(self):
         """Send inspection report to supplier"""
@@ -238,6 +241,112 @@ class IncomingCheckReport(Document):
         except Exception as e:
             frappe.log_error(f"Failed to send inspection notification: {str(e)}")
             frappe.msgprint(_("Failed to send email notification. Error logged."))
+    
+    def create_stock_entries_for_inspection(self):
+        """Create Stock Entries to move goods based on inspection results"""
+        if not self.inspection_warehouse:
+            frappe.throw(_("Inspection Warehouse is required to create stock entries"))
+        
+        # Separate items by inspection result
+        accepted_items = []
+        rejected_items = []
+        
+        for item in self.items:
+            # Add accepted quantity items
+            if item.accepted_quantity and item.accepted_quantity > 0:
+                accepted_items.append({
+                    'item_code': item.item_code,
+                    'qty': item.accepted_quantity,
+                    'batch_no': item.batch_no,
+                    'item_name': item.item_name
+                })
+            
+            # Add damaged/rejected quantity items
+            damage_qty = (item.damage_quantity or 0) + (item.over_quantity or 0)
+            if damage_qty > 0:
+                rejected_items.append({
+                    'item_code': item.item_code,
+                    'qty': damage_qty,
+                    'batch_no': item.batch_no,
+                    'item_name': item.item_name
+                })
+        
+        # Create Stock Entry for accepted items
+        if accepted_items and self.accepted_warehouse:
+            accepted_se = self.create_stock_entry(
+                items=accepted_items,
+                target_warehouse=self.accepted_warehouse,
+                purpose="Material Transfer",
+                remarks=f"Accepted items from Incoming Check Report {self.name}"
+            )
+            if accepted_se:
+                frappe.msgprint(
+                    _("Stock Entry {0} created for accepted items").format(accepted_se.name),
+                    alert=True,
+                    indicator='green'
+                )
+        
+        # Create Stock Entry for rejected/damaged items
+        if rejected_items and self.rejected_warehouse:
+            rejected_se = self.create_stock_entry(
+                items=rejected_items,
+                target_warehouse=self.rejected_warehouse,
+                purpose="Material Transfer",
+                remarks=f"Rejected/Damaged items from Incoming Check Report {self.name}"
+            )
+            if rejected_se:
+                frappe.msgprint(
+                    _("Stock Entry {0} created for rejected/damaged items").format(rejected_se.name),
+                    alert=True,
+                    indicator='orange'
+                )
+    
+    def create_stock_entry(self, items, target_warehouse, purpose, remarks):
+        """Create a Stock Entry document"""
+        try:
+            stock_entry = frappe.new_doc("Stock Entry")
+            stock_entry.purpose = purpose
+            stock_entry.stock_entry_type = "Material Transfer"
+            stock_entry.from_warehouse = self.inspection_warehouse
+            stock_entry.to_warehouse = target_warehouse
+            stock_entry.posting_date = frappe.utils.today()
+            stock_entry.posting_time = frappe.utils.nowtime()
+            stock_entry.set_posting_time = 1
+            stock_entry.custom_purchase_receipt = self.purchase_receipt
+            stock_entry.custom_shipment_ref = self.shipment
+            
+            # Add reference to Incoming Check Report
+            stock_entry.add_comment('Comment', f'Created from Incoming Check Report: {self.name}')
+            
+            # Add items
+            for item_data in items:
+                stock_entry.append("items", {
+                    "item_code": item_data['item_code'],
+                    "item_name": item_data.get('item_name'),
+                    "qty": item_data['qty'],
+                    "s_warehouse": self.inspection_warehouse,
+                    "t_warehouse": target_warehouse,
+                    "batch_no": item_data.get('batch_no'),
+                    "transfer_qty": item_data['qty'],
+                    "uom": frappe.db.get_value("Item", item_data['item_code'], "stock_uom")
+                })
+            
+            stock_entry.insert()
+            stock_entry.submit()
+            
+            return stock_entry
+            
+        except Exception as e:
+            frappe.log_error(
+                message=f"Failed to create Stock Entry from Incoming Check Report {self.name}: {str(e)}",
+                title="Incoming Check Report - Stock Entry Creation Failed"
+            )
+            frappe.msgprint(
+                _("Failed to create Stock Entry: {0}").format(str(e)),
+                alert=True,
+                indicator='red'
+            )
+            return None
 
 
 @frappe.whitelist()
@@ -366,6 +475,72 @@ def make_incoming_check_report(source_name, target_doc=None):
                 "name": "stock_entry",
                 "custom_purchase_receipt": "purchase_receipt",
                 "custom_shipment_ref": "shipment"
+            }
+        }
+    }, target_doc, set_missing_values)
+    
+    return doclist
+
+
+@frappe.whitelist()
+def make_purchase_receipt_report(source_name, target_doc=None):
+    """Create Purchase Receipt Report from Incoming Check Report"""
+    from frappe.model.mapper import get_mapped_doc
+    
+    def set_missing_values(source, target):
+        # Map inspection check fields
+        # Vehicle Inspection
+        if source.seal_numbers:
+            target.seal_numbers_match = 1 if source.seal_integrity_verified else 0
+        
+        if source.temperature_recorder_status:
+            target.temp_recorder_status = source.temperature_recorder_status
+        
+        # Document Check
+        target.invoice_present = 1 if source.commercial_invoice_present else 0
+        target.packing_list_present = 1 if source.packing_list_present else 0
+        target.awb_present = 1 if source.bill_of_lading_present else 0
+        target.coa_present = 1 if source.certificate_of_analysis_present else 0
+        
+        # Physical Check
+        target.seal_integrity = 1 if source.seal_integrity_verified else 0
+        target.package_condition = 1 if source.package_condition_ok else 0
+        target.label_verification = 1 if source.labels_verified else 0
+        target.quantity_verification = 1 if source.quantity_verified else 0
+        
+        # Temperature Control
+        target.data_logger_present = 1 if source.data_logger_present == 'Yes' else 0
+        
+        if source.temperature_range_status == 'Out-of-Range':
+            target.out_of_range = 1
+            if source.out_of_range_action == 'Quarantine and Notify QA':
+                target.quarantine_notify = 1
+            if source.acceptance_reason:
+                target.accept_reason = source.acceptance_reason
+    
+    doclist = get_mapped_doc("Incoming Check Report", source_name, {
+        "Incoming Check Report": {
+            "doctype": "Purchase Receipt Report",
+            "field_map": {
+                "purchase_receipt": "purchase_receipt",
+                "shipment": "custom_shipment_ref"
+            }
+        },
+        "Incoming Check Report Item": {
+            "doctype": "Purchase Receipt Report Item",
+            "field_map": {
+                "shipment_no": "shipment_no",
+                "invoice_no": "invoice_no",
+                "item_code": "item_code",
+                "item_name": "item_name",
+                "batch_no": "batch_no",
+                "invoice_quantity": "invoice_qty",
+                "received_quantity": "received_qty",
+                "damage_quantity": "damage_qty",
+                "over_quantity": "over_qty",
+                "accepted_quantity": "accepted_qty",
+                "manufacturing_date": "manufacturing_date",
+                "expiry_date": "expiry_date"
             }
         }
     }, target_doc, set_missing_values)
