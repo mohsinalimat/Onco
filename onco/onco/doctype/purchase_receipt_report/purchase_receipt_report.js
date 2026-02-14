@@ -1,5 +1,13 @@
 frappe.ui.form.on("Purchase Receipt Report", {
     refresh: function (frm) {
+        // Show helpful message if document is in draft
+        if (frm.doc.docstatus === 0 && !frm.is_new()) {
+            frappe.show_alert({
+                message: __('Please review the inspection data and click Submit to proceed'),
+                indicator: 'blue'
+            }, 5);
+        }
+        
         if (frm.doc.docstatus === 1) {
             frm.add_custom_button(__("Printing Order"), function () {
                 frappe.model.open_mapped_doc({

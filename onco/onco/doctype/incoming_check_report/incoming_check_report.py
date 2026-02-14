@@ -487,6 +487,15 @@ def make_purchase_receipt_report(source_name, target_doc=None):
     """Create Purchase Receipt Report from Incoming Check Report"""
     from frappe.model.mapper import get_mapped_doc
     
+    # Validate source document
+    source_doc = frappe.get_doc("Incoming Check Report", source_name)
+    
+    if source_doc.docstatus != 1:
+        frappe.throw(_("Incoming Check Report must be submitted before creating Purchase Receipt Report"))
+    
+    if not source_doc.items or len(source_doc.items) == 0:
+        frappe.throw(_("Incoming Check Report has no items to map"))
+    
     def set_missing_values(source, target):
         # Map inspection check fields
         # Vehicle Inspection
@@ -517,6 +526,10 @@ def make_purchase_receipt_report(source_name, target_doc=None):
                 target.quarantine_notify = 1
             if source.acceptance_reason:
                 target.accept_reason = source.acceptance_reason
+        
+        # Validate that items were mapped
+        if not target.items or len(target.items) == 0:
+            frappe.throw(_("Failed to map items from Incoming Check Report to Purchase Receipt Report"))
     
     doclist = get_mapped_doc("Incoming Check Report", source_name, {
         "Incoming Check Report": {

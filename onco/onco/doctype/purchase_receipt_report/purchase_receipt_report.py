@@ -4,9 +4,21 @@
 import frappe
 from frappe.model.document import Document
 from frappe.model.mapper import get_mapped_doc
+from frappe import _
 
 class PurchaseReceiptReport(Document):
-	pass
+	def validate(self):
+		"""Validate Purchase Receipt Report before save/submit"""
+		if not self.items or len(self.items) == 0:
+			frappe.throw(_("Cannot save Purchase Receipt Report without items. Please add at least one item."))
+		
+		# Validate that we have a purchase receipt reference
+		if not self.purchase_receipt:
+			frappe.msgprint(
+				_("Warning: No Purchase Receipt linked. This may cause issues in downstream processes."),
+				indicator='orange',
+				title=_('Missing Purchase Receipt')
+			)
 
 @frappe.whitelist()
 def make_printing_order(source_name, target_doc=None):
