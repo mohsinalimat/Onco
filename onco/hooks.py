@@ -152,6 +152,11 @@ doc_events = {
 	},
 	"Sales Invoice": {
 		"validate": "onco.onco.tender_validation.validate_sales_invoice_tender_price"
+	},
+	"Purchase Order": {
+		"validate": "onco.onco.custom_scripts.purchase_order.validate",
+		"on_submit": "onco.onco.custom_scripts.purchase_order.on_submit",
+		"on_cancel": "onco.onco.custom_scripts.purchase_order.on_cancel"
 	}
 }
 

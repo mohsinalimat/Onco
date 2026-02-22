@@ -10,6 +10,8 @@
         "column_break_item",
         "requested_qty",
         "approved_qty",
+        "ordered_qty",
+        "remaining_qty",
         "status"
     ],
     "fields": [
@@ -55,6 +57,23 @@
             "in_list_view": 1,
             "label": "Approved Quantity",
             "reqd": 1
+        },
+        {
+            "default": "0",
+            "fieldname": "ordered_qty",
+            "fieldtype": "Float",
+            "in_list_view": 1,
+            "label": "Ordered Quantity",
+            "read_only": 1,
+            "description": "Total quantity ordered across all Purchase Orders"
+        },
+        {
+            "fieldname": "remaining_qty",
+            "fieldtype": "Float",
+            "in_list_view": 1,
+            "label": "Remaining Quantity",
+            "read_only": 1,
+            "description": "Approved Qty - Ordered Qty"
         },
         {
             "default": "Approved",
