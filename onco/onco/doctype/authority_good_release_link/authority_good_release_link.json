@@ -1,0 +1,59 @@
+{
+    "actions": [],
+    "creation": "2026-02-23 12:30:00.000000",
+    "doctype": "DocType",
+    "editable_grid": 1,
+    "engine": "InnoDB",
+    "field_order": [
+        "authority_good_release",
+        "release_type",
+        "release_date",
+        "released_qty"
+    ],
+    "fields": [
+        {
+            "fieldname": "authority_good_release",
+            "fieldtype": "Link",
+            "in_list_view": 1,
+            "label": "Authority Good Release",
+            "options": "Authority Good Release",
+            "reqd": 1
+        },
+        {
+            "fetch_from": "authority_good_release.release_type",
+            "fieldname": "release_type",
+            "fieldtype": "Data",
+            "in_list_view": 1,
+            "label": "Release Type",
+            "read_only": 1
+        },
+        {
+            "fetch_from": "authority_good_release.release_date",
+            "fieldname": "release_date",
+            "fieldtype": "Date",
+            "in_list_view": 1,
+            "label": "Release Date",
+            "read_only": 1
+        },
+        {
+            "fetch_from": "authority_good_release.total_released_qty",
+            "fieldname": "released_qty",
+            "fieldtype": "Float",
+            "in_list_view": 1,
+            "label": "Released Qty",
+            "read_only": 1
+        }
+    ],
+    "index_web_pages_for_search": 1,
+    "istable": 1,
+    "links": [],
+    "modified": "2026-02-23 12:30:00.000000",
+    "modified_by": "Administrator",
+    "module": "Onco",
+    "name": "Authority Good Release Link",
+    "owner": "Administrator",
+    "permissions": [],
+    "sort_field": "modified",
+    "sort_order": "DESC",
+    "states": []
+}
