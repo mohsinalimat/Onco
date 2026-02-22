@@ -57,6 +57,12 @@
         "inspection_section",
         "custom_inspection_status",
         "custom_inspection_date",
+        "release_tracking_section",
+        "release_type",
+        "release_subtype",
+        "total_released_qty",
+        "total_unreleased_qty",
+        "release_complete",
         "warehouse_transit_section",
         "source_warehouse",
         "target_warehouse",
@@ -384,6 +390,45 @@
             "fieldtype": "Date",
             "label": "Inspection Date",
             "read_only": 1
+        },
+        {
+            "fieldname": "release_tracking_section",
+            "fieldtype": "Section Break",
+            "label": "Track the Release",
+            "collapsible": 1
+        },
+        {
+            "fieldname": "release_type",
+            "fieldtype": "Data",
+            "label": "Release Type",
+            "read_only": 1
+        },
+        {
+            "fieldname": "release_subtype",
+            "fieldtype": "Data",
+            "label": "Release Subtype",
+            "read_only": 1
+        },
+        {
+            "fieldname": "total_released_qty",
+            "fieldtype": "Float",
+            "label": "Total Released Quantity",
+            "read_only": 1,
+            "precision": 2
+        },
+        {
+            "fieldname": "total_unreleased_qty",
+            "fieldtype": "Float",
+            "label": "Total Unreleased Quantity",
+            "read_only": 1,
+            "precision": 2
+        },
+        {
+            "fieldname": "release_complete",
+            "fieldtype": "Check",
+            "label": "Release Complete",
+            "read_only": 1,
+            "default": "0"
         },
         {
             "fieldname": "warehouse_transit_section",

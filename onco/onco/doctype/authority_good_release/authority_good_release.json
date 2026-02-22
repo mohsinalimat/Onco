@@ -1,17 +1,19 @@
 {
     "actions": [],
     "allow_rename": 1,
-    "autoname": "naming_series:",
+    "autoname": "field:name",
     "creation": "2026-01-17 10:00:00.000000",
     "doctype": "DocType",
     "engine": "InnoDB",
     "field_order": [
         "naming_series",
+        "incoming_check_report",
         "shipment_no",
         "invoice_no",
+        "date",
         "release_type",
-        "lot_release_subtype",
-        "analysis_batch_subtype",
+        "lrb_subtype",
+        "abi_subtype",
         "column_break_lot",
         "batch_no",
         "manufacturing_date_",
@@ -25,11 +27,26 @@
         "total_net_released_qty",
         "total_shortage_control_qty",
         "total_sample_qty",
+        "section_break_final_release",
+        "final_released",
+        "final_release_date",
+        "column_break_final_release",
+        "compliance_report_number",
+        "compliance_report_attachment",
+        "section_break_abr",
+        "registration_number",
+        "registration_date",
+        "column_break_abr",
+        "registration_documentation",
+        "section_break_attachments",
+        "release_report",
         "section_break_warehouses",
-        "warehouse_from",
-        "warehouse_to",
+        "source_warehouse",
+        "released_goods_warehouse",
         "column_break_warehouses",
         "sample_warehouse",
+        "sales_warehouse",
+        "onco_warehouse",
         "section_break_samples",
         "no_of_samples",
         "status",
@@ -43,9 +60,15 @@
     "fields": [
         {
             "fieldname": "naming_series",
-            "fieldtype": "Select",
+            "fieldtype": "Data",
             "label": "Series",
-            "options": "AGR-.YYYY.-.#####"
+            "read_only": 1
+        },
+        {
+            "fieldname": "incoming_check_report",
+            "fieldtype": "Link",
+            "label": "Incoming Check Report",
+            "options": "Incoming Check Report"
         },
         {
             "fieldname": "shipment_no",
@@ -60,21 +83,28 @@
             "read_only": 1
         },
         {
+            "fieldname": "date",
+            "fieldtype": "Date",
+            "label": "Date",
+            "read_only": 1
+        },
+        {
             "fieldname": "release_type",
             "fieldtype": "Select",
             "label": "Type of Release",
-            "options": "\nLot Release Batch\nAnalysis Batch"
+            "options": "\nLot Release Batch\nAnalysis Batch Inspection\nAnalysis Batch Registration",
+            "reqd": 1
         },
         {
             "depends_on": "eval:doc.release_type == 'Lot Release Batch'",
-            "fieldname": "lot_release_subtype",
+            "fieldname": "lrb_subtype",
             "fieldtype": "Select",
             "label": "Lot Release Sub-type",
-            "options": "\nLot Release Batch Without Shortage Control Quantity\nLot Release Batch with Shortage Control Quantity"
+            "options": "\nWithout Shortage Control Quantity\nWith Shortage Control Quantity"
         },
         {
-            "depends_on": "eval:doc.release_type == 'Analysis Batch'",
-            "fieldname": "analysis_batch_subtype",
+            "depends_on": "eval:doc.release_type == 'Analysis Batch Inspection'",
+            "fieldname": "abi_subtype",
             "fieldtype": "Select",
             "label": "Analysis Batch Sub-type",
             "options": "\nAuthority Release Total\nAuthority Release Partial with Withdrawal Sample\nWithdrawal Sample Without Partial Release"
@@ -153,23 +183,98 @@
             "read_only": 1
         },
         {
+            "depends_on": "eval:doc.abi_subtype == 'Authority Release Partial with Withdrawal Sample' || doc.abi_subtype == 'Withdrawal Sample Without Partial Release'",
+            "fieldname": "section_break_final_release",
+            "fieldtype": "Section Break",
+            "label": "Final Release"
+        },
+        {
+            "depends_on": "eval:doc.abi_subtype == 'Authority Release Partial with Withdrawal Sample' || doc.abi_subtype == 'Withdrawal Sample Without Partial Release'",
+            "fieldname": "final_released",
+            "fieldtype": "Select",
+            "label": "Final Released",
+            "options": "\nYes\nNo"
+        },
+        {
+            "depends_on": "eval:doc.final_released == 'Yes'",
+            "fieldname": "final_release_date",
+            "fieldtype": "Date",
+            "label": "Final Release Date"
+        },
+        {
+            "fieldname": "column_break_final_release",
+            "fieldtype": "Column Break"
+        },
+        {
+            "depends_on": "eval:doc.final_released == 'Yes'",
+            "fieldname": "compliance_report_number",
+            "fieldtype": "Data",
+            "label": "Compliance Report Number"
+        },
+        {
+            "depends_on": "eval:doc.final_released == 'Yes'",
+            "fieldname": "compliance_report_attachment",
+            "fieldtype": "Attach",
+            "label": "Compliance Report Attachment"
+        },
+        {
+            "depends_on": "eval:doc.release_type == 'Analysis Batch Registration'",
+            "fieldname": "section_break_abr",
+            "fieldtype": "Section Break",
+            "label": "Registration Details"
+        },
+        {
+            "depends_on": "eval:doc.release_type == 'Analysis Batch Registration'",
+            "fieldname": "registration_number",
+            "fieldtype": "Data",
+            "label": "Registration Number"
+        },
+        {
+            "depends_on": "eval:doc.release_type == 'Analysis Batch Registration'",
+            "fieldname": "registration_date",
+            "fieldtype": "Date",
+            "label": "Registration Date"
+        },
+        {
+            "fieldname": "column_break_abr",
+            "fieldtype": "Column Break"
+        },
+        {
+            "depends_on": "eval:doc.release_type == 'Analysis Batch Registration'",
+            "fieldname": "registration_documentation",
+            "fieldtype": "Attach",
+            "label": "Registration Documentation"
+        },
+        {
+            "depends_on": "eval:doc.abi_subtype == 'Authority Release Total'",
+            "fieldname": "section_break_attachments",
+            "fieldtype": "Section Break",
+            "label": "Attachments"
+        },
+        {
+            "depends_on": "eval:doc.abi_subtype == 'Authority Release Total'",
+            "fieldname": "release_report",
+            "fieldtype": "Attach",
+            "label": "Release Report"
+        },
+        {
             "fieldname": "section_break_warehouses",
             "fieldtype": "Section Break",
             "label": "Warehouse Transfer"
         },
         {
             "default": "Under Release - O",
-            "fieldname": "warehouse_from",
+            "fieldname": "source_warehouse",
             "fieldtype": "Link",
-            "label": "From Warehouse",
+            "label": "Source Warehouse",
             "options": "Warehouse",
             "reqd": 1
         },
         {
             "default": "Stores - O",
-            "fieldname": "warehouse_to",
+            "fieldname": "released_goods_warehouse",
             "fieldtype": "Link",
-            "label": "To Warehouse",
+            "label": "Released Goods Warehouse",
             "options": "Warehouse",
             "reqd": 1
         },
@@ -182,6 +287,18 @@
             "fieldname": "sample_warehouse",
             "fieldtype": "Link",
             "label": "Sample Warehouse",
+            "options": "Warehouse"
+        },
+        {
+            "fieldname": "sales_warehouse",
+            "fieldtype": "Link",
+            "label": "Sales Warehouse",
+            "options": "Warehouse"
+        },
+        {
+            "fieldname": "onco_warehouse",
+            "fieldtype": "Link",
+            "label": "Onco Warehouse",
             "options": "Warehouse"
         },
         {

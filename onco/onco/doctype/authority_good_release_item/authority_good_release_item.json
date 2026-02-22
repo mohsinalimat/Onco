@@ -11,12 +11,21 @@
         "manufacturing_date",
         "expiry_date",
         "section_break_quantities",
+        "invoice_quantity",
+        "over_quantity",
+        "damage_quantity",
+        "actual_quantity",
+        "column_break_quantities",
         "requested_qty",
         "released_qty",
         "actual_qty",
-        "column_break_quantities",
-        "net_released_qty",
+        "section_break_conditional_quantities",
+        "withdrew_sample_qty",
+        "partial_released_qty",
+        "total_unreleased_qty",
+        "column_break_conditional",
         "shortage_control_qty",
+        "net_released_qty",
         "sample_qty"
     ],
     "fields": [
@@ -62,6 +71,34 @@
             "label": "Quantities"
         },
         {
+            "fieldname": "invoice_quantity",
+            "fieldtype": "Float",
+            "label": "Invoice Quantity",
+            "read_only": 1
+        },
+        {
+            "fieldname": "over_quantity",
+            "fieldtype": "Float",
+            "label": "Over Quantity",
+            "read_only": 1
+        },
+        {
+            "fieldname": "damage_quantity",
+            "fieldtype": "Float",
+            "label": "Damage Quantity",
+            "read_only": 1
+        },
+        {
+            "fieldname": "actual_quantity",
+            "fieldtype": "Float",
+            "label": "Actual Quantity",
+            "read_only": 1
+        },
+        {
+            "fieldname": "column_break_quantities",
+            "fieldtype": "Column Break"
+        },
+        {
             "fieldname": "requested_qty",
             "fieldtype": "Float",
             "in_list_view": 1,
@@ -83,19 +120,45 @@
             "reqd": 1
         },
         {
-            "fieldname": "column_break_quantities",
+            "fieldname": "section_break_conditional_quantities",
+            "fieldtype": "Section Break",
+            "label": "Conditional Quantities"
+        },
+        {
+            "depends_on": "eval:parent.abi_subtype == 'Authority Release Partial with Withdrawal Sample' || parent.abi_subtype == 'Withdrawal Sample Without Partial Release'",
+            "fieldname": "withdrew_sample_qty",
+            "fieldtype": "Float",
+            "label": "Withdrew Sample Qty"
+        },
+        {
+            "depends_on": "eval:parent.abi_subtype == 'Authority Release Partial with Withdrawal Sample'",
+            "fieldname": "partial_released_qty",
+            "fieldtype": "Float",
+            "label": "Partial Released Qty"
+        },
+        {
+            "depends_on": "eval:parent.abi_subtype == 'Authority Release Partial with Withdrawal Sample' || parent.abi_subtype == 'Withdrawal Sample Without Partial Release' || parent.abi_subtype == 'Authority Release Total'",
+            "fieldname": "total_unreleased_qty",
+            "fieldtype": "Float",
+            "label": "Total Unreleased Qty",
+            "read_only": 1
+        },
+        {
+            "fieldname": "column_break_conditional",
             "fieldtype": "Column Break"
         },
         {
+            "depends_on": "eval:parent.lrb_subtype == 'With Shortage Control Quantity'",
+            "fieldname": "shortage_control_qty",
+            "fieldtype": "Float",
+            "label": "Shortage Control Qty"
+        },
+        {
+            "depends_on": "eval:parent.lrb_subtype == 'With Shortage Control Quantity'",
             "fieldname": "net_released_qty",
             "fieldtype": "Float",
             "label": "Net Released Qty",
             "read_only": 1
-        },
-        {
-            "fieldname": "shortage_control_qty",
-            "fieldtype": "Float",
-            "label": "Shortage Control Qty"
         },
         {
             "depends_on": "eval:parent.analysis_batch_subtype && parent.analysis_batch_subtype.includes('Withdrawal Sample')",

@@ -50,6 +50,11 @@
   "column_break_totals",
   "total_damage_qty",
   "total_accepted_qty",
+  "section_break_agr_tracking",
+  "authority_good_releases",
+  "column_break_agr",
+  "total_released_qty",
+  "remaining_unreleased_qty",
   "section_break_warehouses",
   "accepted_warehouse",
   "rejected_warehouse",
@@ -329,6 +334,35 @@
    "fieldname": "total_accepted_qty",
    "fieldtype": "Float",
    "label": "Total Accepted Qty",
+   "read_only": 1
+  },
+  {
+   "collapsible": 1,
+   "fieldname": "section_break_agr_tracking",
+   "fieldtype": "Section Break",
+   "label": "Authority Good Release Tracking"
+  },
+  {
+   "fieldname": "authority_good_releases",
+   "fieldtype": "Table",
+   "label": "Authority Good Releases",
+   "options": "Authority Good Release Link",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_agr",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "total_released_qty",
+   "fieldtype": "Float",
+   "label": "Total Released Qty",
+   "read_only": 1
+  },
+  {
+   "fieldname": "remaining_unreleased_qty",
+   "fieldtype": "Float",
+   "label": "Remaining Unreleased Qty",
    "read_only": 1
   },
   {

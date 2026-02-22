@@ -43,6 +43,14 @@ frappe.ui.form.on('Incoming Check Report', {
                     }
                 }
             );
+            
+            // Add button to create Authority Good Release
+            frm.add_custom_button(__('Create Authority Good Release'), function() {
+                frappe.model.open_mapped_doc({
+                    method: "onco.onco.doctype.incoming_check_report.incoming_check_report.make_authority_good_release",
+                    frm: frm
+                });
+            }, __('Create'));
         }
     },
 

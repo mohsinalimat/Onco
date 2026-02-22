@@ -586,3 +586,40 @@ def validate_inspection_before_downstream(doctype_name, docname):
                 "Cannot create {0}. Inspection failed or goods are quarantined. "
                 "Incoming Check Report: {1}, Status: {2}"
             ).format(doctype_name, incoming_check.name, incoming_check.status))
+
+
+@frappe.whitelist()
+def make_authority_good_release(source_name, target_doc=None):
+    """Create Authority Good Release from Incoming Check Report"""
+    from frappe.model.mapper import get_mapped_doc
+    
+    def set_missing_values(source, target):
+        # Set incoming_check_report reference
+        target.incoming_check_report = source.name
+    
+    doclist = get_mapped_doc("Incoming Check Report", source_name, {
+        "Incoming Check Report": {
+            "doctype": "Authority Good Release",
+            "field_map": {
+                "inspection_date": "date",
+                "shipment": "shipment",
+                "purchase_invoice": "invoice_no"
+            }
+        },
+        "Incoming Check Report Item": {
+            "doctype": "Authority Good Release Item",
+            "field_map": {
+                "item_code": "item_code",
+                "item_name": "item_name",
+                "batch_no": "batch_no",
+                "manufacturing_date": "manufacturing_date",
+                "expiry_date": "expiry_date",
+                "invoice_quantity": "invoice_quantity",
+                "over_quantity": "over_quantity",
+                "damage_quantity": "damage_quantity",
+                "accepted_quantity": "actual_quantity"
+            }
+        }
+    }, target_doc, set_missing_values)
+    
+    return doclist

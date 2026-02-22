@@ -10,6 +10,28 @@ frappe.ui.form.on('Authority Good Release', {
             });
         }
         
+        // Add manual stock entry creation button if document is submitted and auto-create is disabled
+        if (frm.doc.docstatus === 1 && !frm.doc.create_stock_entry) {
+            frm.add_custom_button(__('Create Stock Entries'), function() {
+                frappe.confirm(
+                    __('Are you sure you want to create stock entries for this Authority Good Release?'),
+                    function() {
+                        // User confirmed
+                        frappe.call({
+                            method: 'create_stock_entries_manually',
+                            doc: frm.doc,
+                            callback: function(r) {
+                                if (r.message && r.message.length > 0) {
+                                    frm.reload_doc();
+                                }
+                            }
+                        });
+                    }
+                );
+            }, __('Actions'));
+        }
+        
+        // Legacy button - keep for backward compatibility
         if (frm.doc.docstatus === 1 && !frm.doc.stock_entry_created) {
             frm.add_custom_button(__('Create Stock Entry'), function() {
                 create_stock_entry(frm);
@@ -18,6 +40,17 @@ frappe.ui.form.on('Authority Good Release', {
         
         // Show/hide fields based on release type
         toggle_fields_based_on_release_type(frm);
+    },
+    
+    create_stock_entry: function(frm) {
+        // Show warning if disabling auto-create on a draft document
+        if (!frm.doc.create_stock_entry && frm.doc.docstatus === 0) {
+            frappe.msgprint({
+                title: __('Manual Stock Entry Mode'),
+                message: __('Stock entries will NOT be created automatically on submit. You will need to manually create them using the "Create Stock Entries" button after submission.'),
+                indicator: 'orange'
+            });
+        }
     },
     
     release_type: function(frm) {
