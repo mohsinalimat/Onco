@@ -167,6 +167,9 @@ def make_purchase_order(source_name, target_doc=None):
         target.item_code = source.item_code
         target.qty = source.approved_qty
         
+        # Set importation approval reference on the item for quantity tracking
+        target.custom_importation_approval = source_parent.name
+        
         # Fetch item details to avoid 'Infinity' and bad tax templates
         from erpnext.stock.get_item_details import get_item_details
         # Try to find company from parent or defaults
