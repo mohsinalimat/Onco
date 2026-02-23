@@ -37,12 +37,12 @@ class AuthorityGoodRelease(Document):
 	def get_awb_swb_number(self):
 		"""Get AWB or SWB number from linked Shipment"""
 		# Return "0000" if shipment field is empty
-		if not self.shipment:
+		if not self.shipment_no:
 			return "0000"
 		
 		try:
 			# Fetch Shipment document
-			shipment = frappe.get_doc("Shipments", self.shipment)
+			shipment = frappe.get_doc("Shipments", self.shipment_no)
 			
 			# Check mode_of_shipping field
 			if shipment.mode_of_shipping == "Air freight":
@@ -659,7 +659,7 @@ class AuthorityGoodRelease(Document):
 		- Update release_complete status
 		"""
 		# Skip if shipment field is empty
-		if not self.shipment:
+		if not self.shipment_no:
 			return
 
 		try:
@@ -668,7 +668,7 @@ class AuthorityGoodRelease(Document):
 			agr_list = frappe.get_all(
 				"Authority Good Release",
 				filters={
-					"shipment": self.shipment,
+					"shipment_no": self.shipment_no,
 					"docstatus": 1  # Only submitted documents
 				},
 				fields=["name", "release_type", "lrb_subtype", "abi_subtype"]
@@ -687,7 +687,7 @@ class AuthorityGoodRelease(Document):
 					total_unreleased += item.total_unreleased_qty or 0
 
 			# Fetch Shipment document
-			shipment_doc = frappe.get_doc("Shipments", self.shipment)
+			shipment_doc = frappe.get_doc("Shipments", self.shipment_no)
 
 			# Update Shipment fields
 			# If there are still AGRs, use the most recent one's release type
@@ -717,14 +717,14 @@ class AuthorityGoodRelease(Document):
 			shipment_doc.save()
 
 			frappe.msgprint(
-				_("Shipment {0} release status updated after cancellation").format(self.shipment),
+				_("Shipment {0} release status updated after cancellation").format(self.shipment_no),
 				alert=True,
 				indicator='orange'
 			)
 
 		except Exception as e:
 			frappe.log_error(
-				message=f"Failed to update Shipment {self.shipment} on cancellation: {str(e)}",
+				message=f"Failed to update Shipment {self.shipment_no} on cancellation: {str(e)}",
 				title="Authority Good Release - Update Shipment on Cancel Failed"
 			)
 			# Don't throw error here, just log it - shipment update is not critical for cancellation
@@ -770,7 +770,7 @@ class AuthorityGoodRelease(Document):
 		- Set release_complete = True if total_unreleased_qty == 0, else False
 		"""
 		# Skip if shipment field is empty
-		if not self.shipment:
+		if not self.shipment_no:
 			return
 		
 		try:
@@ -778,7 +778,7 @@ class AuthorityGoodRelease(Document):
 			agr_list = frappe.get_all(
 				"Authority Good Release",
 				filters={
-					"shipment": self.shipment,
+					"shipment_no": self.shipment_no,
 					"docstatus": 1  # Only submitted documents
 				},
 				fields=["name"]
@@ -799,7 +799,7 @@ class AuthorityGoodRelease(Document):
 					cumulative_unreleased_qty += agr_item.total_unreleased_qty or 0
 			
 			# Fetch Shipment document
-			shipment_doc = frappe.get_doc("Shipments", self.shipment)
+			shipment_doc = frappe.get_doc("Shipments", self.shipment_no)
 			
 			# Update shipment fields
 			shipment_doc.release_type = self.release_type
@@ -818,7 +818,7 @@ class AuthorityGoodRelease(Document):
 			
 			frappe.msgprint(
 				_("Shipment {0} updated: Release Type = {1}, Total Released Qty = {2}, Total Unreleased Qty = {3}, Release Complete = {4}").format(
-					self.shipment,
+					self.shipment_no,
 					self.release_type,
 					cumulative_released_qty,
 					cumulative_unreleased_qty,
@@ -830,7 +830,7 @@ class AuthorityGoodRelease(Document):
 			
 		except Exception as e:
 			frappe.log_error(
-				message=f"Failed to update Shipment {self.shipment}: {str(e)}",
+				message=f"Failed to update Shipment {self.shipment_no}: {str(e)}",
 				title="Authority Good Release - Update Shipment Failed"
 			)
 			frappe.throw(
