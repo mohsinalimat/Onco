@@ -513,7 +513,7 @@ class AuthorityGoodRelease(Document):
 			total_released += getattr(item, 'released_qty', 0) or 0
 			total_actual += getattr(item, 'actual_qty', 0) or 0
 			total_shortage_control += getattr(item, 'shortage_control_qty', 0) or 0
-			total_sample += getattr(item, 'sample_qty', 0) or 0
+			total_sample += getattr(item, 'withdrew_sample_qty', 0) or 0
 			total_net_released += getattr(item, 'net_released_qty', 0) or 0
 		
 		self.total_requested_qty = total_requested

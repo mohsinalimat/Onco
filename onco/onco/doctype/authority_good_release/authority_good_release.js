@@ -99,7 +99,7 @@ frappe.ui.form.on('Authority Good Release', {
             
             let has_samples = false;
             frm.doc.items.forEach(function(item) {
-                if (item.sample_qty > 0) {
+                if (item.withdrew_sample_qty > 0) {
                     has_samples = true;
                 }
             });
@@ -127,7 +127,7 @@ frappe.ui.form.on('Authority Good Release Item', {
         calculate_totals(frm);
     },
     
-    sample_qty: function(frm) {
+    withdrew_sample_qty: function(frm) {
         calculate_totals(frm);
     },
     
@@ -169,7 +169,7 @@ function calculate_totals(frm) {
         total_actual += item.actual_qty || 0;
         total_net_released += item.net_released_qty || 0;
         total_shortage_control += item.shortage_control_qty || 0;
-        total_sample += item.sample_qty || 0;
+        total_sample += item.withdrew_sample_qty || 0;
     });
     
     frm.set_value('total_requested_qty', total_requested);
