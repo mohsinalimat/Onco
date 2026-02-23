@@ -7,6 +7,25 @@ from frappe import _
 from frappe.model.document import Document
 from erpnext.stock.doctype.purchase_receipt.purchase_receipt import make_purchase_invoice as _make_purchase_invoice
 class Shipments(Document):
+    def autoname(self):
+        """
+        Generate naming series based on mode of shipping and AWB/SWB number
+        Format: SHIP-IMP-AWB-{AWB_NUMBER} or SHIP-IMP-SWB-{SWB_NUMBER}
+        """
+        if not self.mode_of_shipping:
+            frappe.throw(_("Mode of Shipping is required for naming"))
+        
+        if self.mode_of_shipping == "Air freight":
+            if not self.awb_no:
+                frappe.throw(_("AWB No is required for Air freight shipments"))
+            self.name = f"SHIP-IMP-AWB-{self.awb_no}"
+        elif self.mode_of_shipping == "Sea freight":
+            if not self.swb_no:
+                frappe.throw(_("SWB No is required for Sea freight shipments"))
+            self.name = f"SHIP-IMP-SWB-{self.swb_no}"
+        else:
+            frappe.throw(_("Invalid Mode of Shipping: {0}").format(self.mode_of_shipping))
+    
     def validate(self):
         self.validate_status_sequence()
         self.calculate_milestone_completion()
