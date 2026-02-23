@@ -57,8 +57,8 @@ frappe.ui.form.on('Authority Good Release', {
         toggle_fields_based_on_release_type(frm);
         
         // Clear subtype when release type changes
-        frm.set_value('lot_release_subtype', '');
-        frm.set_value('analysis_batch_subtype', '');
+        frm.set_value('lrb_subtype', '');
+        frm.set_value('abi_subtype', '');
     },
     
     shipment_no: function(frm) {
@@ -93,9 +93,9 @@ frappe.ui.form.on('Authority Good Release', {
         }
         
         // Validate sample quantities for analysis batch
-        if (frm.doc.release_type === 'Analysis Batch' && 
-            frm.doc.analysis_batch_subtype && 
-            frm.doc.analysis_batch_subtype.includes('Withdrawal Sample')) {
+        if (frm.doc.release_type === 'Analysis Batch Inspection' && 
+            frm.doc.abi_subtype && 
+            frm.doc.abi_subtype.includes('Withdrawal Sample')) {
             
             let has_samples = false;
             frm.doc.items.forEach(function(item) {
@@ -138,14 +138,14 @@ frappe.ui.form.on('Authority Good Release Item', {
 
 function toggle_fields_based_on_release_type(frm) {
     if (frm.doc.release_type === 'Lot Release Batch') {
-        frm.set_df_property('lot_release_subtype', 'hidden', 0);
-        frm.set_df_property('analysis_batch_subtype', 'hidden', 1);
-    } else if (frm.doc.release_type === 'Analysis Batch') {
-        frm.set_df_property('lot_release_subtype', 'hidden', 1);
-        frm.set_df_property('analysis_batch_subtype', 'hidden', 0);
+        frm.set_df_property('lrb_subtype', 'hidden', 0);
+        frm.set_df_property('abi_subtype', 'hidden', 1);
+    } else if (frm.doc.release_type === 'Analysis Batch Inspection') {
+        frm.set_df_property('lrb_subtype', 'hidden', 1);
+        frm.set_df_property('abi_subtype', 'hidden', 0);
     } else {
-        frm.set_df_property('lot_release_subtype', 'hidden', 1);
-        frm.set_df_property('analysis_batch_subtype', 'hidden', 1);
+        frm.set_df_property('lrb_subtype', 'hidden', 1);
+        frm.set_df_property('abi_subtype', 'hidden', 1);
     }
 }
 
