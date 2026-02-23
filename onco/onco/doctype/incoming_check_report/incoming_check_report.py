@@ -596,14 +596,26 @@ def make_authority_good_release(source_name, target_doc=None):
     def set_missing_values(source, target):
         # Set incoming_check_report reference
         target.incoming_check_report = source.name
+        
+        # Set shipment reference
+        if source.shipment:
+            target.shipment_no = source.shipment
+        
+        # Set source warehouse from accepted_warehouse
+        if source.accepted_warehouse:
+            target.source_warehouse = source.accepted_warehouse
+        
+        # Set sample warehouse to default
+        target.sample_warehouse = "Imported Finished Phr Sample warehouse - Onco"
     
     doclist = get_mapped_doc("Incoming Check Report", source_name, {
         "Incoming Check Report": {
             "doctype": "Authority Good Release",
             "field_map": {
                 "inspection_date": "date",
-                "shipment": "shipment",
-                "purchase_invoice": "invoice_no"
+                "shipment": "shipment_no",
+                "purchase_invoice": "invoice_no",
+                "accepted_warehouse": "source_warehouse"
             }
         },
         "Incoming Check Report Item": {

@@ -7,7 +7,7 @@ from frappe import _
 
 class AuthorityGoodRelease(Document):
 	def autoname(self):
-		"""Generate naming series based on release type"""
+		"""Generate naming series based on release type with batch sequence for shortage control"""
 		if not self.release_type:
 			frappe.throw(_("Release Type is required for naming"))
 		
@@ -31,8 +31,21 @@ class AuthorityGoodRelease(Document):
 		# Get auto-incremented counter
 		counter = self.get_next_counter(prefix, year)
 		
-		# Generate name in format: {PREFIX}-{YYYY}-{XXXX}-{0000}
-		self.name = f"{prefix}-{year}-{counter:04d}-{awb_swb}"
+		# Get batch sequence number for shortage control releases
+		batch_seq = self.get_batch_sequence_number()
+		
+		# Generate name in format: {PREFIX}-{YYYY}-{XXXX}-{AWB/SWB}-{BATCH}
+		# Example: LRB-2026-0001-AWB123-01, LRB-2026-0001-AWB123-02
+		self.name = f"{prefix}-{year}-{counter:04d}-{awb_swb}-{batch_seq:02d}"
+	
+	def update_status(self):
+		"""Update status field based on document state"""
+		if self.docstatus == 0:
+			self.status = "Draft"
+		elif self.docstatus == 1:
+			self.status = "Submitted"
+		elif self.docstatus == 2:
+			self.status = "Cancelled"
 
 	def get_awb_swb_number(self):
 		"""Get AWB or SWB number from linked Shipment"""
@@ -69,7 +82,7 @@ class AuthorityGoodRelease(Document):
 		)
 		
 		if existing:
-			# Extract counter from name (format: PREFIX-YYYY-XXXX-0000)
+			# Extract counter from name (format: PREFIX-YYYY-XXXX-AWB-BB)
 			# Counter is the third component after splitting by "-"
 			parts = existing[0].name.split("-")
 			if len(parts) >= 3:
@@ -82,88 +95,53 @@ class AuthorityGoodRelease(Document):
 		
 		# Return 1 if no existing documents or extraction failed
 		return 1
-
-	def update_incoming_check_report(self):
+	
+	def get_batch_sequence_number(self):
 		"""
-		Update Incoming Check Report with AGR reference and calculated quantities
-		- Add current AGR to authority_good_releases child table if not already present
-		- Calculate and update total_released_qty (sum of released_qty across all linked AGRs)
-		- Calculate and update remaining_unreleased_qty (actual_qty - total_released_qty)
+		Get batch sequence number for shortage control releases
+		For the same Incoming Check Report, each new AGR gets an incremented batch number
+		Example: First release = 01, Second release = 02, etc.
 		"""
-		# Skip if incoming_check_report is empty
+		# If no incoming_check_report, return 01 (first batch)
 		if not self.incoming_check_report:
-			return
+			return 1
+		
+		# Get all Authority Good Release documents for this incoming_check_report
+		# Exclude cancelled (docstatus = 2) and exclude current document if it exists
+		filters = {
+			"incoming_check_report": self.incoming_check_report,
+			"docstatus": ["!=", 2]  # Exclude cancelled
+		}
+		
+		# Exclude current document if it already has a name
+		if self.name:
+			filters["name"] = ["!=", self.name]
+		
+		existing_agrs = frappe.get_all(
+			"Authority Good Release",
+			filters=filters,
+			fields=["name"],
+			order_by="creation desc"
+		)
+		
+		# Batch sequence is count of existing AGRs + 1
+		return len(existing_agrs) + 1
 
-		try:
-			# Fetch Incoming Check Report document
-			icr_doc = frappe.get_doc("Incoming Check Report", self.incoming_check_report)
-
-			# Get all Authority Good Release documents for this incoming_check_report
-			# Include only submitted documents (docstatus = 1)
-			agr_list = frappe.get_all(
-				"Authority Good Release",
-				filters={
-					"incoming_check_report": self.incoming_check_report,
-					"docstatus": 1  # Only submitted documents
-				},
-				fields=["name"]
-			)
-
-			# Calculate total_released_qty across all linked AGRs
-			# We need to sum released_qty for each item across all AGRs
-			total_released_qty = 0
-
-			for agr_name in agr_list:
-				agr_doc = frappe.get_doc("Authority Good Release", agr_name["name"])
-
-				# Sum released_qty from all items in this AGR
-				for agr_item in agr_doc.items:
-					total_released_qty += agr_item.released_qty or 0
-
-			# Calculate remaining_unreleased_qty
-			# This is the total actual_qty from ICR minus total_released_qty
-			total_actual_qty = 0
-			for icr_item in icr_doc.items:
-				total_actual_qty += icr_item.accepted_quantity or 0
-
-			remaining_unreleased_qty = total_actual_qty - total_released_qty
-
-			# Ensure remaining_unreleased_qty is not negative
-			remaining_unreleased_qty = max(0, remaining_unreleased_qty)
-
-			# Update Incoming Check Report fields
-			icr_doc.total_released_qty = total_released_qty
-			icr_doc.remaining_unreleased_qty = remaining_unreleased_qty
-
-			# Save Incoming Check Report
-			# Use flags to bypass validation and avoid recursion
-			icr_doc.flags.ignore_validate = True
-			icr_doc.flags.ignore_mandatory = True
-			icr_doc.save()
-
-			frappe.msgprint(
-				_("Incoming Check Report {0} updated: Total Released Qty = {1}, Remaining Unreleased Qty = {2}").format(
-					self.incoming_check_report,
-					total_released_qty,
-					remaining_unreleased_qty
-				),
-				alert=True,
-				indicator='green'
-			)
-
-		except Exception as e:
-			frappe.log_error(
-				message=f"Failed to update Incoming Check Report {self.incoming_check_report}: {str(e)}",
-				title="Authority Good Release - Update ICR Failed"
-			)
-			frappe.throw(
-				_("Failed to update Incoming Check Report: {0}").format(str(e))
-			)
 
 
 	def before_save(self):
 		"""Called before the document is saved"""
+		self.update_status()
 		self.calculate_quantities()
+	def update_status(self):
+		"""Update status field based on document state"""
+		if self.docstatus == 0:
+			self.status = "Draft"
+		elif self.docstatus == 1:
+			self.status = "Submitted"
+		elif self.docstatus == 2:
+			self.status = "Cancelled"
+
 	
 	def calculate_quantities(self):
 		"""Calculate all derived quantity fields based on release type and subtype"""
@@ -433,7 +411,10 @@ class AuthorityGoodRelease(Document):
 				frappe.throw("Compliance Report Number is required when Final Released is set to Yes")
 	
 	def validate_cumulative_quantities(self):
-		"""Validate cumulative quantities across all AGR documents"""
+		"""
+		Validate cumulative quantities across all AGR documents
+		For shortage control: ensure each release doesn't exceed the shortage control limit
+		"""
 		# Skip if incoming_check_report is empty
 		if not self.incoming_check_report:
 			return
@@ -483,21 +464,49 @@ class AuthorityGoodRelease(Document):
 					)
 				)
 			
-			# Verify cumulative released_qty <= actual_quantity
-			if cumulative_released > icr_item.accepted_quantity:
+			# Verify cumulative released_qty + sample_qty <= actual_quantity
+			total_cumulative = cumulative_released + cumulative_sample
+			if total_cumulative > icr_item.accepted_quantity:
 				frappe.throw(
-					_("Cumulative released quantity ({0}) exceeds actual quantity ({1}) for item {2} (batch: {3})").format(
-						cumulative_released, icr_item.accepted_quantity, item.item_code, item.batch_no
+					_("Cumulative released quantity ({0}) + sample quantity ({1}) = {2} exceeds actual quantity ({3}) for item {4} (batch: {5})").format(
+						cumulative_released, cumulative_sample, total_cumulative, 
+						icr_item.accepted_quantity, item.item_code, item.batch_no
 					)
 				)
 			
-			# Verify cumulative withdrew_sample_qty <= actual_quantity
-			if cumulative_sample > icr_item.accepted_quantity:
-				frappe.throw(
-					_("Cumulative withdrew sample quantity ({0}) exceeds actual quantity ({1}) for item {2} (batch: {3})").format(
-						cumulative_sample, icr_item.accepted_quantity, item.item_code, item.batch_no
+			# SHORTAGE CONTROL VALIDATION
+			# For "With Shortage Control Quantity", validate against shortage control limit
+			if self.lrb_subtype == "With Shortage Control Quantity":
+				# Calculate the shortage control limit for this batch
+				# Shortage control limit = actual_qty - released_qty (from previous AGRs)
+				previous_released = cumulative_released - (item.released_qty or 0)
+				previous_sample = cumulative_sample - (item.withdrew_sample_qty or 0)
+				
+				# Remaining available = actual_qty - (previous_released + previous_sample)
+				remaining_available = icr_item.accepted_quantity - (previous_released + previous_sample)
+				
+				# Current release (released + sample) should not exceed remaining available
+				current_release_total = (item.released_qty or 0) + (item.withdrew_sample_qty or 0)
+				
+				if current_release_total > remaining_available:
+					frappe.throw(
+						_("Current release quantity ({0}) exceeds remaining available quantity ({1}) for item {2} (batch: {3}). "
+						  "Previous releases: {4}, Actual quantity: {5}").format(
+							current_release_total, remaining_available, item.item_code, item.batch_no,
+							previous_released + previous_sample, icr_item.accepted_quantity
+						)
 					)
-				)
+				
+				# Additionally, for shortage control, the released_qty in this batch should not exceed
+				# the shortage control quantity limit (which is actual_qty - released_qty)
+				# This ensures progressive release in batches
+				shortage_control_limit = item.actual_qty - item.released_qty
+				if item.released_qty > shortage_control_limit:
+					frappe.throw(
+						_("Released quantity ({0}) exceeds shortage control limit ({1}) for item {2} (batch: {3})").format(
+							item.released_qty, shortage_control_limit, item.item_code, item.batch_no
+						)
+					)
 
 	def calculate_totals(self):
 		"""Calculate total quantities from items"""
@@ -524,6 +533,8 @@ class AuthorityGoodRelease(Document):
 		self.total_sample_qty = total_sample
 
 	def on_submit(self):
+		# Update status to Submitted
+		self.update_status()
 		# Only auto-create stock entries if the flag is enabled
 		if self.create_stock_entry:
 			self.create_stock_entries()
@@ -566,10 +577,13 @@ class AuthorityGoodRelease(Document):
 	def on_cancel(self):
 		"""
 		Called when an Authority Good Release document is cancelled
+		- Update status to Cancelled
 		- Remove current AGR from Incoming Check Report's authority_good_releases list
 		- Recalculate Incoming Check Report's total_released_qty and remaining_unreleased_qty
 		- Update Shipment release status
 		"""
+		# Update status to Cancelled
+		self.update_status()
 		# Update Incoming Check Report to recalculate quantities
 		self.update_incoming_check_report_on_cancel()
 
@@ -602,15 +616,19 @@ class AuthorityGoodRelease(Document):
 			)
 
 			# Calculate total_released_qty across all remaining linked AGRs
-			# We need to sum released_qty for each item across all AGRs
+			# Formula: released_qty - sample_qty (because samples are withdrawn separately)
 			total_released_qty = 0
 
 			for agr_name in agr_list:
 				agr_doc = frappe.get_doc("Authority Good Release", agr_name["name"])
 
-				# Sum released_qty from all items in this AGR
+				# Sum (released_qty - sample_qty) from all items in this AGR
 				for agr_item in agr_doc.items:
-					total_released_qty += agr_item.released_qty or 0
+					released = agr_item.released_qty or 0
+					sample = agr_item.withdrew_sample_qty or 0
+					# Only count the quantity that actually goes to released warehouse
+					# (released qty minus samples that are withdrawn)
+					total_released_qty += (released - sample)
 
 			# Calculate remaining_unreleased_qty
 			# This is the total actual_qty from ICR minus total_released_qty
@@ -736,16 +754,21 @@ class AuthorityGoodRelease(Document):
 
 
 	def calculate_net_quantities(self):
-		"""Calculate shortage control and net released quantities"""
+		"""Calculate shortage control and net released quantities
+		Formula: Net released = total released - shortage control quantity
+		"""
 		for item in self.items:
 			# If shortage control is enabled for this type
 			if self.lrb_subtype == "With Shortage Control Quantity":
+				# Shortage control quantity is the difference between actual and released
 				item.shortage_control_qty = (item.actual_qty or 0) - (item.released_qty or 0)
+				# Net Released = Released Qty - Shortage Control Qty
+				# This is the quantity that goes to the released warehouse
+				item.net_released_qty = (item.released_qty or 0) - (item.shortage_control_qty or 0)
 			else:
 				item.shortage_control_qty = 0
-			
-			# Net Released is what goes to Sale Warehouse now
-			item.net_released_qty = item.released_qty or 0
+				# Without shortage control, net released equals released qty
+				item.net_released_qty = item.released_qty or 0
 
 	def get_subtype_display(self):
 		"""
@@ -864,15 +887,19 @@ class AuthorityGoodRelease(Document):
 			)
 			
 			# Calculate total_released_qty across all linked AGRs
-			# We need to sum released_qty for each item across all AGRs
+			# Formula: released_qty - sample_qty (because samples are withdrawn separately)
 			total_released_qty = 0
 			
 			for agr_name in agr_list:
 				agr_doc = frappe.get_doc("Authority Good Release", agr_name["name"])
 				
-				# Sum released_qty from all items in this AGR
+				# Sum (released_qty - sample_qty) from all items in this AGR
 				for agr_item in agr_doc.items:
-					total_released_qty += agr_item.released_qty or 0
+					released = agr_item.released_qty or 0
+					sample = agr_item.withdrew_sample_qty or 0
+					# Only count the quantity that actually goes to released warehouse
+					# (released qty minus samples that are withdrawn)
+					total_released_qty += (released - sample)
 			
 			# Calculate remaining_unreleased_qty
 			# This is the total actual_qty from ICR minus total_released_qty

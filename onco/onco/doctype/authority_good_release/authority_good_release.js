@@ -11,7 +11,7 @@ frappe.ui.form.on('Authority Good Release', {
         }
         
         // Add manual stock entry creation button if document is submitted and auto-create is disabled
-        if (frm.doc.docstatus === 1 && !frm.doc.create_stock_entry) {
+        if (frm.doc.docstatus === 1 && !frm.doc.create_stock_entry && !frm.doc.stock_entry_created) {
             frm.add_custom_button(__('Create Stock Entries'), function() {
                 frappe.confirm(
                     __('Are you sure you want to create stock entries for this Authority Good Release?'),
@@ -29,13 +29,6 @@ frappe.ui.form.on('Authority Good Release', {
                     }
                 );
             }, __('Actions'));
-        }
-        
-        // Legacy button - keep for backward compatibility
-        if (frm.doc.docstatus === 1 && !frm.doc.stock_entry_created) {
-            frm.add_custom_button(__('Create Stock Entry'), function() {
-                create_stock_entry(frm);
-            });
         }
         
         // Show/hide fields based on release type
@@ -211,21 +204,6 @@ function fetch_items_from_purchase_receipt_report(frm) {
                 frm.refresh_field('items');
                 calculate_totals(frm);
                 frappe.msgprint(__('Items fetched successfully'));
-            }
-        }
-    });
-}
-
-function create_stock_entry(frm) {
-    frappe.call({
-        method: "onco.onco.doctype.authority_good_release.authority_good_release.create_stock_entry",
-        args: {
-            authority_good_release: frm.doc.name
-        },
-        callback: function(r) {
-            if (r.message) {
-                frm.reload_doc();
-                frappe.msgprint(__(`Stock Entry ${r.message} created successfully`));
             }
         }
     });

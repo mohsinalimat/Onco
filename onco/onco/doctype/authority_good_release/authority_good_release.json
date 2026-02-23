@@ -317,7 +317,8 @@
             "fieldname": "status",
             "fieldtype": "Select",
             "label": "Status",
-            "options": "\nDraft\nSubmitted\nCancelled"
+            "options": "\nDraft\nSubmitted\nCancelled",
+            "read_only": 1
         },
         {
             "fieldname": "items_section",
