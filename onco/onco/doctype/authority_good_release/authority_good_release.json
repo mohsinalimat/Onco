@@ -1,416 +1,435 @@
 {
-    "actions": [],
-    "allow_rename": 1,
-    "autoname": "field:name",
-    "creation": "2026-01-17 10:00:00.000000",
-    "doctype": "DocType",
-    "engine": "InnoDB",
-    "field_order": [
-        "naming_series",
-        "incoming_check_report",
-        "shipment_no",
-        "invoice_no",
-        "date",
-        "release_type",
-        "lrb_subtype",
-        "abi_subtype",
-        "column_break_lot",
-        "batch_no",
-        "manufacturing_date_",
-        "expiry_date",
-        "release_date",
-        "section_break_quantities",
-        "total_requested_qty",
-        "total_released_qty",
-        "total_actual_qty",
-        "column_break_quantities",
-        "total_net_released_qty",
-        "total_shortage_control_qty",
-        "total_sample_qty",
-        "section_break_final_release",
-        "final_released",
-        "final_release_date",
-        "column_break_final_release",
-        "compliance_report_number",
-        "compliance_report_attachment",
-        "section_break_abr",
-        "registration_number",
-        "registration_date",
-        "column_break_abr",
-        "registration_documentation",
-        "section_break_attachments",
-        "release_report",
-        "section_break_warehouses",
-        "source_warehouse",
-        "released_goods_warehouse",
-        "column_break_warehouses",
-        "sample_warehouse",
-        "sales_warehouse",
-        "onco_warehouse",
-        "section_break_samples",
-        "no_of_samples",
-        "status",
-        "items_section",
-        "items",
-        "section_break_stock_transfer",
-        "create_stock_entry",
-        "stock_entry_created",
-        "amended_from"
-    ],
-    "fields": [
-        {
-            "fieldname": "naming_series",
-            "fieldtype": "Data",
-            "label": "Series",
-            "read_only": 1
-        },
-        {
-            "fieldname": "incoming_check_report",
-            "fieldtype": "Link",
-            "label": "Incoming Check Report",
-            "options": "Incoming Check Report"
-        },
-        {
-            "fieldname": "shipment_no",
-            "fieldtype": "Link",
-            "label": "Shipment No",
-            "options": "Shipments"
-        },
-        {
-            "fieldname": "invoice_no",
-            "fieldtype": "Data",
-            "label": "Invoice No",
-            "read_only": 1
-        },
-        {
-            "fieldname": "date",
-            "fieldtype": "Date",
-            "label": "Date",
-            "read_only": 1
-        },
-        {
-            "fieldname": "release_type",
-            "fieldtype": "Select",
-            "label": "Type of Release",
-            "options": "\nLot Release Batch\nAnalysis Batch Inspection\nAnalysis Batch Registration",
-            "reqd": 1
-        },
-        {
-            "depends_on": "eval:doc.release_type == 'Lot Release Batch'",
-            "fieldname": "lrb_subtype",
-            "fieldtype": "Select",
-            "label": "Lot Release Sub-type",
-            "options": "\nWithout Shortage Control Quantity\nWith Shortage Control Quantity"
-        },
-        {
-            "depends_on": "eval:doc.release_type == 'Analysis Batch Inspection'",
-            "fieldname": "abi_subtype",
-            "fieldtype": "Select",
-            "label": "Analysis Batch Sub-type",
-            "options": "\nAuthority Release Total\nAuthority Release Partial with Withdrawal Sample\nWithdrawal Sample Without Partial Release"
-        },
-        {
-            "fieldname": "batch_no",
-            "fieldtype": "Data",
-            "label": "Batch No",
-            "read_only": 1
-        },
-        {
-            "fieldname": "column_break_lot",
-            "fieldtype": "Column Break"
-        },
-        {
-            "fieldname": "manufacturing_date_",
-            "fieldtype": "Date",
-            "label": "Manufacturing Date",
-            "read_only": 1
-        },
-        {
-            "fieldname": "expiry_date",
-            "fieldtype": "Date",
-            "label": "Expiry Date",
-            "read_only": 1
-        },
-        {
-            "default": "Today",
-            "fieldname": "release_date",
-            "fieldtype": "Date",
-            "label": "Release Date"
-        },
-        {
-            "fieldname": "section_break_quantities",
-            "fieldtype": "Section Break",
-            "label": "Quantity Summary"
-        },
-        {
-            "fieldname": "total_requested_qty",
-            "fieldtype": "Float",
-            "label": "Total Requested Qty",
-            "read_only": 1
-        },
-        {
-            "fieldname": "total_released_qty",
-            "fieldtype": "Float",
-            "label": "Total Released Qty",
-            "read_only": 1
-        },
-        {
-            "fieldname": "total_actual_qty",
-            "fieldtype": "Float",
-            "label": "Total Actual Qty",
-            "read_only": 1
-        },
-        {
-            "fieldname": "column_break_quantities",
-            "fieldtype": "Column Break"
-        },
-        {
-            "fieldname": "total_net_released_qty",
-            "fieldtype": "Float",
-            "label": "Total Net Released Qty",
-            "read_only": 1
-        },
-        {
-            "fieldname": "total_shortage_control_qty",
-            "fieldtype": "Float",
-            "label": "Total Shortage Control Qty",
-            "read_only": 1
-        },
-        {
-            "fieldname": "total_sample_qty",
-            "fieldtype": "Float",
-            "label": "Total Sample Qty",
-            "read_only": 1
-        },
-        {
-            "depends_on": "eval:doc.abi_subtype == 'Authority Release Partial with Withdrawal Sample' || doc.abi_subtype == 'Withdrawal Sample Without Partial Release'",
-            "fieldname": "section_break_final_release",
-            "fieldtype": "Section Break",
-            "label": "Final Release"
-        },
-        {
-            "depends_on": "eval:doc.abi_subtype == 'Authority Release Partial with Withdrawal Sample' || doc.abi_subtype == 'Withdrawal Sample Without Partial Release'",
-            "fieldname": "final_released",
-            "fieldtype": "Select",
-            "label": "Final Released",
-            "options": "\nYes\nNo"
-        },
-        {
-            "depends_on": "eval:doc.final_released == 'Yes'",
-            "fieldname": "final_release_date",
-            "fieldtype": "Date",
-            "label": "Final Release Date"
-        },
-        {
-            "fieldname": "column_break_final_release",
-            "fieldtype": "Column Break"
-        },
-        {
-            "depends_on": "eval:doc.final_released == 'Yes'",
-            "fieldname": "compliance_report_number",
-            "fieldtype": "Data",
-            "label": "Compliance Report Number"
-        },
-        {
-            "depends_on": "eval:doc.final_released == 'Yes'",
-            "fieldname": "compliance_report_attachment",
-            "fieldtype": "Attach",
-            "label": "Compliance Report Attachment"
-        },
-        {
-            "depends_on": "eval:doc.release_type == 'Analysis Batch Registration'",
-            "fieldname": "section_break_abr",
-            "fieldtype": "Section Break",
-            "label": "Registration Details"
-        },
-        {
-            "depends_on": "eval:doc.release_type == 'Analysis Batch Registration'",
-            "fieldname": "registration_number",
-            "fieldtype": "Data",
-            "label": "Registration Number"
-        },
-        {
-            "depends_on": "eval:doc.release_type == 'Analysis Batch Registration'",
-            "fieldname": "registration_date",
-            "fieldtype": "Date",
-            "label": "Registration Date"
-        },
-        {
-            "fieldname": "column_break_abr",
-            "fieldtype": "Column Break"
-        },
-        {
-            "depends_on": "eval:doc.release_type == 'Analysis Batch Registration'",
-            "fieldname": "registration_documentation",
-            "fieldtype": "Attach",
-            "label": "Registration Documentation"
-        },
-        {
-            "depends_on": "eval:doc.abi_subtype == 'Authority Release Total'",
-            "fieldname": "section_break_attachments",
-            "fieldtype": "Section Break",
-            "label": "Attachments"
-        },
-        {
-            "depends_on": "eval:doc.abi_subtype == 'Authority Release Total'",
-            "fieldname": "release_report",
-            "fieldtype": "Attach",
-            "label": "Release Report"
-        },
-        {
-            "fieldname": "section_break_warehouses",
-            "fieldtype": "Section Break",
-            "label": "Warehouse Transfer"
-        },
-        {
-            "default": "Under Release - O",
-            "fieldname": "source_warehouse",
-            "fieldtype": "Link",
-            "label": "Source Warehouse",
-            "options": "Warehouse",
-            "reqd": 1
-        },
-        {
-            "default": "Stores - O",
-            "fieldname": "released_goods_warehouse",
-            "fieldtype": "Link",
-            "label": "Released Goods Warehouse",
-            "options": "Warehouse",
-            "reqd": 1
-        },
-        {
-            "fieldname": "column_break_warehouses",
-            "fieldtype": "Column Break"
-        },
-        {
-            "default": "Sample Warehouse - O",
-            "fieldname": "sample_warehouse",
-            "fieldtype": "Link",
-            "label": "Sample Warehouse",
-            "options": "Warehouse"
-        },
-        {
-            "fieldname": "sales_warehouse",
-            "fieldtype": "Link",
-            "label": "Sales Warehouse",
-            "options": "Warehouse"
-        },
-        {
-            "fieldname": "onco_warehouse",
-            "fieldtype": "Link",
-            "label": "Onco Warehouse",
-            "options": "Warehouse"
-        },
-        {
-            "fieldname": "section_break_samples",
-            "fieldtype": "Section Break",
-            "label": "Sample Management"
-        },
-        {
-            "depends_on": "eval:doc.analysis_batch_subtype && doc.analysis_batch_subtype.includes('Withdrawal Sample')",
-            "fieldname": "no_of_samples",
-            "fieldtype": "Int",
-            "label": "No of Samples"
-        },
-        {
-            "default": "Draft",
-            "fieldname": "status",
-            "fieldtype": "Select",
-            "label": "Status",
-            "options": "\nDraft\nSubmitted\nCancelled",
-            "read_only": 1
-        },
-        {
-            "fieldname": "items_section",
-            "fieldtype": "Section Break",
-            "label": "Items"
-        },
-        {
-            "fieldname": "items",
-            "fieldtype": "Table",
-            "label": "Items",
-            "options": "Authority Good Release Item"
-        },
-        {
-            "fieldname": "section_break_stock_transfer",
-            "fieldtype": "Section Break",
-            "label": "Stock Transfer"
-        },
-        {
-            "default": 0,
-            "fieldname": "create_stock_entry",
-            "fieldtype": "Check",
-            "label": "Create Stock Entry on Submit"
-        },
-        {
-            "fieldname": "stock_entry_created",
-            "fieldtype": "Link",
-            "label": "Stock Entry Created",
-            "options": "Stock Entry",
-            "read_only": 1
-        },
-        {
-            "fieldname": "amended_from",
-            "fieldtype": "Link",
-            "label": "Amended From",
-            "no_copy": 1,
-            "options": "Authority Good Release",
-            "print_hide": 1,
-            "read_only": 1,
-            "search_index": 1
-        }
-    ],
-    "index_web_pages_for_search": 1,
-    "is_submittable": 1,
-    "links": [],
-    "modified": "2026-01-17 10:00:00.000000",
-    "modified_by": "Administrator",
-    "module": "Onco",
-    "name": "Authority Good Release",
-    "owner": "Administrator",
-    "permissions": [
-        {
-            "create": 1,
-            "delete": 1,
-            "email": 1,
-            "export": 1,
-            "print": 1,
-            "read": 1,
-            "report": 1,
-            "role": "System Manager",
-            "share": 1,
-            "submit": 1,
-            "write": 1
-        },
-        {
-            "amend": 1,
-            "cancel": 1,
-            "create": 1,
-            "delete": 1,
-            "email": 1,
-            "export": 1,
-            "print": 1,
-            "read": 1,
-            "report": 1,
-            "role": "Stock Manager",
-            "share": 1,
-            "submit": 1,
-            "write": 1
-        },
-        {
-            "create": 1,
-            "email": 1,
-            "export": 1,
-            "print": 1,
-            "read": 1,
-            "report": 1,
-            "role": "Stock User",
-            "share": 1,
-            "submit": 1,
-            "write": 1
-        }
-    ],
-    "sort_field": "modified",
-    "sort_order": "DESC",
-    "states": []
+ "actions": [],
+ "allow_rename": 1,
+ "autoname": "naming_series:",
+ "creation": "2026-01-17 10:00:00",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "naming_series",
+  "incoming_check_report",
+  "shipment_no",
+  "invoice_no",
+  "date",
+  "release_type",
+  "lrb_subtype",
+  "abi_subtype",
+  "column_break_lot",
+  "batch_no",
+  "manufacturing_date_",
+  "expiry_date",
+  "release_date",
+  "section_break_quantities",
+  "total_requested_qty",
+  "total_released_qty",
+  "total_actual_qty",
+  "column_break_quantities",
+  "total_net_released_qty",
+  "total_shortage_control_qty",
+  "total_sample_qty",
+  "section_break_final_release",
+  "final_released",
+  "final_release_date",
+  "column_break_final_release",
+  "compliance_report_number",
+  "compliance_report_attachment",
+  "section_break_abr",
+  "registration_number",
+  "registration_date",
+  "column_break_abr",
+  "registration_documentation",
+  "section_break_attachments",
+  "release_report",
+  "section_break_warehouses",
+  "source_warehouse",
+  "released_goods_warehouse",
+  "column_break_warehouses",
+  "sample_warehouse",
+  "sales_warehouse",
+  "onco_warehouse",
+  "section_break_samples",
+  "no_of_samples",
+  "status",
+  "items_section",
+  "items",
+  "section_break_stock_transfer",
+  "create_stock_entry",
+  "stock_entry_created",
+  "amended_from"
+ ],
+ "fields": [
+  {
+   "fieldname": "naming_series",
+   "fieldtype": "Data",
+   "label": "Series",
+   "read_only": 1
+  },
+  {
+   "fieldname": "incoming_check_report",
+   "fieldtype": "Link",
+   "label": "Incoming Check Report",
+   "options": "Incoming Check Report"
+  },
+  {
+   "fieldname": "shipment_no",
+   "fieldtype": "Link",
+   "label": "Shipment No",
+   "options": "Shipments"
+  },
+  {
+   "fieldname": "invoice_no",
+   "fieldtype": "Data",
+   "label": "Invoice No",
+   "read_only": 1
+  },
+  {
+   "fieldname": "date",
+   "fieldtype": "Date",
+   "label": "Date",
+   "read_only": 1
+  },
+  {
+   "fieldname": "release_type",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Type of Release",
+   "options": "\nLot Release Batch\nAnalysis Batch Inspection\nAnalysis Batch Registration",
+   "reqd": 1
+  },
+  {
+   "depends_on": "eval:doc.release_type == 'Lot Release Batch'",
+   "fieldname": "lrb_subtype",
+   "fieldtype": "Select",
+   "label": "Lot Release Sub-type",
+   "options": "\nWithout Shortage Control Quantity\nWith Shortage Control Quantity"
+  },
+  {
+   "depends_on": "eval:doc.release_type == 'Analysis Batch Inspection'",
+   "fieldname": "abi_subtype",
+   "fieldtype": "Select",
+   "label": "Analysis Batch Sub-type",
+   "options": "\nAuthority Release Total\nAuthority Release Partial with Withdrawal Sample\nWithdrawal Sample Without Partial Release"
+  },
+  {
+   "fieldname": "batch_no",
+   "fieldtype": "Data",
+   "label": "Batch No",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_lot",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "manufacturing_date_",
+   "fieldtype": "Date",
+   "label": "Manufacturing Date",
+   "read_only": 1
+  },
+  {
+   "fieldname": "expiry_date",
+   "fieldtype": "Date",
+   "label": "Expiry Date",
+   "read_only": 1
+  },
+  {
+   "default": "Today",
+   "fieldname": "release_date",
+   "fieldtype": "Date",
+   "label": "Release Date"
+  },
+  {
+   "fieldname": "section_break_quantities",
+   "fieldtype": "Section Break",
+   "label": "Quantity Summary"
+  },
+  {
+   "fieldname": "total_requested_qty",
+   "fieldtype": "Float",
+   "label": "Total Requested Qty",
+   "read_only": 1
+  },
+  {
+   "fieldname": "total_released_qty",
+   "fieldtype": "Float",
+   "label": "Total Released Qty",
+   "read_only": 1
+  },
+  {
+   "fieldname": "total_actual_qty",
+   "fieldtype": "Float",
+   "label": "Total Actual Qty",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_quantities",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "total_net_released_qty",
+   "fieldtype": "Float",
+   "label": "Total Net Released Qty",
+   "read_only": 1
+  },
+  {
+   "fieldname": "total_shortage_control_qty",
+   "fieldtype": "Float",
+   "label": "Total Shortage Control Qty",
+   "read_only": 1
+  },
+  {
+   "fieldname": "total_sample_qty",
+   "fieldtype": "Float",
+   "label": "Total Sample Qty",
+   "read_only": 1
+  },
+  {
+   "depends_on": "eval:doc.abi_subtype == 'Authority Release Partial with Withdrawal Sample' || doc.abi_subtype == 'Withdrawal Sample Without Partial Release'",
+   "fieldname": "section_break_final_release",
+   "fieldtype": "Section Break",
+   "label": "Final Release"
+  },
+  {
+   "depends_on": "eval:doc.abi_subtype == 'Authority Release Partial with Withdrawal Sample' || doc.abi_subtype == 'Withdrawal Sample Without Partial Release'",
+   "fieldname": "final_released",
+   "fieldtype": "Select",
+   "label": "Final Released",
+   "options": "\nYes\nNo"
+  },
+  {
+   "depends_on": "eval:doc.final_released == 'Yes'",
+   "fieldname": "final_release_date",
+   "fieldtype": "Date",
+   "label": "Final Release Date"
+  },
+  {
+   "fieldname": "column_break_final_release",
+   "fieldtype": "Column Break"
+  },
+  {
+   "depends_on": "eval:doc.final_released == 'Yes'",
+   "fieldname": "compliance_report_number",
+   "fieldtype": "Data",
+   "label": "Compliance Report Number"
+  },
+  {
+   "depends_on": "eval:doc.final_released == 'Yes'",
+   "fieldname": "compliance_report_attachment",
+   "fieldtype": "Attach",
+   "label": "Compliance Report Attachment"
+  },
+  {
+   "depends_on": "eval:doc.release_type == 'Analysis Batch Registration'",
+   "fieldname": "section_break_abr",
+   "fieldtype": "Section Break",
+   "label": "Registration Details"
+  },
+  {
+   "depends_on": "eval:doc.release_type == 'Analysis Batch Registration'",
+   "fieldname": "registration_number",
+   "fieldtype": "Data",
+   "label": "Registration Number"
+  },
+  {
+   "depends_on": "eval:doc.release_type == 'Analysis Batch Registration'",
+   "fieldname": "registration_date",
+   "fieldtype": "Date",
+   "label": "Registration Date"
+  },
+  {
+   "fieldname": "column_break_abr",
+   "fieldtype": "Column Break"
+  },
+  {
+   "depends_on": "eval:doc.release_type == 'Analysis Batch Registration'",
+   "fieldname": "registration_documentation",
+   "fieldtype": "Attach",
+   "label": "Registration Documentation"
+  },
+  {
+   "depends_on": "eval:doc.abi_subtype == 'Authority Release Total'",
+   "fieldname": "section_break_attachments",
+   "fieldtype": "Section Break",
+   "label": "Attachments"
+  },
+  {
+   "depends_on": "eval:doc.abi_subtype == 'Authority Release Total'",
+   "fieldname": "release_report",
+   "fieldtype": "Attach",
+   "label": "Release Report"
+  },
+  {
+   "fieldname": "section_break_warehouses",
+   "fieldtype": "Section Break",
+   "label": "Warehouse Transfer"
+  },
+  {
+   "default": "Under Release - O",
+   "fieldname": "source_warehouse",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Source Warehouse",
+   "options": "Warehouse",
+   "reqd": 1
+  },
+  {
+   "default": "Stores - O",
+   "fieldname": "released_goods_warehouse",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Released Goods Warehouse",
+   "options": "Warehouse",
+   "reqd": 1
+  },
+  {
+   "fieldname": "column_break_warehouses",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "Sample Warehouse - O",
+   "fieldname": "sample_warehouse",
+   "fieldtype": "Link",
+   "label": "Sample Warehouse",
+   "options": "Warehouse"
+  },
+  {
+   "fieldname": "sales_warehouse",
+   "fieldtype": "Link",
+   "label": "Sales Warehouse",
+   "options": "Warehouse"
+  },
+  {
+   "fieldname": "onco_warehouse",
+   "fieldtype": "Link",
+   "label": "Onco Warehouse",
+   "options": "Warehouse"
+  },
+  {
+   "fieldname": "section_break_samples",
+   "fieldtype": "Section Break",
+   "label": "Sample Management"
+  },
+  {
+   "depends_on": "eval:doc.analysis_batch_subtype && doc.analysis_batch_subtype.includes('Withdrawal Sample')",
+   "fieldname": "no_of_samples",
+   "fieldtype": "Int",
+   "label": "No of Samples"
+  },
+  {
+   "default": "Draft",
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "label": "Status",
+   "options": "\nDraft\nSubmitted\nCancelled",
+   "read_only": 1
+  },
+  {
+   "fieldname": "items_section",
+   "fieldtype": "Section Break",
+   "label": "Items"
+  },
+  {
+   "fieldname": "items",
+   "fieldtype": "Table",
+   "label": "Items",
+   "options": "Authority Good Release Item"
+  },
+  {
+   "fieldname": "section_break_stock_transfer",
+   "fieldtype": "Section Break",
+   "label": "Stock Transfer"
+  },
+  {
+   "default": "0",
+   "fieldname": "create_stock_entry",
+   "fieldtype": "Check",
+   "label": "Create Stock Entry on Submit"
+  },
+  {
+   "fieldname": "stock_entry_created",
+   "fieldtype": "Link",
+   "label": "Stock Entry Created",
+   "options": "Stock Entry",
+   "read_only": 1
+  },
+  {
+   "fieldname": "amended_from",
+   "fieldtype": "Link",
+   "label": "Amended From",
+   "no_copy": 1,
+   "options": "Authority Good Release",
+   "print_hide": 1,
+   "read_only": 1,
+   "search_index": 1
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "is_submittable": 1,
+ "links": [],
+ "modified": "2026-02-24 00:35:04.699956",
+ "modified_by": "it_asst2@oncopharmegy.com",
+ "module": "Onco",
+ "name": "Authority Good Release",
+ "naming_rule": "By \"Naming Series\" field",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  },
+  {
+   "amend": 1,
+   "cancel": 1,
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Stock Manager",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Stock User",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Bank_User",
+   "select": 1,
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
 }

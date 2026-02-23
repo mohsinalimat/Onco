@@ -1,241 +1,259 @@
 {
-    "actions": [],
-    "allow_rename": 1,
-    "autoname": "naming_series:",
-    "creation": "2026-01-26 10:00:00.000000",
-    "doctype": "DocType",
-    "engine": "InnoDB",
-    "field_order": [
-        "naming_series",
-        "approval_type",
-        "date",
-        "column_break_basic",
-        "importation_approval_request",
-        "reference_no",
-        "section_break_modification",
-        "is_modification",
-        "is_extension",
-        "original_document",
-        "column_break_modification",
-        "modification_reason",
-        "extension_reason",
-        "section_break_details",
-        "items",
-        "section_break_approval_details",
-        "valid_date",
-        "special_conditions",
-        "column_break_approval_details",
-        "hard_copy_attachment",
-        "section_break_email",
-        "send_email_notification",
-        "supplier_email",
-        "section_break_actions",
-        "actions_available",
-        "amended_from"
-    ],
-    "fields": [
-        {
-            "fieldname": "naming_series",
-            "fieldtype": "Select",
-            "label": "Series",
-            "options": "EDA-SPIMA-.YYYY.-.#####\nEDA-APIMA-.YYYY.-.#####\nEDA-SPIMA-MD-.YYYY.-.#####\nEDA-APIMA-MD-.YYYY.-.#####\nEDA-SPIMA-EX-.YYYY.-.######\nEDA-APIMA-EX-.YYYY.-.######",
-            "reqd": 1
-        },
-        {
-            "fieldname": "approval_type",
-            "fieldtype": "Select",
-            "label": "Approval Type",
-            "options": "\nSpecial Importation (SPIMA)\nAnnual Importation (APIMA)",
-            "reqd": 1
-        },
-        {
-            "default": "Today",
-            "fieldname": "date",
-            "fieldtype": "Date",
-            "label": "Date",
-            "reqd": 1
-        },
-        {
-            "fieldname": "column_break_basic",
-            "fieldtype": "Column Break"
-        },
-        {
-            "fieldname": "importation_approval_request",
-            "fieldtype": "Link",
-            "label": "Importation Approval Request",
-            "options": "Importation Approval Request",
-            "reqd": 1
-        },
-        {
-            "fetch_from": "importation_approval_request.name",
-            "fieldname": "reference_no",
-            "fieldtype": "Data",
-            "label": "SPIMR/APIMR No",
-            "read_only": 1
-        },
-        {
-            "collapsible": 1,
-            "fieldname": "section_break_modification",
-            "fieldtype": "Section Break",
-            "label": "Modification/Extension Details"
-        },
-        {
-            "default": "0",
-            "fieldname": "is_modification",
-            "fieldtype": "Check",
-            "label": "Is Modification",
-            "read_only": 1
-        },
-        {
-            "default": "0",
-            "fieldname": "is_extension",
-            "fieldtype": "Check",
-            "label": "Is Extension",
-            "read_only": 1
-        },
-        {
-            "fieldname": "original_document",
-            "fieldtype": "Link",
-            "label": "Original Document",
-            "options": "Importation Approvals",
-            "read_only": 1
-        },
-        {
-            "fieldname": "column_break_modification",
-            "fieldtype": "Column Break"
-        },
-        {
-            "depends_on": "is_modification",
-            "fieldname": "modification_reason",
-            "fieldtype": "Select",
-            "label": "Modification Reason",
-            "options": "\nError\nChange data and conditions"
-        },
-        {
-            "depends_on": "is_extension",
-            "fieldname": "extension_reason",
-            "fieldtype": "Select",
-            "label": "Extension Reason",
-            "options": "\nValidation\nOther"
-        },
-        {
-            "fieldname": "section_break_details",
-            "fieldtype": "Section Break",
-            "label": "Items"
-        },
-        {
-            "fieldname": "items",
-            "fieldtype": "Table",
-            "label": "Items",
-            "options": "Importation Approvals Item",
-            "reqd": 1
-        },
-        {
-            "fieldname": "section_break_approval_details",
-            "fieldtype": "Section Break",
-            "label": "Approval Details"
-        },
-        {
-            "fieldname": "valid_date",
-            "fieldtype": "Date",
-            "label": "Valid Date",
-            "reqd": 1
-        },
-        {
-            "fieldname": "special_conditions",
-            "fieldtype": "Text",
-            "label": "Special Condition",
-            "reqd": 1
-        },
-        {
-            "fieldname": "column_break_approval_details",
-            "fieldtype": "Column Break"
-        },
-        {
-            "fieldname": "hard_copy_attachment",
-            "fieldtype": "Attach",
-            "label": "Attach Hard Copy",
-            "reqd": 1
-        },
-        {
-            "fieldname": "section_break_email",
-            "fieldtype": "Section Break",
-            "label": "Email Notification Settings"
-        },
-        {
-            "default": "0",
-            "fieldname": "send_email_notification",
-            "fieldtype": "Check",
-            "label": "Mail Notification for suppliers"
-        },
-        {
-            "depends_on": "send_email_notification",
-            "fieldname": "supplier_email",
-            "fieldtype": "Data",
-            "label": "Enter email",
-            "mandatory_depends_on": "send_email_notification"
-        },
-        {
-            "collapsible": 1,
-            "fieldname": "section_break_actions",
-            "fieldtype": "Section Break",
-            "label": "Available Actions"
-        },
-        {
-            "fieldname": "actions_available",
-            "fieldtype": "HTML",
-            "label": "Actions Available",
-            "options": "<div class=\"alert alert-info\">\n<strong>After Submission, you can:</strong>\n<ul>\n<li>Create Purchase Order</li>\n<li>Create Modification (EDA-IMAPR-MD-YYYY-#####)</li>\n<li>Create Extension (EDA-SPIMR-EX-YYYY-##### / EDA-APIMR-EX-YYYY-#####)</li>\n</ul>\n</div>"
-        },
-        {
-            "fieldname": "amended_from",
-            "fieldtype": "Link",
-            "label": "Amended From",
-            "no_copy": 1,
-            "options": "Importation Approvals",
-            "print_hide": 1,
-            "read_only": 1
-        }
-    ],
-    "is_submittable": 1,
-    "links": [],
-    "modified": "2026-01-26 10:00:00.000000",
-    "modified_by": "Administrator",
-    "module": "Onco",
-    "name": "Importation Approvals",
-    "naming_rule": "By \"Naming Series\" field",
-    "owner": "Administrator",
-    "permissions": [
-        {
-            "create": 1,
-            "delete": 1,
-            "email": 1,
-            "export": 1,
-            "print": 1,
-            "read": 1,
-            "report": 1,
-            "role": "System Manager",
-            "share": 1,
-            "submit": 1,
-            "write": 1
-        },
-        {
-            "create": 1,
-            "delete": 1,
-            "email": 1,
-            "export": 1,
-            "print": 1,
-            "read": 1,
-            "report": 1,
-            "role": "Purchase Manager",
-            "share": 1,
-            "submit": 1,
-            "write": 1
-        }
-    ],
-    "sort_field": "modified",
-    "sort_order": "DESC",
-    "states": [],
-    "title_field": "",
-    "track_changes": 1
+ "actions": [],
+ "allow_rename": 1,
+ "autoname": "naming_series:",
+ "creation": "2026-01-26 10:00:00",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "naming_series",
+  "approval_type",
+  "date",
+  "column_break_basic",
+  "importation_approval_request",
+  "reference_no",
+  "section_break_modification",
+  "is_modification",
+  "is_extension",
+  "original_document",
+  "column_break_modification",
+  "modification_reason",
+  "extension_reason",
+  "section_break_details",
+  "items",
+  "section_break_approval_details",
+  "valid_date",
+  "special_conditions",
+  "column_break_approval_details",
+  "hard_copy_attachment",
+  "section_break_email",
+  "send_email_notification",
+  "supplier_email",
+  "section_break_actions",
+  "actions_available",
+  "amended_from"
+ ],
+ "fields": [
+  {
+   "fieldname": "naming_series",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Series",
+   "options": "EDA-SPIMA-.YYYY.-.#####\nEDA-APIMA-.YYYY.-.#####\nEDA-SPIMA-MD-.YYYY.-.#####\nEDA-APIMA-MD-.YYYY.-.#####\nEDA-SPIMA-EX-.YYYY.-.######\nEDA-APIMA-EX-.YYYY.-.######",
+   "reqd": 1
+  },
+  {
+   "fieldname": "approval_type",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Approval Type",
+   "options": "\nSpecial Importation (SPIMA)\nAnnual Importation (APIMA)",
+   "reqd": 1
+  },
+  {
+   "default": "Today",
+   "fieldname": "date",
+   "fieldtype": "Date",
+   "in_list_view": 1,
+   "label": "Date",
+   "reqd": 1
+  },
+  {
+   "fieldname": "column_break_basic",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "importation_approval_request",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Importation Approval Request",
+   "options": "Importation Approval Request",
+   "reqd": 1
+  },
+  {
+   "fetch_from": "importation_approval_request.name",
+   "fieldname": "reference_no",
+   "fieldtype": "Data",
+   "label": "SPIMR/APIMR No",
+   "read_only": 1
+  },
+  {
+   "collapsible": 1,
+   "fieldname": "section_break_modification",
+   "fieldtype": "Section Break",
+   "label": "Modification/Extension Details"
+  },
+  {
+   "default": "0",
+   "fieldname": "is_modification",
+   "fieldtype": "Check",
+   "label": "Is Modification",
+   "read_only": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "is_extension",
+   "fieldtype": "Check",
+   "label": "Is Extension",
+   "read_only": 1
+  },
+  {
+   "fieldname": "original_document",
+   "fieldtype": "Link",
+   "label": "Original Document",
+   "options": "Importation Approvals",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_modification",
+   "fieldtype": "Column Break"
+  },
+  {
+   "depends_on": "is_modification",
+   "fieldname": "modification_reason",
+   "fieldtype": "Select",
+   "label": "Modification Reason",
+   "options": "\nError\nChange data and conditions"
+  },
+  {
+   "depends_on": "is_extension",
+   "fieldname": "extension_reason",
+   "fieldtype": "Select",
+   "label": "Extension Reason",
+   "options": "\nValidation\nOther"
+  },
+  {
+   "fieldname": "section_break_details",
+   "fieldtype": "Section Break",
+   "label": "Items"
+  },
+  {
+   "fieldname": "items",
+   "fieldtype": "Table",
+   "label": "Items",
+   "options": "Importation Approvals Item",
+   "reqd": 1
+  },
+  {
+   "fieldname": "section_break_approval_details",
+   "fieldtype": "Section Break",
+   "label": "Approval Details"
+  },
+  {
+   "fieldname": "valid_date",
+   "fieldtype": "Date",
+   "label": "Valid Date",
+   "reqd": 1
+  },
+  {
+   "fieldname": "special_conditions",
+   "fieldtype": "Text",
+   "label": "Special Condition",
+   "reqd": 1
+  },
+  {
+   "fieldname": "column_break_approval_details",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "hard_copy_attachment",
+   "fieldtype": "Attach",
+   "label": "Attach Hard Copy",
+   "reqd": 1
+  },
+  {
+   "fieldname": "section_break_email",
+   "fieldtype": "Section Break",
+   "label": "Email Notification Settings"
+  },
+  {
+   "default": "0",
+   "fieldname": "send_email_notification",
+   "fieldtype": "Check",
+   "label": "Mail Notification for suppliers"
+  },
+  {
+   "depends_on": "send_email_notification",
+   "fieldname": "supplier_email",
+   "fieldtype": "Data",
+   "label": "Enter email",
+   "mandatory_depends_on": "send_email_notification"
+  },
+  {
+   "collapsible": 1,
+   "fieldname": "section_break_actions",
+   "fieldtype": "Section Break",
+   "label": "Available Actions"
+  },
+  {
+   "fieldname": "actions_available",
+   "fieldtype": "HTML",
+   "label": "Actions Available",
+   "options": "<div class=\"alert alert-info\">\n<strong>After Submission, you can:</strong>\n<ul>\n<li>Create Purchase Order</li>\n<li>Create Modification (EDA-IMAPR-MD-YYYY-#####)</li>\n<li>Create Extension (EDA-SPIMR-EX-YYYY-##### / EDA-APIMR-EX-YYYY-#####)</li>\n</ul>\n</div>"
+  },
+  {
+   "fieldname": "amended_from",
+   "fieldtype": "Link",
+   "label": "Amended From",
+   "no_copy": 1,
+   "options": "Importation Approvals",
+   "print_hide": 1,
+   "read_only": 1
+  }
+ ],
+ "is_submittable": 1,
+ "links": [],
+ "modified": "2026-02-24 00:26:16.708625",
+ "modified_by": "it_asst2@oncopharmegy.com",
+ "module": "Onco",
+ "name": "Importation Approvals",
+ "naming_rule": "By \"Naming Series\" field",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Purchase Manager",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Bank_User",
+   "select": 1,
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 1
 }

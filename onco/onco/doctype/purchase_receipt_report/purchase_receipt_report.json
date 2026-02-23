@@ -1,257 +1,270 @@
 {
-    "actions": [],
-    "allow_rename": 1,
-    "creation": "2026-01-17 10:00:00.000000",
-    "doctype": "DocType",
-    "engine": "InnoDB",
-    "field_order": [
-        "purchase_receipt",
-        "custom_shipment_ref",
-        "vehicle_inspection_section",
-        "vehicle_inspection_section",
-        "seal_numbers_match",
-        "temp_recorder_status",
-        "document_check_section",
-        "invoice_present",
-        "packing_list_present",
-        "column_break_docs",
-        "awb_present",
-        "coa_present",
-        "physical_check_section",
-        "seal_integrity",
-        "package_condition",
-        "column_break_phys",
-        "label_verification",
-        "quantity_verification",
-        "items_section",
-        "items",
-        "temp_control_section",
-        "data_logger_present",
-        "report_attachment",
-        "out_of_range",
-        "quarantine_notify",
-        "supplier_notified",
-        "date_of_notification",
-        "accept_reason",
-        "amended_from"
-    ],
-    "fields": [
-        {
-            "fieldname": "purchase_receipt",
-            "fieldtype": "Link",
-            "label": "Purchase Receipt",
-            "options": "Purchase Receipt"
-        },
-        {
-            "fieldname": "custom_shipment_ref",
-            "fieldtype": "Link",
-            "label": "Shipment Ref",
-            "options": "Shipments",
-            "read_only": 1
-        },
-        {
-            "fieldname": "vehicle_inspection_section",
-            "fieldtype": "Section Break",
-            "label": "Vehicle Inspection"
-        },
-        {
-            "default": "0",
-            "fieldname": "seal_numbers_match",
-            "fieldtype": "Check",
-            "label": "Seal Numbers Match"
-        },
-        {
-            "fieldname": "temp_recorder_status",
-            "fieldtype": "Select",
-            "label": "Temperature Recorder Status",
-            "options": "\nOk\nNot Ok"
-        },
-        {
-            "fieldname": "document_check_section",
-            "fieldtype": "Section Break",
-            "label": "Document Check"
-        },
-        {
-            "default": "0",
-            "fieldname": "invoice_present",
-            "fieldtype": "Check",
-            "label": "Commercial Invoice"
-        },
-        {
-            "default": "0",
-            "fieldname": "packing_list_present",
-            "fieldtype": "Check",
-            "label": "Packing List"
-        },
-        {
-            "fieldname": "column_break_docs",
-            "fieldtype": "Column Break"
-        },
-        {
-            "default": "0",
-            "fieldname": "awb_present",
-            "fieldtype": "Check",
-            "label": "Bill of Lading / Airway Bill"
-        },
-        {
-            "default": "0",
-            "fieldname": "coa_present",
-            "fieldtype": "Check",
-            "label": "Certificate of Analysis (CoA)"
-        },
-        {
-            "fieldname": "physical_check_section",
-            "fieldtype": "Section Break",
-            "label": "Physical Check"
-        },
-        {
-            "default": "0",
-            "fieldname": "seal_integrity",
-            "fieldtype": "Check",
-            "label": "Seal Integrity"
-        },
-        {
-            "default": "0",
-            "fieldname": "package_condition",
-            "fieldtype": "Check",
-            "label": "Package Condition (No Damage)"
-        },
-        {
-            "fieldname": "column_break_phys",
-            "fieldtype": "Column Break"
-        },
-        {
-            "default": "0",
-            "fieldname": "label_verification",
-            "fieldtype": "Check",
-            "label": "Label Verification"
-        },
-        {
-            "default": "0",
-            "fieldname": "quantity_verification",
-            "fieldtype": "Check",
-            "label": "Quantity Verification"
-        },
-        {
-            "fieldname": "items_section",
-            "fieldtype": "Section Break",
-            "label": "Items"
-        },
-        {
-            "fieldname": "items",
-            "fieldtype": "Table",
-            "label": "Items",
-            "options": "Purchase Receipt Report Item"
-        },
-        {
-            "fieldname": "temp_control_section",
-            "fieldtype": "Section Break",
-            "label": "Temperature Control"
-        },
-        {
-            "default": "0",
-            "fieldname": "data_logger_present",
-            "fieldtype": "Check",
-            "label": "Data Logger Present"
-        },
-        {
-            "depends_on": "eval:doc.data_logger_present==1",
-            "fieldname": "report_attachment",
-            "fieldtype": "Attach",
-            "label": "Report Attachment"
-        },
-        {
-            "default": "0",
-            "fieldname": "out_of_range",
-            "fieldtype": "Check",
-            "label": "Temp Out of Range?"
-        },
-        {
-            "default": "0",
-            "depends_on": "eval:doc.out_of_range==1",
-            "fieldname": "quarantine_notify",
-            "fieldtype": "Check",
-            "label": "Quarantine and Notify QA"
-        },
-        {
-            "default": "0",
-            "depends_on": "eval:doc.out_of_range==1",
-            "fieldname": "supplier_notified",
-            "fieldtype": "Check",
-            "label": "Supplier Notified"
-        },
-        {
-            "depends_on": "eval:doc.supplier_notified==1",
-            "fieldname": "date_of_notification",
-            "fieldtype": "Date",
-            "label": "Date of Notification"
-        },
-        {
-            "depends_on": "eval:doc.out_of_range==1",
-            "fieldname": "accept_reason",
-            "fieldtype": "Small Text",
-            "label": "Acceptance Reason (if accepted despite deviation)"
-        },
-        {
-            "fieldname": "amended_from",
-            "fieldtype": "Link",
-            "label": "Amended From",
-            "no_copy": 1,
-            "options": "Purchase Receipt Report",
-            "print_hide": 1,
-            "read_only": 1,
-            "search_index": 1
-        }
-    ],
-    "index_web_pages_for_search": 1,
-    "is_submittable": 1,
-    "links": [],
-    "modified": "2026-01-17 10:00:00.000000",
-    "modified_by": "Administrator",
-    "module": "Onco",
-    "name": "Purchase Receipt Report",
-    "owner": "Administrator",
-    "permissions": [
-        {
-            "create": 1,
-            "delete": 1,
-            "email": 1,
-            "export": 1,
-            "print": 1,
-            "read": 1,
-            "report": 1,
-            "role": "System Manager",
-            "share": 1,
-            "submit": 1,
-            "write": 1
-        },
-        {
-            "create": 1,
-            "delete": 1,
-            "email": 1,
-            "export": 1,
-            "print": 1,
-            "read": 1,
-            "report": 1,
-            "role": "Stock User",
-            "share": 1,
-            "submit": 1,
-            "write": 1
-        },
-        {
-            "create": 1,
-            "email": 1,
-            "export": 1,
-            "print": 1,
-            "read": 1,
-            "report": 1,
-            "role": "Purchase User",
-            "share": 1,
-            "submit": 1,
-            "write": 1
-        }
-    ],
-    "sort_field": "modified",
-    "sort_order": "DESC",
-    "states": []
+ "actions": [],
+ "allow_rename": 1,
+ "creation": "2026-01-17 10:00:00",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "purchase_receipt",
+  "custom_shipment_ref",
+  "vehicle_inspection_section",
+  "seal_numbers_match",
+  "temp_recorder_status",
+  "document_check_section",
+  "invoice_present",
+  "packing_list_present",
+  "column_break_docs",
+  "awb_present",
+  "coa_present",
+  "physical_check_section",
+  "seal_integrity",
+  "package_condition",
+  "column_break_phys",
+  "label_verification",
+  "quantity_verification",
+  "items_section",
+  "items",
+  "temp_control_section",
+  "data_logger_present",
+  "report_attachment",
+  "out_of_range",
+  "quarantine_notify",
+  "supplier_notified",
+  "date_of_notification",
+  "accept_reason",
+  "amended_from"
+ ],
+ "fields": [
+  {
+   "fieldname": "purchase_receipt",
+   "fieldtype": "Link",
+   "label": "Purchase Receipt",
+   "options": "Purchase Receipt"
+  },
+  {
+   "fieldname": "custom_shipment_ref",
+   "fieldtype": "Link",
+   "label": "Shipment Ref",
+   "options": "Shipments",
+   "read_only": 1
+  },
+  {
+   "fieldname": "vehicle_inspection_section",
+   "fieldtype": "Section Break",
+   "label": "Vehicle Inspection"
+  },
+  {
+   "default": "0",
+   "fieldname": "seal_numbers_match",
+   "fieldtype": "Check",
+   "label": "Seal Numbers Match"
+  },
+  {
+   "fieldname": "temp_recorder_status",
+   "fieldtype": "Select",
+   "label": "Temperature Recorder Status",
+   "options": "\nOk\nNot Ok"
+  },
+  {
+   "fieldname": "document_check_section",
+   "fieldtype": "Section Break",
+   "label": "Document Check"
+  },
+  {
+   "default": "0",
+   "fieldname": "invoice_present",
+   "fieldtype": "Check",
+   "label": "Commercial Invoice"
+  },
+  {
+   "default": "0",
+   "fieldname": "packing_list_present",
+   "fieldtype": "Check",
+   "label": "Packing List"
+  },
+  {
+   "fieldname": "column_break_docs",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "0",
+   "fieldname": "awb_present",
+   "fieldtype": "Check",
+   "label": "Bill of Lading / Airway Bill"
+  },
+  {
+   "default": "0",
+   "fieldname": "coa_present",
+   "fieldtype": "Check",
+   "label": "Certificate of Analysis (CoA)"
+  },
+  {
+   "fieldname": "physical_check_section",
+   "fieldtype": "Section Break",
+   "label": "Physical Check"
+  },
+  {
+   "default": "0",
+   "fieldname": "seal_integrity",
+   "fieldtype": "Check",
+   "label": "Seal Integrity"
+  },
+  {
+   "default": "0",
+   "fieldname": "package_condition",
+   "fieldtype": "Check",
+   "label": "Package Condition (No Damage)"
+  },
+  {
+   "fieldname": "column_break_phys",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "0",
+   "fieldname": "label_verification",
+   "fieldtype": "Check",
+   "label": "Label Verification"
+  },
+  {
+   "default": "0",
+   "fieldname": "quantity_verification",
+   "fieldtype": "Check",
+   "label": "Quantity Verification"
+  },
+  {
+   "fieldname": "items_section",
+   "fieldtype": "Section Break",
+   "label": "Items"
+  },
+  {
+   "fieldname": "items",
+   "fieldtype": "Table",
+   "label": "Items",
+   "options": "Purchase Receipt Report Item"
+  },
+  {
+   "fieldname": "temp_control_section",
+   "fieldtype": "Section Break",
+   "label": "Temperature Control"
+  },
+  {
+   "default": "0",
+   "fieldname": "data_logger_present",
+   "fieldtype": "Check",
+   "label": "Data Logger Present"
+  },
+  {
+   "depends_on": "eval:doc.data_logger_present==1",
+   "fieldname": "report_attachment",
+   "fieldtype": "Attach",
+   "label": "Report Attachment"
+  },
+  {
+   "default": "0",
+   "fieldname": "out_of_range",
+   "fieldtype": "Check",
+   "label": "Temp Out of Range?"
+  },
+  {
+   "default": "0",
+   "depends_on": "eval:doc.out_of_range==1",
+   "fieldname": "quarantine_notify",
+   "fieldtype": "Check",
+   "label": "Quarantine and Notify QA"
+  },
+  {
+   "default": "0",
+   "depends_on": "eval:doc.out_of_range==1",
+   "fieldname": "supplier_notified",
+   "fieldtype": "Check",
+   "label": "Supplier Notified"
+  },
+  {
+   "depends_on": "eval:doc.supplier_notified==1",
+   "fieldname": "date_of_notification",
+   "fieldtype": "Date",
+   "label": "Date of Notification"
+  },
+  {
+   "depends_on": "eval:doc.out_of_range==1",
+   "fieldname": "accept_reason",
+   "fieldtype": "Small Text",
+   "label": "Acceptance Reason (if accepted despite deviation)"
+  },
+  {
+   "fieldname": "amended_from",
+   "fieldtype": "Link",
+   "label": "Amended From",
+   "no_copy": 1,
+   "options": "Purchase Receipt Report",
+   "print_hide": 1,
+   "read_only": 1,
+   "search_index": 1
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "is_submittable": 1,
+ "links": [],
+ "modified": "2026-02-24 00:30:49.942622",
+ "modified_by": "it_asst2@oncopharmegy.com",
+ "module": "Onco",
+ "name": "Purchase Receipt Report",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Stock User",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Purchase User",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Bank_User",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
 }
