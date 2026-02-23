@@ -739,7 +739,7 @@ class AuthorityGoodRelease(Document):
 		"""Calculate shortage control and net released quantities"""
 		for item in self.items:
 			# If shortage control is enabled for this type
-			if self.lot_release_subtype == "Lot Release Batch with Shortage Control Quantity":
+			if self.lrb_subtype == "With Shortage Control Quantity":
 				item.shortage_control_qty = (item.actual_qty or 0) - (item.released_qty or 0)
 			else:
 				item.shortage_control_qty = 0
