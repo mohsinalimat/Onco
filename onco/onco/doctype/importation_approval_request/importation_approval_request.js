@@ -177,6 +177,13 @@ frappe.ui.form.on('Importation Approval Request Item', {
                     if (r.message) {
                         let item = r.message;
 
+                        // Fetch supplier from Item's supplier_items child table
+                        if (item.supplier_items && item.supplier_items.length > 0) {
+                            frappe.model.set_value(cdt, cdn, 'supplier', item.supplier_items[0].supplier);
+                        } else {
+                            frappe.model.set_value(cdt, cdn, 'supplier', '');
+                        }
+
                         // Check if it's a pharmaceutical item
                         if (item.custom_pharmaceutical_item) {
                             // Show pharmaceutical item information

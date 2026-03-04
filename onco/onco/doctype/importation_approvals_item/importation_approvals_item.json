@@ -32,7 +32,6 @@
             "read_only": 1
         },
         {
-            "fetch_from": "item_code.default_supplier",
             "fieldname": "supplier",
             "fieldtype": "Link",
             "in_list_view": 1,
@@ -56,6 +55,7 @@
             "fieldtype": "Float",
             "in_list_view": 1,
             "label": "Approved Quantity",
+            "read_only": 1,
             "reqd": 1
         },
         {

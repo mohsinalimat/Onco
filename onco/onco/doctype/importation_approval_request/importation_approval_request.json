@@ -1,253 +1,255 @@
 {
- "actions": [],
- "allow_rename": 1,
- "autoname": "naming_series:",
- "creation": "2026-01-26 10:00:00",
- "doctype": "DocType",
- "engine": "InnoDB",
- "field_order": [
-  "naming_series",
-  "request_type",
-  "date",
-  "column_break_basic",
-  "status",
-  "requested_to",
-  "year_plan",
-  "section_break_modification",
-  "is_modification",
-  "is_extension",
-  "original_document",
-  "column_break_modification",
-  "modification_reason",
-  "extension_reason",
-  "section_break_items",
-  "items",
-  "section_break_approval",
-  "total_requested_qty",
-  "total_approved_qty",
-  "column_break_approval",
-  "approval_status",
-  "approval_date",
-  "section_break_attachments",
-  "attachments",
-  "amended_from"
- ],
- "fields": [
-  {
-   "fieldname": "naming_series",
-   "fieldtype": "Select",
-   "in_list_view": 1,
-   "label": "Series",
-   "options": "EDA-SPIMR-.YYYY.-.#####\nEDA-APIMR-.YYYY.-.#####\nEDA-SPIMR-MD-.YYYY.-.#####\nEDA-APIMR-MD-.YYYY.-.#####\nEDA-SPIMR-EX-.YYYY.-.######\nEDA-APIMR-EX-.YYYY.-.######",
-   "reqd": 1
-  },
-  {
-   "fieldname": "request_type",
-   "fieldtype": "Select",
-   "in_list_view": 1,
-   "label": "Request Type",
-   "options": "\nSpecial Importation (SPIMR)\nAnnual Importation (APIMR)",
-   "reqd": 1
-  },
-  {
-   "default": "Today",
-   "fieldname": "date",
-   "fieldtype": "Date",
-   "in_list_view": 1,
-   "label": "Date",
-   "reqd": 1
-  },
-  {
-   "fieldname": "column_break_basic",
-   "fieldtype": "Column Break"
-  },
-  {
-   "default": "Pending",
-   "fieldname": "status",
-   "fieldtype": "Select",
-   "label": "Status",
-   "options": "\nPending\nTotally Approved\nPartially Approved\nRefused\nClosed - Modified\nClosed - Extended",
-   "read_only": 1
-  },
-  {
-   "fieldname": "requested_to",
-   "fieldtype": "Link",
-   "in_list_view": 1,
-   "label": "Requested To",
-   "options": "Customer",
-   "reqd": 1
-  },
-  {
-   "depends_on": "eval:doc.request_type=='Annual Importation (APIMR)'",
-   "fieldname": "year_plan",
-   "fieldtype": "Int",
-   "label": "Year Plan",
-   "mandatory_depends_on": "eval:doc.request_type=='Annual Importation (APIMR)'"
-  },
-  {
-   "collapsible": 1,
-   "fieldname": "section_break_modification",
-   "fieldtype": "Section Break",
-   "label": "Modification/Extension Details"
-  },
-  {
-   "default": "0",
-   "fieldname": "is_modification",
-   "fieldtype": "Check",
-   "label": "Is Modification",
-   "read_only": 1
-  },
-  {
-   "default": "0",
-   "fieldname": "is_extension",
-   "fieldtype": "Check",
-   "label": "Is Extension",
-   "read_only": 1
-  },
-  {
-   "fieldname": "original_document",
-   "fieldtype": "Link",
-   "label": "Original Document",
-   "options": "Importation Approval Request",
-   "read_only": 1
-  },
-  {
-   "fieldname": "column_break_modification",
-   "fieldtype": "Column Break"
-  },
-  {
-   "depends_on": "is_modification",
-   "fieldname": "modification_reason",
-   "fieldtype": "Select",
-   "label": "Modification Reason",
-   "options": "\nError\nChange data and conditions"
-  },
-  {
-   "depends_on": "is_extension",
-   "fieldname": "extension_reason",
-   "fieldtype": "Select",
-   "label": "Extension Reason",
-   "options": "\nValidation\nOther"
-  },
-  {
-   "fieldname": "section_break_items",
-   "fieldtype": "Section Break",
-   "label": "Items"
-  },
-  {
-   "fieldname": "items",
-   "fieldtype": "Table",
-   "label": "Items",
-   "options": "Importation Approval Request Item",
-   "reqd": 1
-  },
-  {
-   "fieldname": "section_break_approval",
-   "fieldtype": "Section Break",
-   "label": "Approval Summary"
-  },
-  {
-   "fieldname": "total_requested_qty",
-   "fieldtype": "Float",
-   "label": "Total Requested Quantity",
-   "read_only": 1
-  },
-  {
-   "fieldname": "total_approved_qty",
-   "fieldtype": "Float",
-   "label": "Total Approved Quantity",
-   "read_only": 1
-  },
-  {
-   "fieldname": "column_break_approval",
-   "fieldtype": "Column Break"
-  },
-  {
-   "fieldname": "approval_status",
-   "fieldtype": "Select",
-   "label": "Approval Status",
-   "options": "\nTotally Approved\nPartially Approved\nRefused",
-   "read_only": 1
-  },
-  {
-   "fieldname": "approval_date",
-   "fieldtype": "Date",
-   "label": "Approval Date",
-   "read_only": 1
-  },
-  {
-   "fieldname": "section_break_attachments",
-   "fieldtype": "Section Break",
-   "label": "Attachments"
-  },
-  {
-   "fieldname": "attachments",
-   "fieldtype": "Attach",
-   "label": "Attachments"
-  },
-  {
-   "fieldname": "amended_from",
-   "fieldtype": "Link",
-   "label": "Amended From",
-   "no_copy": 1,
-   "options": "Importation Approval Request",
-   "print_hide": 1,
-   "read_only": 1
-  }
- ],
- "is_submittable": 1,
- "links": [],
- "modified": "2026-02-24 00:27:08.630889",
- "modified_by": "it_asst2@oncopharmegy.com",
- "module": "Onco",
- "name": "Importation Approval Request",
- "naming_rule": "By \"Naming Series\" field",
- "owner": "Administrator",
- "permissions": [
-  {
-   "create": 1,
-   "delete": 1,
-   "email": 1,
-   "export": 1,
-   "print": 1,
-   "read": 1,
-   "report": 1,
-   "role": "System Manager",
-   "share": 1,
-   "submit": 1,
-   "write": 1
-  },
-  {
-   "create": 1,
-   "delete": 1,
-   "email": 1,
-   "export": 1,
-   "print": 1,
-   "read": 1,
-   "report": 1,
-   "role": "Purchase Manager",
-   "share": 1,
-   "submit": 1,
-   "write": 1
-  },
-  {
-   "create": 1,
-   "delete": 1,
-   "email": 1,
-   "export": 1,
-   "print": 1,
-   "read": 1,
-   "report": 1,
-   "role": "Bank_User",
-   "select": 1,
-   "share": 1,
-   "submit": 1,
-   "write": 1
-  }
- ],
- "row_format": "Dynamic",
- "sort_field": "modified",
- "sort_order": "DESC",
- "states": [],
- "track_changes": 1
+    "actions": [],
+    "allow_rename": 1,
+    "autoname": "naming_series:",
+    "creation": "2026-01-26 10:00:00",
+    "doctype": "DocType",
+    "engine": "InnoDB",
+    "field_order": [
+        "naming_series",
+        "request_type",
+        "date",
+        "column_break_basic",
+        "status",
+        "requested_to",
+        "year_plan",
+        "section_break_modification",
+        "is_modification",
+        "is_extension",
+        "original_document",
+        "column_break_modification",
+        "modification_reason",
+        "extension_reason",
+        "section_break_items",
+        "items",
+        "section_break_approval",
+        "total_requested_qty",
+        "total_approved_qty",
+        "column_break_approval",
+        "approval_status",
+        "approval_date",
+        "section_break_attachments",
+        "attachments",
+        "amended_from"
+    ],
+    "fields": [
+        {
+            "fieldname": "naming_series",
+            "fieldtype": "Select",
+            "hidden": 1,
+            "in_list_view": 1,
+            "label": "Series",
+            "options": "EDA-SPIMR-.YYYY.-.#####\nEDA-APIMR-.YYYY.-.#####\nEDA-SPIMR-MD-.YYYY.-.#####\nEDA-APIMR-MD-.YYYY.-.#####\nEDA-SPIMR-EX-.YYYY.-.######\nEDA-APIMR-EX-.YYYY.-.######",
+            "reqd": 1
+        },
+        {
+            "fieldname": "request_type",
+            "fieldtype": "Select",
+            "in_list_view": 1,
+            "label": "Request Type",
+            "options": "\nSpecial Importation (SPIMR)\nAnnual Importation (APIMR)",
+            "reqd": 1
+        },
+        {
+            "default": "Today",
+            "fieldname": "date",
+            "fieldtype": "Date",
+            "in_list_view": 1,
+            "label": "Date",
+            "reqd": 1
+        },
+        {
+            "fieldname": "column_break_basic",
+            "fieldtype": "Column Break"
+        },
+        {
+            "default": "Pending",
+            "fieldname": "status",
+            "fieldtype": "Select",
+            "label": "Status",
+            "options": "\nPending\nTotally Approved\nPartially Approved\nRefused\nClosed - Modified\nClosed - Extended",
+            "read_only": 1
+        },
+        {
+            "depends_on": "eval:doc.request_type == 'Special Importation (SPIMR)'",
+            "fieldname": "requested_to",
+            "fieldtype": "Link",
+            "in_list_view": 1,
+            "label": "Requested To",
+            "mandatory_depends_on": "eval:doc.request_type == 'Special Importation (SPIMR)'",
+            "options": "Customer"
+        },
+        {
+            "depends_on": "eval:doc.request_type=='Annual Importation (APIMR)'",
+            "fieldname": "year_plan",
+            "fieldtype": "Int",
+            "label": "Year Plan",
+            "mandatory_depends_on": "eval:doc.request_type=='Annual Importation (APIMR)'"
+        },
+        {
+            "collapsible": 1,
+            "fieldname": "section_break_modification",
+            "fieldtype": "Section Break",
+            "label": "Modification/Extension Details"
+        },
+        {
+            "default": "0",
+            "fieldname": "is_modification",
+            "fieldtype": "Check",
+            "label": "Is Modification",
+            "read_only": 1
+        },
+        {
+            "default": "0",
+            "fieldname": "is_extension",
+            "fieldtype": "Check",
+            "label": "Is Extension",
+            "read_only": 1
+        },
+        {
+            "fieldname": "original_document",
+            "fieldtype": "Link",
+            "label": "Original Document",
+            "options": "Importation Approval Request",
+            "read_only": 1
+        },
+        {
+            "fieldname": "column_break_modification",
+            "fieldtype": "Column Break"
+        },
+        {
+            "depends_on": "is_modification",
+            "fieldname": "modification_reason",
+            "fieldtype": "Select",
+            "label": "Modification Reason",
+            "options": "\nError\nChange data and conditions"
+        },
+        {
+            "depends_on": "is_extension",
+            "fieldname": "extension_reason",
+            "fieldtype": "Select",
+            "label": "Extension Reason",
+            "options": "\nValidation\nOther"
+        },
+        {
+            "fieldname": "section_break_items",
+            "fieldtype": "Section Break",
+            "label": "Items"
+        },
+        {
+            "fieldname": "items",
+            "fieldtype": "Table",
+            "label": "Items",
+            "options": "Importation Approval Request Item",
+            "reqd": 1
+        },
+        {
+            "fieldname": "section_break_approval",
+            "fieldtype": "Section Break",
+            "label": "Approval Summary"
+        },
+        {
+            "fieldname": "total_requested_qty",
+            "fieldtype": "Float",
+            "label": "Total Requested Quantity",
+            "read_only": 1
+        },
+        {
+            "fieldname": "total_approved_qty",
+            "fieldtype": "Float",
+            "label": "Total Approved Quantity",
+            "read_only": 1
+        },
+        {
+            "fieldname": "column_break_approval",
+            "fieldtype": "Column Break"
+        },
+        {
+            "fieldname": "approval_status",
+            "fieldtype": "Select",
+            "label": "Approval Status",
+            "options": "\nTotally Approved\nPartially Approved\nRefused",
+            "read_only": 1
+        },
+        {
+            "fieldname": "approval_date",
+            "fieldtype": "Date",
+            "label": "Approval Date",
+            "read_only": 1
+        },
+        {
+            "fieldname": "section_break_attachments",
+            "fieldtype": "Section Break",
+            "label": "Attachments"
+        },
+        {
+            "fieldname": "attachments",
+            "fieldtype": "Attach",
+            "label": "Attachments"
+        },
+        {
+            "fieldname": "amended_from",
+            "fieldtype": "Link",
+            "label": "Amended From",
+            "no_copy": 1,
+            "options": "Importation Approval Request",
+            "print_hide": 1,
+            "read_only": 1
+        }
+    ],
+    "is_submittable": 1,
+    "links": [],
+    "modified": "2026-02-24 00:27:08.630889",
+    "modified_by": "it_asst2@oncopharmegy.com",
+    "module": "Onco",
+    "name": "Importation Approval Request",
+    "naming_rule": "By \"Naming Series\" field",
+    "owner": "Administrator",
+    "permissions": [
+        {
+            "create": 1,
+            "delete": 1,
+            "email": 1,
+            "export": 1,
+            "print": 1,
+            "read": 1,
+            "report": 1,
+            "role": "System Manager",
+            "share": 1,
+            "submit": 1,
+            "write": 1
+        },
+        {
+            "create": 1,
+            "delete": 1,
+            "email": 1,
+            "export": 1,
+            "print": 1,
+            "read": 1,
+            "report": 1,
+            "role": "Purchase Manager",
+            "share": 1,
+            "submit": 1,
+            "write": 1
+        },
+        {
+            "create": 1,
+            "delete": 1,
+            "email": 1,
+            "export": 1,
+            "print": 1,
+            "read": 1,
+            "report": 1,
+            "role": "Bank_User",
+            "select": 1,
+            "share": 1,
+            "submit": 1,
+            "write": 1
+        }
+    ],
+    "row_format": "Dynamic",
+    "sort_field": "modified",
+    "sort_order": "DESC",
+    "states": [],
+    "track_changes": 1
 }

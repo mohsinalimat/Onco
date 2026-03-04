@@ -130,6 +130,7 @@ def make_importation_approval(source_name, target_doc=None):
         # Map all item fields and set approved_qty to approved_qty from request
         target.requested_qty = source.requested_qty
         target.approved_qty = source.approved_qty  # Set to the actual approved quantity
+        target.supplier = source.supplier  # Explicitly carry over supplier
         target.status = "Approved"
     
     doclist = get_mapped_doc("Importation Approval Request", source_name, {

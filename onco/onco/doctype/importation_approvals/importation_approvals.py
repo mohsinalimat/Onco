@@ -262,7 +262,7 @@ def send_supplier_notification(supplier, approval_reference, custom_email=None):
         # Don't fail the PO creation if email fails
 
 @frappe.whitelist()
-def create_modification(source_name, modification_reason, requested_modification, new_conditions):
+def create_modification(source_name, modification_reason, requested_modification=None, new_conditions=None):
     """Create modification of Importation Approvals"""
     source_doc = frappe.get_doc("Importation Approvals", source_name)
     
