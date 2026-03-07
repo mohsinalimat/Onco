@@ -27,8 +27,36 @@ class Shipments(Document):
             frappe.throw(_("Invalid Mode of Shipping: {0}").format(self.mode_of_shipping))
     
     def validate(self):
+        self.validate_unique_invoices()
         self.validate_status_sequence()
         self.calculate_milestone_completion()
+    
+    def validate_unique_invoices(self):
+        """Prevent duplicate shipments for the same invoices"""
+        if not self.custom_invoices:
+            return
+        
+        for row in self.custom_invoices:
+            if not row.purchase_invoice:
+                continue
+            
+            # Check if this invoice is already linked to another non-cancelled Shipments
+            existing = frappe.db.sql("""
+                SELECT parent FROM `tabShipment Invoice`
+                WHERE purchase_invoice = %s
+                AND parent != %s
+                AND parent IN (
+                    SELECT name FROM `tabShipments`
+                    WHERE docstatus != 2
+                )
+            """, (row.purchase_invoice, self.name or ""), as_dict=True)
+            
+            if existing:
+                frappe.throw(
+                    _("Purchase Invoice {0} is already linked to Shipment {1}. Cannot create duplicate shipment for the same invoice.").format(
+                        row.purchase_invoice, existing[0].parent
+                    )
+                )
     
     def before_submit(self):
         """Validate before submission"""
@@ -141,6 +169,10 @@ def make_purchase_receipt(source_name, target_doc=None):
 		target.run_method("calculate_taxes_and_totals")
 		# Link Shipment
 		target.custom_shipment_ref = source_name
+		# Set warehouse and type defaults
+		target.set_warehouse = "Imported Finished Phr Receipt and Inspection Warehouse  - Onco"
+		target.rejected_warehouse = "Imported Finished Phr (Damage & Losses) warehouse - Onco"
+		target.custom_purchase_receipt_type = "Shipment"
 
 	# Map the first invoice to create the target doc
 	target_doc = get_mapped_doc("Purchase Invoice", invoices[0], {
@@ -196,10 +228,18 @@ def make_purchase_receipt(source_name, target_doc=None):
 					"project": pi_item.project
 				}
 				
-				# Only add batch_no if item has batch tracking and batch is provided
+				# Handle Batch No and Serial No
 				if item_doc.has_batch_no and item_row.batch_no:
 					pr_item["batch_no"] = item_row.batch_no
-					pr_item["use_serial_batch_fields"] = 1  # Use legacy batch fields for ERPNext v15
+				if item_doc.has_serial_no and item_row.serial_no:
+					pr_item["serial_no"] = item_row.serial_no
+
+				# Handle Serial and Batch Bundle (v15 requirement)
+				if item_row.serial_and_batch_bundle:
+					pr_item["serial_and_batch_bundle"] = item_row.serial_and_batch_bundle
+				else:
+					# Legacy fallback
+					pr_item["use_serial_batch_fields"] = 1
 				
 				# Add expiry date if provided
 				if item_row.expiry_date:

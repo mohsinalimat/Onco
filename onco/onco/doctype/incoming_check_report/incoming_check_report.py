@@ -7,7 +7,6 @@ from frappe import _
 
 class IncomingCheckReport(Document):
     def validate(self):
-        self.validate_stock_entry()
         self.fetch_reference_data()
         self.fetch_inspection_warehouse()
         self.calculate_quantities()
@@ -25,43 +24,29 @@ class IncomingCheckReport(Document):
             frappe.throw(_("Stock Entry must be submitted before creating Incoming Check Report"))
     
     def fetch_inspection_warehouse(self):
-        """Fetch inspection warehouse from Stock Entry's to_warehouse field"""
-        if self.stock_entry and not self.inspection_warehouse:
-            # Fetch to_warehouse from Stock Entry (target warehouse)
+        """Fetch inspection warehouse from Purchase Receipt or Stock Entry"""
+        if self.purchase_receipt and not self.inspection_warehouse:
+            set_warehouse = frappe.db.get_value("Purchase Receipt", self.purchase_receipt, "set_warehouse")
+            if set_warehouse:
+                self.inspection_warehouse = set_warehouse
+        elif self.stock_entry and not self.inspection_warehouse:
             to_warehouse = frappe.db.get_value("Stock Entry", self.stock_entry, "to_warehouse")
             if to_warehouse:
                 self.inspection_warehouse = to_warehouse
     
     def fetch_reference_data(self):
-        """Fetch all reference data from Stock Entry chain"""
-        if not self.stock_entry:
+        """Fetch all reference data from Purchase Receipt chain"""
+        if not self.purchase_receipt:
             return
-        
-        # Get Purchase Receipt from Stock Entry custom field
-        stock_entry = frappe.get_doc("Stock Entry", self.stock_entry)
-        purchase_receipt = stock_entry.get("custom_purchase_receipt")
-        
-        if not purchase_receipt:
-            frappe.msgprint(
-                _("Warning: No Purchase Receipt linked to this Stock Entry. Some data may not be available.<br><br>"
-                  "To fix this issue:<br>"
-                  "1. Go to the Stock Entry and manually set the 'Purchase Receipt' field, OR<br>"
-                  "2. Ensure the Stock Entry was created from a Purchase Receipt using the standard ERPNext flow"),
-                indicator='orange',
-                title=_('Missing Purchase Receipt Link')
-            )
-            return
-        
-        self.purchase_receipt = purchase_receipt
         
         # Get Shipment from Purchase Receipt
-        shipment = frappe.db.get_value("Purchase Receipt", purchase_receipt, "custom_shipment_ref")
+        shipment = frappe.db.get_value("Purchase Receipt", self.purchase_receipt, "custom_shipment_ref")
         if shipment:
             self.shipment = shipment
         
         # Get Purchase Invoice from Purchase Receipt items
         pr_items = frappe.get_all("Purchase Receipt Item",
-            filters={"parent": purchase_receipt},
+            filters={"parent": self.purchase_receipt},
             fields=["purchase_invoice"],
             limit=1
         )
@@ -483,6 +468,92 @@ def make_incoming_check_report(source_name, target_doc=None):
 
 
 @frappe.whitelist()
+def make_incoming_check_report_from_pr(source_name, target_doc=None):
+    """Create Incoming Check Report from Purchase Receipt"""
+    from frappe.model.mapper import get_mapped_doc
+    
+    source_doc = frappe.get_doc("Purchase Receipt", source_name)
+    
+    if source_doc.docstatus != 1:
+        frappe.throw(_("Purchase Receipt must be submitted before creating Incoming Check Report"))
+    
+    def set_missing_values(source, target):
+        target.purchase_receipt = source.name
+        target.inspection_date = frappe.utils.today()
+        target.inspection_warehouse = source.set_warehouse
+        
+        # Get Shipment reference
+        if source.get("custom_shipment_ref"):
+            target.shipment = source.custom_shipment_ref
+        
+        # Get Purchase Invoice from items
+        if source.items:
+            for item in source.items:
+                if item.get("purchase_invoice"):
+                    target.purchase_invoice = item.purchase_invoice
+                    break
+        
+        # Populate items from Purchase Receipt
+        target.items = []
+        for pr_item in source.items:
+            item_code = pr_item.item_code
+            batch_no = pr_item.batch_no
+            serial_no = getattr(pr_item, "serial_no", None)
+            serial_and_batch_bundle = getattr(pr_item, "serial_and_batch_bundle", None)
+            use_serial_batch_fields = getattr(pr_item, "use_serial_batch_fields", 0)
+            received_qty = pr_item.qty
+            
+            # Get item name
+            item_name = frappe.db.get_value("Item", item_code, "item_name")
+            
+            # Get batch details
+            manufacturing_date = None
+            expiry_date = None
+            if batch_no:
+                batch_details = frappe.db.get_value(
+                    "Batch", batch_no,
+                    ["manufacturing_date", "expiry_date"],
+                    as_dict=True
+                )
+                if batch_details:
+                    manufacturing_date = batch_details.manufacturing_date
+                    expiry_date = batch_details.expiry_date
+            
+            shipment_no = source.get("custom_shipment_ref") or ""
+            
+            target.append("items", {
+                "item_code": item_code,
+                "item_name": item_name,
+                "batch_no": batch_no,
+                "serial_no": serial_no,
+                "serial_and_batch_bundle": serial_and_batch_bundle,
+                "use_serial_batch_fields": use_serial_batch_fields,
+                "shipment_no": shipment_no,
+                "invoice_no": source.name,
+                "invoice_quantity": received_qty,
+                "received_quantity": received_qty,
+                "shortage_quantity": 0,
+                "over_quantity": 0,
+                "damage_quantity": 0,
+                "accepted_quantity": received_qty,
+                "manufacturing_date": manufacturing_date,
+                "expiry_date": expiry_date
+            })
+    
+    doclist = get_mapped_doc("Purchase Receipt", source_name, {
+        "Purchase Receipt": {
+            "doctype": "Incoming Check Report",
+            "field_map": {
+                "name": "purchase_receipt",
+                "custom_shipment_ref": "shipment"
+            }
+        }
+    }, target_doc, set_missing_values)
+    
+    return doclist
+
+
+@frappe.whitelist()
 def make_purchase_receipt_report(source_name, target_doc=None):
     """Create Purchase Receipt Report from Incoming Check Report"""
     from frappe.model.mapper import get_mapped_doc
@@ -624,6 +695,9 @@ def make_authority_good_release(source_name, target_doc=None):
                 "item_code": "item_code",
                 "item_name": "item_name",
                 "batch_no": "batch_no",
+                "serial_no": "serial_no",
+                "serial_and_batch_bundle": "serial_and_batch_bundle",
+                "use_serial_batch_fields": "use_serial_batch_fields",
                 "manufacturing_date": "manufacturing_date",
                 "expiry_date": "expiry_date",
                 "invoice_quantity": "invoice_quantity",

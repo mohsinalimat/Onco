@@ -113,6 +113,9 @@ frappe.ui.form.on("Shipments", {
     if (frm.doc.received_at_warehouse) {
       frm.set_value("received_date", frappe.datetime.get_today());
       frm.set_value("time_of_received", frappe.datetime.now_time());
+      frm.set_value("received_warehouse", "Imported  Finished Phr Incoming Warehouse - Onco");
+      frm.set_value("source_warehouse", "Imported  Finished Phr Incoming Warehouse - Onco");
+      frm.set_value("target_warehouse", "Imported Finished Phr Receipt and Inspection Warehouse  - Onco");
     }
     frm.trigger("render_dashboard");
   },
@@ -211,19 +214,46 @@ frappe.ui.form.on('Shipment Invoice', {
             frappe.model.set_value(cdt, cdn, "invoice_no", invoice.bill_no || invoice.name);
             frappe.model.set_value(cdt, cdn, "invoice_date", invoice.posting_date);
 
-            // If there are items, fetch the first one (or summarize)
+            // Fetch all items
             if (invoice.items && invoice.items.length > 0) {
-              var item = invoice.items[0];
-              console.log("Fetched First Item for Row:", item);
+              // The first item uses the current row
+              var first_item = invoice.items[0];
+              frappe.model.set_value(cdt, cdn, "item_code", first_item.item_code);
+              frappe.model.set_value(cdt, cdn, "item_name", first_item.item_name);
+              frappe.model.set_value(cdt, cdn, "qty", first_item.qty);
+              frappe.model.set_value(cdt, cdn, "uom", first_item.uom);
+              frappe.model.set_value(cdt, cdn, "rate", first_item.rate);
+              frappe.model.set_value(cdt, cdn, "amount", first_item.amount);
+              frappe.model.set_value(cdt, cdn, "batch_no", first_item.batch_no || "");
+              frappe.model.set_value(cdt, cdn, "serial_no", first_item.serial_no || "");
+              frappe.model.set_value(cdt, cdn, "serial_and_batch_bundle", first_item.serial_and_batch_bundle || "");
+              frappe.model.set_value(cdt, cdn, "expiry_date", first_item.expiry_date || "");
 
-              frappe.model.set_value(cdt, cdn, "item_code", item.item_code);
-              frappe.model.set_value(cdt, cdn, "item_name", item.item_name);
-              frappe.model.set_value(cdt, cdn, "qty", item.qty);
-              frappe.model.set_value(cdt, cdn, "uom", item.uom);
-              frappe.model.set_value(cdt, cdn, "rate", item.rate);
-              frappe.model.set_value(cdt, cdn, "amount", item.amount);
-              frappe.model.set_value(cdt, cdn, "batch_no", item.batch_no || "");
-              frappe.model.set_value(cdt, cdn, "expiry_date", item.expiry_date || "");
+              // For any subsequent items, we need to add new rows to the child table
+              if (invoice.items.length > 1) {
+                // Wait for the first row to be set, then add others
+                setTimeout(() => {
+                  for (let i = 1; i < invoice.items.length; i++) {
+                    let item = invoice.items[i];
+                    let new_row = frappe.model.add_child(frm.doc, "Shipment Invoice", "custom_invoices");
+
+                    new_row.purchase_invoice = invoice.name;
+                    new_row.invoice_no = invoice.bill_no || invoice.name;
+                    new_row.invoice_date = invoice.posting_date;
+                    new_row.item_code = item.item_code;
+                    new_row.item_name = item.item_name;
+                    new_row.qty = item.qty;
+                    new_row.uom = item.uom;
+                    new_row.rate = item.rate;
+                    new_row.amount = item.amount;
+                    new_row.batch_no = item.batch_no || "";
+                    new_row.serial_no = item.serial_no || "";
+                    new_row.serial_and_batch_bundle = item.serial_and_batch_bundle || "";
+                    new_row.expiry_date = item.expiry_date || "";
+                  }
+                  frm.refresh_field("custom_invoices");
+                }, 100);
+              }
             }
           }
         }

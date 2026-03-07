@@ -1,480 +1,479 @@
 {
- "actions": [],
- "allow_rename": 1,
- "autoname": "naming_series:",
- "creation": "2026-02-08 12:00:00",
- "doctype": "DocType",
- "editable_grid": 1,
- "engine": "InnoDB",
- "field_order": [
-  "naming_series",
-  "stock_entry",
-  "purchase_receipt",
-  "shipment",
-  "purchase_invoice",
-  "importation_approval",
-  "column_break_2",
-  "inspection_date",
-  "inspector_name",
-  "status",
-  "inspection_warehouse",
-  "section_break_vehicle",
-  "seal_numbers",
-  "seal_integrity",
-  "temperature_recorder_status",
-  "section_break_documents",
-  "commercial_invoice_present",
-  "packing_list_present",
-  "bill_of_lading_present",
-  "certificate_of_analysis_present",
-  "coo_gmp_certificate_present",
-  "all_documents_consistent",
-  "section_break_physical",
-  "seal_integrity_verified",
-  "package_condition_ok",
-  "labels_verified",
-  "quantity_verified",
-  "section_break_temperature",
-  "data_logger_present",
-  "temperature_report",
-  "temperature_range_status",
-  "out_of_range_action",
-  "acceptance_reason",
-  "section_break_items",
-  "items",
-  "section_break_totals",
-  "total_invoice_qty",
-  "total_received_qty",
-  "total_over_qty",
-  "total_shortage_qty",
-  "column_break_totals",
-  "total_damage_qty",
-  "total_accepted_qty",
-  "section_break_agr_tracking",
-  "authority_good_releases",
-  "column_break_agr",
-  "total_released_qty",
-  "remaining_unreleased_qty",
-  "section_break_warehouses",
-  "accepted_warehouse",
-  "rejected_warehouse",
-  "section_break_notification",
-  "send_shipment_receipt_notification",
-  "notification_email",
-  "section_break_result",
-  "inspection_result",
-  "remarks",
-  "amended_from"
- ],
- "fields": [
-  {
-   "fieldname": "naming_series",
-   "fieldtype": "Select",
-   "label": "Series",
-   "options": "ICR-.YYYY.-.#####",
-   "reqd": 1
-  },
-  {
-   "fieldname": "stock_entry",
-   "fieldtype": "Link",
-   "in_list_view": 1,
-   "label": "Stock Entry",
-   "options": "Stock Entry",
-   "reqd": 1
-  },
-  {
-   "fetch_from": "stock_entry.custom_purchase_receipt",
-   "fieldname": "purchase_receipt",
-   "fieldtype": "Link",
-   "label": "Purchase Receipt",
-   "options": "Purchase Receipt",
-   "read_only": 1
-  },
-  {
-   "fieldname": "shipment",
-   "fieldtype": "Link",
-   "label": "Shipment",
-   "options": "Shipments",
-   "read_only": 1
-  },
-  {
-   "fieldname": "purchase_invoice",
-   "fieldtype": "Link",
-   "label": "Purchase Invoice",
-   "options": "Purchase Invoice",
-   "read_only": 1
-  },
-  {
-   "fieldname": "importation_approval",
-   "fieldtype": "Link",
-   "label": "Importation Approval",
-   "options": "Importation Approvals",
-   "read_only": 1
-  },
-  {
-   "fieldname": "column_break_2",
-   "fieldtype": "Column Break"
-  },
-  {
-   "default": "Today",
-   "fieldname": "inspection_date",
-   "fieldtype": "Date",
-   "in_list_view": 1,
-   "label": "Inspection Date",
-   "reqd": 1
-  },
-  {
-   "fieldname": "inspector_name",
-   "fieldtype": "Link",
-   "label": "Inspector Name",
-   "options": "User"
-  },
-  {
-   "default": "Draft",
-   "fieldname": "status",
-   "fieldtype": "Select",
-   "in_list_view": 1,
-   "in_standard_filter": 1,
-   "label": "Status",
-   "options": "Draft\nInspection Passed\nInspection Failed\nQuarantined",
-   "read_only": 1
-  },
-  {
-   "fieldname": "inspection_warehouse",
-   "fieldtype": "Link",
-   "label": "Inspection Warehouse",
-   "options": "Warehouse",
-   "read_only": 1
-  },
-  {
-   "collapsible": 1,
-   "fieldname": "section_break_vehicle",
-   "fieldtype": "Section Break",
-   "label": "Vehicle Inspection"
-  },
-  {
-   "fieldname": "seal_numbers",
-   "fieldtype": "Data",
-   "label": "Seal Numbers"
-  },
-  {
-   "fieldname": "seal_integrity",
-   "fieldtype": "Select",
-   "label": "Seal Integrity",
-   "options": "\nIntact\nBroken\nMissing"
-  },
-  {
-   "fieldname": "temperature_recorder_status",
-   "fieldtype": "Select",
-   "label": "Temperature Recorder Status",
-   "options": "\nPresent\nNot Present"
-  },
-  {
-   "collapsible": 1,
-   "fieldname": "section_break_documents",
-   "fieldtype": "Section Break",
-   "label": "Document Check (all present & consistent)"
-  },
-  {
-   "default": "0",
-   "fieldname": "commercial_invoice_present",
-   "fieldtype": "Check",
-   "label": "Commercial Invoice"
-  },
-  {
-   "default": "0",
-   "fieldname": "packing_list_present",
-   "fieldtype": "Check",
-   "label": "Packing List"
-  },
-  {
-   "default": "0",
-   "fieldname": "bill_of_lading_present",
-   "fieldtype": "Check",
-   "label": "Bill of Lading / Airway Bill"
-  },
-  {
-   "default": "0",
-   "fieldname": "certificate_of_analysis_present",
-   "fieldtype": "Check",
-   "label": "Certificate of Analysis (CoA)"
-  },
-  {
-   "default": "0",
-   "fieldname": "coo_gmp_certificate_present",
-   "fieldtype": "Check",
-   "label": "COO & GMP Certificate (if required)"
-  },
-  {
-   "default": "0",
-   "fieldname": "all_documents_consistent",
-   "fieldtype": "Check",
-   "label": "All Documents Consistent"
-  },
-  {
-   "collapsible": 1,
-   "fieldname": "section_break_physical",
-   "fieldtype": "Section Break",
-   "label": "Physical Check"
-  },
-  {
-   "default": "0",
-   "fieldname": "seal_integrity_verified",
-   "fieldtype": "Check",
-   "label": "Seal Integrity - Intact & Matching Seal Numbers"
-  },
-  {
-   "default": "0",
-   "fieldname": "package_condition_ok",
-   "fieldtype": "Check",
-   "label": "Package Condition - No Damage, Leaks, Broken Containers"
-  },
-  {
-   "default": "0",
-   "fieldname": "labels_verified",
-   "fieldtype": "Check",
-   "label": "Label Verification - Product Name, Strength, Batch #, Expiry, Storage"
-  },
-  {
-   "default": "0",
-   "fieldname": "quantity_verified",
-   "fieldtype": "Check",
-   "label": "Quantity Verification - Count vs Packing List (tolerance \u00b10%)"
-  },
-  {
-   "collapsible": 1,
-   "fieldname": "section_break_temperature",
-   "fieldtype": "Section Break",
-   "label": "Temperature Control"
-  },
-  {
-   "fieldname": "data_logger_present",
-   "fieldtype": "Select",
-   "label": "Data Logger Present",
-   "options": "\nYes\nNo"
-  },
-  {
-   "depends_on": "eval:doc.data_logger_present=='Yes'",
-   "fieldname": "temperature_report",
-   "fieldtype": "Attach",
-   "label": "Temperature Report"
-  },
-  {
-   "depends_on": "eval:doc.data_logger_present=='Yes'",
-   "fieldname": "temperature_range_status",
-   "fieldtype": "Select",
-   "label": "Temperature Range Status",
-   "options": "\nIn-Range\nOut-of-Range"
-  },
-  {
-   "depends_on": "eval:doc.temperature_range_status=='Out-of-Range'",
-   "fieldname": "out_of_range_action",
-   "fieldtype": "Select",
-   "label": "Out-of-Range Action",
-   "options": "\nQuarantine and Notify QA\nAccept with Reason"
-  },
-  {
-   "depends_on": "eval:doc.out_of_range_action=='Accept with Reason'",
-   "fieldname": "acceptance_reason",
-   "fieldtype": "Text",
-   "label": "Acceptance Reason",
-   "mandatory_depends_on": "eval:doc.out_of_range_action=='Accept with Reason'"
-  },
-  {
-   "fieldname": "section_break_items",
-   "fieldtype": "Section Break",
-   "label": "Quantity Verification"
-  },
-  {
-   "fieldname": "items",
-   "fieldtype": "Table",
-   "label": "Items",
-   "options": "Incoming Check Report Item",
-   "reqd": 1
-  },
-  {
-   "fieldname": "section_break_totals",
-   "fieldtype": "Section Break",
-   "label": "Totals"
-  },
-  {
-   "fieldname": "total_invoice_qty",
-   "fieldtype": "Float",
-   "label": "Total Invoice Qty",
-   "read_only": 1
-  },
-  {
-   "fieldname": "total_received_qty",
-   "fieldtype": "Float",
-   "label": "Total Received Qty",
-   "read_only": 1
-  },
-  {
-   "fieldname": "total_over_qty",
-   "fieldtype": "Float",
-   "label": "Total Over Qty",
-   "read_only": 1
-  },
-  {
-   "fieldname": "total_shortage_qty",
-   "fieldtype": "Float",
-   "label": "Total Shortage Qty",
-   "read_only": 1
-  },
-  {
-   "fieldname": "column_break_totals",
-   "fieldtype": "Column Break"
-  },
-  {
-   "fieldname": "total_damage_qty",
-   "fieldtype": "Float",
-   "label": "Total Damage Qty",
-   "read_only": 1
-  },
-  {
-   "fieldname": "total_accepted_qty",
-   "fieldtype": "Float",
-   "label": "Total Accepted Qty",
-   "read_only": 1
-  },
-  {
-   "collapsible": 1,
-   "fieldname": "section_break_agr_tracking",
-   "fieldtype": "Section Break",
-   "label": "Authority Good Release Tracking"
-  },
-  {
-   "fieldname": "authority_good_releases",
-   "fieldtype": "Table",
-   "label": "Authority Good Releases",
-   "options": "Authority Good Release Link",
-   "read_only": 1
-  },
-  {
-   "fieldname": "column_break_agr",
-   "fieldtype": "Column Break"
-  },
-  {
-   "allow_on_submit": 1,
-   "fieldname": "total_released_qty",
-   "fieldtype": "Float",
-   "label": "Total Released Qty",
-   "read_only": 1
-  },
-  {
-   "allow_on_submit": 1,
-   "fieldname": "remaining_unreleased_qty",
-   "fieldtype": "Float",
-   "label": "Remaining Unreleased Qty",
-   "read_only": 1
-  },
-  {
-   "fieldname": "section_break_warehouses",
-   "fieldtype": "Section Break",
-   "label": "Warehouse Assignment"
-  },
-  {
-   "fieldname": "accepted_warehouse",
-   "fieldtype": "Link",
-   "label": "Accepted Warehouse",
-   "options": "Warehouse"
-  },
-  {
-   "fieldname": "rejected_warehouse",
-   "fieldtype": "Link",
-   "label": "Rejected Warehouse",
-   "options": "Warehouse"
-  },
-  {
-   "collapsible": 1,
-   "fieldname": "section_break_notification",
-   "fieldtype": "Section Break",
-   "label": "Shipment Receipt Notification"
-  },
-  {
-   "default": "0",
-   "fieldname": "send_shipment_receipt_notification",
-   "fieldtype": "Check",
-   "label": "Send Shipment Receipt Notification to Supplier"
-  },
-  {
-   "depends_on": "eval:doc.send_shipment_receipt_notification==1",
-   "fieldname": "notification_email",
-   "fieldtype": "Data",
-   "label": "Notification Email",
-   "mandatory_depends_on": "eval:doc.send_shipment_receipt_notification==1"
-  },
-  {
-   "fieldname": "section_break_result",
-   "fieldtype": "Section Break",
-   "label": "Inspection Result"
-  },
-  {
-   "fieldname": "inspection_result",
-   "fieldtype": "Select",
-   "in_list_view": 1,
-   "in_standard_filter": 1,
-   "label": "Inspection Result",
-   "options": "\nPassed\nFailed\nQuarantined",
-   "reqd": 1
-  },
-  {
-   "fieldname": "remarks",
-   "fieldtype": "Text",
-   "label": "Remarks"
-  },
-  {
-   "fieldname": "amended_from",
-   "fieldtype": "Link",
-   "label": "Amended From",
-   "no_copy": 1,
-   "options": "Incoming Check Report",
-   "print_hide": 1,
-   "read_only": 1,
-   "search_index": 1
-  }
- ],
- "index_web_pages_for_search": 1,
- "is_submittable": 1,
- "links": [],
- "modified": "2026-02-24 00:29:41.749535",
- "modified_by": "it_asst2@oncopharmegy.com",
- "module": "Onco",
- "name": "Incoming Check Report",
- "naming_rule": "By \"Naming Series\" field",
- "owner": "Administrator",
- "permissions": [
-  {
-   "create": 1,
-   "delete": 1,
-   "email": 1,
-   "export": 1,
-   "print": 1,
-   "read": 1,
-   "report": 1,
-   "role": "System Manager",
-   "share": 1,
-   "submit": 1,
-   "write": 1
-  },
-  {
-   "create": 1,
-   "delete": 1,
-   "email": 1,
-   "export": 1,
-   "print": 1,
-   "read": 1,
-   "report": 1,
-   "role": "Bank_User",
-   "select": 1,
-   "share": 1,
-   "submit": 1,
-   "write": 1
-  }
- ],
- "row_format": "Dynamic",
- "sort_field": "modified",
- "sort_order": "DESC",
- "states": [],
- "track_changes": 1
+    "actions": [],
+    "allow_rename": 1,
+    "autoname": "naming_series:",
+    "creation": "2026-02-08 12:00:00",
+    "doctype": "DocType",
+    "editable_grid": 1,
+    "engine": "InnoDB",
+    "field_order": [
+        "naming_series",
+        "stock_entry",
+        "purchase_receipt",
+        "shipment",
+        "purchase_invoice",
+        "importation_approval",
+        "column_break_2",
+        "inspection_date",
+        "inspector_name",
+        "status",
+        "inspection_warehouse",
+        "section_break_vehicle",
+        "seal_numbers",
+        "seal_integrity",
+        "temperature_recorder_status",
+        "section_break_documents",
+        "commercial_invoice_present",
+        "packing_list_present",
+        "bill_of_lading_present",
+        "certificate_of_analysis_present",
+        "coo_gmp_certificate_present",
+        "all_documents_consistent",
+        "section_break_physical",
+        "seal_integrity_verified",
+        "package_condition_ok",
+        "labels_verified",
+        "quantity_verified",
+        "section_break_temperature",
+        "data_logger_present",
+        "temperature_report",
+        "temperature_range_status",
+        "out_of_range_action",
+        "acceptance_reason",
+        "section_break_items",
+        "items",
+        "section_break_totals",
+        "total_invoice_qty",
+        "total_received_qty",
+        "total_over_qty",
+        "total_shortage_qty",
+        "column_break_totals",
+        "total_damage_qty",
+        "total_accepted_qty",
+        "section_break_agr_tracking",
+        "authority_good_releases",
+        "column_break_agr",
+        "total_released_qty",
+        "remaining_unreleased_qty",
+        "section_break_warehouses",
+        "accepted_warehouse",
+        "rejected_warehouse",
+        "section_break_notification",
+        "send_shipment_receipt_notification",
+        "notification_email",
+        "section_break_result",
+        "inspection_result",
+        "remarks",
+        "amended_from"
+    ],
+    "fields": [
+        {
+            "fieldname": "naming_series",
+            "fieldtype": "Select",
+            "label": "Series",
+            "options": "ICR-.YYYY.-.#####",
+            "reqd": 1
+        },
+        {
+            "fieldname": "stock_entry",
+            "fieldtype": "Link",
+            "hidden": 1,
+            "label": "Stock Entry",
+            "options": "Stock Entry"
+        },
+        {
+            "fieldname": "purchase_receipt",
+            "fieldtype": "Link",
+            "in_list_view": 1,
+            "label": "Purchase Receipt",
+            "options": "Purchase Receipt",
+            "reqd": 1
+        },
+        {
+            "fieldname": "shipment",
+            "fieldtype": "Link",
+            "label": "Shipment",
+            "options": "Shipments",
+            "read_only": 1
+        },
+        {
+            "fieldname": "purchase_invoice",
+            "fieldtype": "Link",
+            "label": "Purchase Invoice",
+            "options": "Purchase Invoice",
+            "read_only": 1
+        },
+        {
+            "fieldname": "importation_approval",
+            "fieldtype": "Link",
+            "label": "Importation Approval",
+            "options": "Importation Approvals",
+            "read_only": 1
+        },
+        {
+            "fieldname": "column_break_2",
+            "fieldtype": "Column Break"
+        },
+        {
+            "default": "Today",
+            "fieldname": "inspection_date",
+            "fieldtype": "Date",
+            "in_list_view": 1,
+            "label": "Inspection Date",
+            "reqd": 1
+        },
+        {
+            "fieldname": "inspector_name",
+            "fieldtype": "Link",
+            "label": "Inspector Name",
+            "options": "User"
+        },
+        {
+            "default": "Draft",
+            "fieldname": "status",
+            "fieldtype": "Select",
+            "in_list_view": 1,
+            "in_standard_filter": 1,
+            "label": "Status",
+            "options": "Draft\nInspection Passed\nInspection Failed\nQuarantined",
+            "read_only": 1
+        },
+        {
+            "fieldname": "inspection_warehouse",
+            "fieldtype": "Link",
+            "label": "Inspection Warehouse",
+            "options": "Warehouse",
+            "read_only": 1
+        },
+        {
+            "collapsible": 1,
+            "fieldname": "section_break_vehicle",
+            "fieldtype": "Section Break",
+            "label": "Vehicle Inspection"
+        },
+        {
+            "fieldname": "seal_numbers",
+            "fieldtype": "Data",
+            "label": "Seal Numbers"
+        },
+        {
+            "fieldname": "seal_integrity",
+            "fieldtype": "Select",
+            "label": "Seal Integrity",
+            "options": "\nIntact\nBroken\nMissing"
+        },
+        {
+            "fieldname": "temperature_recorder_status",
+            "fieldtype": "Select",
+            "label": "Temperature Recorder Status",
+            "options": "\nPresent\nNot Present"
+        },
+        {
+            "collapsible": 1,
+            "fieldname": "section_break_documents",
+            "fieldtype": "Section Break",
+            "label": "Document Check (all present & consistent)"
+        },
+        {
+            "default": "0",
+            "fieldname": "commercial_invoice_present",
+            "fieldtype": "Check",
+            "label": "Commercial Invoice"
+        },
+        {
+            "default": "0",
+            "fieldname": "packing_list_present",
+            "fieldtype": "Check",
+            "label": "Packing List"
+        },
+        {
+            "default": "0",
+            "fieldname": "bill_of_lading_present",
+            "fieldtype": "Check",
+            "label": "Bill of Lading / Airway Bill"
+        },
+        {
+            "default": "0",
+            "fieldname": "certificate_of_analysis_present",
+            "fieldtype": "Check",
+            "label": "Certificate of Analysis (CoA)"
+        },
+        {
+            "default": "0",
+            "fieldname": "coo_gmp_certificate_present",
+            "fieldtype": "Check",
+            "label": "COO & GMP Certificate (if required)"
+        },
+        {
+            "default": "0",
+            "fieldname": "all_documents_consistent",
+            "fieldtype": "Check",
+            "label": "All Documents Consistent"
+        },
+        {
+            "collapsible": 1,
+            "fieldname": "section_break_physical",
+            "fieldtype": "Section Break",
+            "label": "Physical Check"
+        },
+        {
+            "default": "0",
+            "fieldname": "seal_integrity_verified",
+            "fieldtype": "Check",
+            "label": "Seal Integrity - Intact & Matching Seal Numbers"
+        },
+        {
+            "default": "0",
+            "fieldname": "package_condition_ok",
+            "fieldtype": "Check",
+            "label": "Package Condition - No Damage, Leaks, Broken Containers"
+        },
+        {
+            "default": "0",
+            "fieldname": "labels_verified",
+            "fieldtype": "Check",
+            "label": "Label Verification - Product Name, Strength, Batch #, Expiry, Storage"
+        },
+        {
+            "default": "0",
+            "fieldname": "quantity_verified",
+            "fieldtype": "Check",
+            "label": "Quantity Verification - Count vs Packing List (tolerance \u00b10%)"
+        },
+        {
+            "collapsible": 1,
+            "fieldname": "section_break_temperature",
+            "fieldtype": "Section Break",
+            "label": "Temperature Control"
+        },
+        {
+            "fieldname": "data_logger_present",
+            "fieldtype": "Select",
+            "label": "Data Logger Present",
+            "options": "\nYes\nNo"
+        },
+        {
+            "depends_on": "eval:doc.data_logger_present=='Yes'",
+            "fieldname": "temperature_report",
+            "fieldtype": "Attach",
+            "label": "Temperature Report"
+        },
+        {
+            "depends_on": "eval:doc.data_logger_present=='Yes'",
+            "fieldname": "temperature_range_status",
+            "fieldtype": "Select",
+            "label": "Temperature Range Status",
+            "options": "\nIn-Range\nOut-of-Range"
+        },
+        {
+            "depends_on": "eval:doc.temperature_range_status=='Out-of-Range'",
+            "fieldname": "out_of_range_action",
+            "fieldtype": "Select",
+            "label": "Out-of-Range Action",
+            "options": "\nQuarantine and Notify QA\nAccept with Reason"
+        },
+        {
+            "depends_on": "eval:doc.out_of_range_action=='Accept with Reason'",
+            "fieldname": "acceptance_reason",
+            "fieldtype": "Text",
+            "label": "Acceptance Reason",
+            "mandatory_depends_on": "eval:doc.out_of_range_action=='Accept with Reason'"
+        },
+        {
+            "fieldname": "section_break_items",
+            "fieldtype": "Section Break",
+            "label": "Quantity Verification"
+        },
+        {
+            "fieldname": "items",
+            "fieldtype": "Table",
+            "label": "Items",
+            "options": "Incoming Check Report Item",
+            "reqd": 1
+        },
+        {
+            "fieldname": "section_break_totals",
+            "fieldtype": "Section Break",
+            "label": "Totals"
+        },
+        {
+            "fieldname": "total_invoice_qty",
+            "fieldtype": "Float",
+            "label": "Total Invoice Qty",
+            "read_only": 1
+        },
+        {
+            "fieldname": "total_received_qty",
+            "fieldtype": "Float",
+            "label": "Total Received Qty",
+            "read_only": 1
+        },
+        {
+            "fieldname": "total_over_qty",
+            "fieldtype": "Float",
+            "label": "Total Over Qty",
+            "read_only": 1
+        },
+        {
+            "fieldname": "total_shortage_qty",
+            "fieldtype": "Float",
+            "label": "Total Shortage Qty",
+            "read_only": 1
+        },
+        {
+            "fieldname": "column_break_totals",
+            "fieldtype": "Column Break"
+        },
+        {
+            "fieldname": "total_damage_qty",
+            "fieldtype": "Float",
+            "label": "Total Damage Qty",
+            "read_only": 1
+        },
+        {
+            "fieldname": "total_accepted_qty",
+            "fieldtype": "Float",
+            "label": "Total Accepted Qty",
+            "read_only": 1
+        },
+        {
+            "collapsible": 1,
+            "fieldname": "section_break_agr_tracking",
+            "fieldtype": "Section Break",
+            "label": "Authority Good Release Tracking"
+        },
+        {
+            "fieldname": "authority_good_releases",
+            "fieldtype": "Table",
+            "label": "Authority Good Releases",
+            "options": "Authority Good Release Link",
+            "read_only": 1
+        },
+        {
+            "fieldname": "column_break_agr",
+            "fieldtype": "Column Break"
+        },
+        {
+            "allow_on_submit": 1,
+            "fieldname": "total_released_qty",
+            "fieldtype": "Float",
+            "label": "Total Released Qty",
+            "read_only": 1
+        },
+        {
+            "allow_on_submit": 1,
+            "fieldname": "remaining_unreleased_qty",
+            "fieldtype": "Float",
+            "label": "Remaining Unreleased Qty",
+            "read_only": 1
+        },
+        {
+            "fieldname": "section_break_warehouses",
+            "fieldtype": "Section Break",
+            "label": "Warehouse Assignment"
+        },
+        {
+            "fieldname": "accepted_warehouse",
+            "fieldtype": "Link",
+            "label": "Accepted Warehouse",
+            "options": "Warehouse"
+        },
+        {
+            "fieldname": "rejected_warehouse",
+            "fieldtype": "Link",
+            "label": "Rejected Warehouse",
+            "options": "Warehouse"
+        },
+        {
+            "collapsible": 1,
+            "fieldname": "section_break_notification",
+            "fieldtype": "Section Break",
+            "label": "Shipment Receipt Notification"
+        },
+        {
+            "default": "0",
+            "fieldname": "send_shipment_receipt_notification",
+            "fieldtype": "Check",
+            "label": "Send Shipment Receipt Notification to Supplier"
+        },
+        {
+            "depends_on": "eval:doc.send_shipment_receipt_notification==1",
+            "fieldname": "notification_email",
+            "fieldtype": "Data",
+            "label": "Notification Email",
+            "mandatory_depends_on": "eval:doc.send_shipment_receipt_notification==1"
+        },
+        {
+            "fieldname": "section_break_result",
+            "fieldtype": "Section Break",
+            "label": "Inspection Result"
+        },
+        {
+            "fieldname": "inspection_result",
+            "fieldtype": "Select",
+            "in_list_view": 1,
+            "in_standard_filter": 1,
+            "label": "Inspection Result",
+            "options": "\nPassed\nFailed\nQuarantined",
+            "reqd": 1
+        },
+        {
+            "fieldname": "remarks",
+            "fieldtype": "Text",
+            "label": "Remarks"
+        },
+        {
+            "fieldname": "amended_from",
+            "fieldtype": "Link",
+            "label": "Amended From",
+            "no_copy": 1,
+            "options": "Incoming Check Report",
+            "print_hide": 1,
+            "read_only": 1,
+            "search_index": 1
+        }
+    ],
+    "index_web_pages_for_search": 1,
+    "is_submittable": 1,
+    "links": [],
+    "modified": "2026-02-24 00:29:41.749535",
+    "modified_by": "it_asst2@oncopharmegy.com",
+    "module": "Onco",
+    "name": "Incoming Check Report",
+    "naming_rule": "By \"Naming Series\" field",
+    "owner": "Administrator",
+    "permissions": [
+        {
+            "create": 1,
+            "delete": 1,
+            "email": 1,
+            "export": 1,
+            "print": 1,
+            "read": 1,
+            "report": 1,
+            "role": "System Manager",
+            "share": 1,
+            "submit": 1,
+            "write": 1
+        },
+        {
+            "create": 1,
+            "delete": 1,
+            "email": 1,
+            "export": 1,
+            "print": 1,
+            "read": 1,
+            "report": 1,
+            "role": "Bank_User",
+            "select": 1,
+            "share": 1,
+            "submit": 1,
+            "write": 1
+        }
+    ],
+    "row_format": "Dynamic",
+    "sort_field": "modified",
+    "sort_order": "DESC",
+    "states": [],
+    "track_changes": 1
 }

@@ -200,7 +200,11 @@ class AuthorityGoodRelease(Document):
 			# Find the matching item in ICR
 			icr_item = None
 			for icr_item_row in icr_doc.items:
-				if icr_item_row.item_code == item.item_code and icr_item_row.batch_no == item.batch_no:
+				# Match by item_code AND bundle AND serial AND batch
+				if (icr_item_row.item_code == item.item_code and
+					getattr(icr_item_row, "serial_and_batch_bundle", None) == getattr(item, "serial_and_batch_bundle", None) and
+					getattr(icr_item_row, "serial_no", None) == getattr(item, "serial_no", None) and
+					icr_item_row.batch_no == item.batch_no):
 					icr_item = icr_item_row
 					break
 
@@ -229,7 +233,10 @@ class AuthorityGoodRelease(Document):
 
 				# Find matching items in the AGR document
 				for agr_item in agr_doc.items:
-					if agr_item.item_code == item.item_code and agr_item.batch_no == item.batch_no:
+					if (agr_item.item_code == item.item_code and 
+						getattr(agr_item, "serial_and_batch_bundle", None) == getattr(item, "serial_and_batch_bundle", None) and
+						getattr(agr_item, "serial_no", None) == getattr(item, "serial_no", None) and
+						agr_item.batch_no == item.batch_no):
 						total_previous_releases += agr_item.released_qty or 0
 
 			# Calculate total unreleased = invoice_qty - sum of all previous releases
@@ -446,14 +453,20 @@ class AuthorityGoodRelease(Document):
 				
 				# Find matching items in the AGR document
 				for agr_item in agr_doc.items:
-					if agr_item.item_code == item.item_code and agr_item.batch_no == item.batch_no:
+					if (agr_item.item_code == item.item_code and 
+						getattr(agr_item, "serial_and_batch_bundle", None) == getattr(item, "serial_and_batch_bundle", None) and
+						getattr(agr_item, "serial_no", None) == getattr(item, "serial_no", None) and
+						agr_item.batch_no == item.batch_no):
 						cumulative_released += agr_item.released_qty or 0
 						cumulative_sample += agr_item.withdrew_sample_qty or 0
 			
 			# Get actual_quantity from Incoming Check Report for this item
 			icr_item = None
 			for icr_item_row in icr_doc.items:
-				if icr_item_row.item_code == item.item_code and icr_item_row.batch_no == item.batch_no:
+				if (icr_item_row.item_code == item.item_code and 
+					getattr(icr_item_row, "serial_and_batch_bundle", None) == getattr(item, "serial_and_batch_bundle", None) and
+					getattr(icr_item_row, "serial_no", None) == getattr(item, "serial_no", None) and
+					icr_item_row.batch_no == item.batch_no):
 					icr_item = icr_item_row
 					break
 			
@@ -1019,6 +1032,9 @@ class AuthorityGoodRelease(Document):
 					"s_warehouse": source_warehouse,
 					"t_warehouse": self.sample_warehouse,
 					"batch_no": item.batch_no,
+					"serial_no": getattr(item, "serial_no", None),
+					"serial_and_batch_bundle": getattr(item, "serial_and_batch_bundle", None),
+					"use_serial_batch_fields": getattr(item, "use_serial_batch_fields", 0),
 					"manufacturing_date": item.manufacturing_date,
 					"expiry_date": item.expiry_date,
 					"uom": frappe.db.get_value("Item", item.item_code, "stock_uom")
@@ -1125,6 +1141,9 @@ class AuthorityGoodRelease(Document):
 					"s_warehouse": source_warehouse,
 					"t_warehouse": self.released_goods_warehouse,
 					"batch_no": item.batch_no,
+					"serial_no": getattr(item, "serial_no", None),
+					"serial_and_batch_bundle": getattr(item, "serial_and_batch_bundle", None),
+					"use_serial_batch_fields": getattr(item, "use_serial_batch_fields", 0),
 					"manufacturing_date": item.manufacturing_date,
 					"expiry_date": item.expiry_date,
 					"uom": frappe.db.get_value("Item", item.item_code, "stock_uom")
@@ -1203,6 +1222,9 @@ class AuthorityGoodRelease(Document):
 					"s_warehouse": self.released_goods_warehouse,
 					"t_warehouse": target_warehouse,
 					"batch_no": item.batch_no,
+					"serial_no": getattr(item, "serial_no", None),
+					"serial_and_batch_bundle": getattr(item, "serial_and_batch_bundle", None),
+					"use_serial_batch_fields": getattr(item, "use_serial_batch_fields", 0),
 					"manufacturing_date": item.manufacturing_date,
 					"expiry_date": item.expiry_date,
 					"uom": frappe.db.get_value("Item", item.item_code, "stock_uom")
@@ -1291,6 +1313,9 @@ class AuthorityGoodRelease(Document):
 					"s_warehouse": source_warehouse,
 					"t_warehouse": target_warehouse,
 					"batch_no": item.batch_no,
+					"serial_no": getattr(item, "serial_no", None),
+					"serial_and_batch_bundle": getattr(item, "serial_and_batch_bundle", None),
+					"use_serial_batch_fields": getattr(item, "use_serial_batch_fields", 0),
 					"uom": frappe.db.get_value("Item", item.item_code, "stock_uom")
 				})
 				has_items = True
@@ -1318,6 +1343,9 @@ class AuthorityGoodRelease(Document):
 				"s_warehouse": source_warehouse,
 				"t_warehouse": target_warehouse,
 				"batch_no": item.batch_no,
+				"serial_no": getattr(item, "serial_no", None),
+				"serial_and_batch_bundle": getattr(item, "serial_and_batch_bundle", None),
+				"use_serial_batch_fields": getattr(item, "use_serial_batch_fields", 0),
 				"uom": frappe.db.get_value("Item", item.item_code, "stock_uom")
 			})
 			se.insert()
@@ -1388,7 +1416,10 @@ def create_stock_entry(authority_good_release):
 				"qty": item.net_released_qty,
 				"s_warehouse": agr_doc.warehouse_from,
 				"t_warehouse": agr_doc.warehouse_to,
-				"batch_no": item.batch_no
+				"batch_no": item.batch_no,
+				"serial_no": getattr(item, "serial_no", None),
+				"serial_and_batch_bundle": getattr(item, "serial_and_batch_bundle", None),
+				"use_serial_batch_fields": getattr(item, "use_serial_batch_fields", 0)
 			})
 		
 		# Handle sample quantities
@@ -1398,7 +1429,10 @@ def create_stock_entry(authority_good_release):
 				"qty": item.sample_qty,
 				"s_warehouse": agr_doc.warehouse_from,
 				"t_warehouse": agr_doc.sample_warehouse,
-				"batch_no": item.batch_no
+				"batch_no": item.batch_no,
+				"serial_no": getattr(item, "serial_no", None),
+				"serial_and_batch_bundle": getattr(item, "serial_and_batch_bundle", None),
+				"use_serial_batch_fields": getattr(item, "use_serial_batch_fields", 0)
 			})
 	
 	if stock_entry.items:

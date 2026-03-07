@@ -11,6 +11,9 @@
         "item_code",
         "item_name",
         "batch_no",
+        "serial_no",
+        "serial_and_batch_bundle",
+        "use_serial_batch_fields",
         "column_break_1",
         "invoice_quantity",
         "received_quantity",
@@ -60,6 +63,26 @@
             "in_list_view": 1,
             "label": "Batch No",
             "read_only": 1
+        },
+        {
+            "fieldname": "serial_no",
+            "fieldtype": "Small Text",
+            "label": "Serial No",
+            "read_only": 1
+        },
+        {
+            "fieldname": "serial_and_batch_bundle",
+            "fieldtype": "Link",
+            "label": "Serial and Batch Bundle",
+            "options": "Serial and Batch Bundle",
+            "read_only": 1
+        },
+        {
+            "default": "0",
+            "fieldname": "use_serial_batch_fields",
+            "fieldtype": "Check",
+            "hidden": 1,
+            "label": "Use Serial / Batch Fields"
         },
         {
             "fieldname": "column_break_1",

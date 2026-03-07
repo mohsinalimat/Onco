@@ -16,6 +16,9 @@
         "rate",
         "amount",
         "batch_no",
+        "serial_no",
+        "serial_and_batch_bundle",
+        "use_serial_batch_fields",
         "expiry_date"
     ],
     "fields": [
@@ -85,6 +88,26 @@
             "fieldtype": "Data",
             "label": "Batch No",
             "read_only": 1
+        },
+        {
+            "fieldname": "serial_no",
+            "fieldtype": "Small Text",
+            "label": "Serial No",
+            "read_only": 1
+        },
+        {
+            "fieldname": "serial_and_batch_bundle",
+            "fieldtype": "Link",
+            "label": "Serial and Batch Bundle",
+            "options": "Serial and Batch Bundle",
+            "read_only": 1
+        },
+        {
+            "default": "0",
+            "fieldname": "use_serial_batch_fields",
+            "fieldtype": "Check",
+            "hidden": 1,
+            "label": "Use Serial / Batch Fields"
         },
         {
             "fieldname": "expiry_date",

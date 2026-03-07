@@ -133,6 +133,8 @@ def make_purchase_order(source_name, target_doc=None):
     
     def set_missing_values(source, target):
         target.custom_importation_approval = source.name  # Fixed: use correct field name
+        target.custom_purchase_order_type = "Imported Purchase"
+        target.custom_purchase_type = "Finished Products Item"
         
         # Ensure company is set (required for currency/pricing)
         if not target.company:

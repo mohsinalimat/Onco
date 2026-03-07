@@ -10,10 +10,10 @@ frappe.ui.form.on('Incoming Check Report', {
         if (!frm.doc.inspector_name && frappe.session.user) {
             frm.set_value('inspector_name', frappe.session.user);
         }
-        
+
         // Add button to view created Stock Entries if submitted
         if (frm.doc.docstatus === 1) {
-            frm.add_custom_button(__('View Stock Entries'), function() {
+            frm.add_custom_button(__('View Stock Entries'), function () {
                 frappe.route_options = {
                     "custom_purchase_receipt": frm.doc.purchase_receipt,
                     "docstatus": 1,
@@ -21,15 +21,15 @@ frappe.ui.form.on('Incoming Check Report', {
                 };
                 frappe.set_route("List", "Stock Entry");
             }, __('View'));
-            
+
             // Add button to create Purchase Receipt Report
-            frappe.db.get_value('Purchase Receipt Report', 
-                {'purchase_receipt': frm.doc.purchase_receipt}, 
+            frappe.db.get_value('Purchase Receipt Report',
+                { 'purchase_receipt': frm.doc.purchase_receipt },
                 'name',
                 (r) => {
                     if (!r || !r.name) {
                         // No Purchase Receipt Report exists, show create button
-                        frm.add_custom_button(__('Create Purchase Receipt Report'), function() {
+                        frm.add_custom_button(__('Create Purchase Receipt Report'), function () {
                             frappe.model.open_mapped_doc({
                                 method: "onco.onco.doctype.incoming_check_report.incoming_check_report.make_purchase_receipt_report",
                                 frm: frm
@@ -37,15 +37,15 @@ frappe.ui.form.on('Incoming Check Report', {
                         }, __('Create'));
                     } else {
                         // Purchase Receipt Report exists, show view button
-                        frm.add_custom_button(__('View Purchase Receipt Report'), function() {
+                        frm.add_custom_button(__('View Purchase Receipt Report'), function () {
                             frappe.set_route('Form', 'Purchase Receipt Report', r.name);
                         }, __('View'));
                     }
                 }
             );
-            
+
             // Add button to create Authority Good Release
-            frm.add_custom_button(__('Create Authority Good Release'), function() {
+            frm.add_custom_button(__('Create Authority Good Release'), function () {
                 frappe.model.open_mapped_doc({
                     method: "onco.onco.doctype.incoming_check_report.incoming_check_report.make_authority_good_release",
                     frm: frm
@@ -56,11 +56,16 @@ frappe.ui.form.on('Incoming Check Report', {
 
     stock_entry: function (frm) {
         if (frm.doc.stock_entry) {
-            // Fetch all reference data from Stock Entry
+            // Legacy fallback - fetch data via stock entry
             fetch_reference_data(frm);
-
-            // Fetch items from Stock Entry
             fetch_items_from_stock_entry(frm);
+        }
+    },
+
+    purchase_receipt: function (frm) {
+        if (frm.doc.purchase_receipt) {
+            // Primary path - fetch data directly from Purchase Receipt
+            fetch_data_from_purchase_receipt(frm);
         }
     },
 
@@ -410,4 +415,85 @@ function validate_inspection_completion(frm) {
     }
 
     return true;
+}
+
+function fetch_data_from_purchase_receipt(frm) {
+    if (!frm.doc.purchase_receipt) return;
+
+    frappe.call({
+        method: 'frappe.client.get',
+        args: {
+            doctype: 'Purchase Receipt',
+            name: frm.doc.purchase_receipt
+        },
+        callback: function (r) {
+            if (r.message) {
+                let pr = r.message;
+
+                // Set inspection warehouse
+                if (pr.set_warehouse) {
+                    frm.set_value('inspection_warehouse', pr.set_warehouse);
+                }
+
+                // Set Shipment
+                if (pr.custom_shipment_ref) {
+                    frm.set_value('shipment', pr.custom_shipment_ref);
+                }
+
+                // Get Purchase Invoice from items
+                if (pr.items && pr.items.length > 0) {
+                    for (let i = 0; i < pr.items.length; i++) {
+                        if (pr.items[i].purchase_invoice) {
+                            frm.set_value('purchase_invoice', pr.items[i].purchase_invoice);
+
+                            // Fetch Importation Approval from Purchase Invoice
+                            frappe.db.get_value('Purchase Invoice', pr.items[i].purchase_invoice, 'custom_importation_approval')
+                                .then(imp_r => {
+                                    if (imp_r.message && imp_r.message.custom_importation_approval) {
+                                        frm.set_value('importation_approval', imp_r.message.custom_importation_approval);
+                                    }
+                                });
+                            break;
+                        }
+                    }
+                }
+
+                // Populate items from Purchase Receipt
+                frm.clear_table('items');
+
+                if (pr.items && pr.items.length > 0) {
+                    pr.items.forEach(function (pr_item) {
+                        let row = frm.add_child('items');
+                        row.item_code = pr_item.item_code;
+                        row.item_name = pr_item.item_name;
+                        row.batch_no = pr_item.batch_no || '';
+                        row.serial_no = pr_item.serial_no || '';
+                        row.serial_and_batch_bundle = pr_item.serial_and_batch_bundle || '';
+                        row.use_serial_batch_fields = pr_item.use_serial_batch_fields || 0;
+                        row.invoice_quantity = pr_item.qty;
+                        row.received_quantity = pr_item.qty;
+                        row.shortage_quantity = 0;
+                        row.over_quantity = 0;
+                        row.damage_quantity = 0;
+                        row.accepted_quantity = pr_item.qty;
+                        row.shipment_no = pr.custom_shipment_ref || '';
+                        row.invoice_no = frm.doc.purchase_receipt;
+
+                        // Get batch details if batch exists
+                        if (pr_item.batch_no) {
+                            frappe.db.get_value('Batch', pr_item.batch_no, ['manufacturing_date', 'expiry_date'], (batch_r) => {
+                                if (batch_r) {
+                                    frappe.model.set_value(row.doctype, row.name, 'manufacturing_date', batch_r.manufacturing_date);
+                                    frappe.model.set_value(row.doctype, row.name, 'expiry_date', batch_r.expiry_date);
+                                }
+                            });
+                        }
+                    });
+
+                    frm.refresh_field('items');
+                    calculate_totals(frm);
+                }
+            }
+        }
+    });
 }
