@@ -158,6 +158,11 @@ doc_events = {
 		"validate": "onco.onco.custom_scripts.purchase_order.validate",
 		"on_submit": "onco.onco.custom_scripts.purchase_order.on_submit",
 		"on_cancel": "onco.onco.custom_scripts.purchase_order.on_cancel"
+	},
+	"Purchase Invoice": {
+		"before_insert": "onco.onco.purchase_invoice.before_insert",
+		"validate": "onco.onco.purchase_invoice.validate",
+		"on_submit": "onco.onco.purchase_invoice.on_submit"
 	}
 }
 
