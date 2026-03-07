@@ -289,6 +289,32 @@ class IncomingCheckReport(Document):
     def create_stock_entry(self, items, target_warehouse, purpose, remarks):
         """Create a Stock Entry document"""
         try:
+            # Validate batch stock availability before creating stock entry
+            for item_data in items:
+                if item_data.get('batch_no'):
+                    available_qty = frappe.db.sql("""
+                        SELECT SUM(actual_qty) as qty
+                        FROM `tabStock Ledger Entry`
+                        WHERE item_code = %s
+                        AND batch_no = %s
+                        AND warehouse = %s
+                        AND is_cancelled = 0
+                    """, (item_data['item_code'], item_data['batch_no'], self.inspection_warehouse), as_dict=True)
+                    
+                    available = available_qty[0].qty if available_qty and available_qty[0].qty else 0
+                    
+                    if available < item_data['qty']:
+                        frappe.throw(_(
+                            "Insufficient stock for Item {0}, Batch {1} in warehouse {2}. "
+                            "Available: {3}, Required: {4}"
+                        ).format(
+                            item_data['item_code'],
+                            item_data['batch_no'],
+                            self.inspection_warehouse,
+                            available,
+                            item_data['qty']
+                        ))
+            
             stock_entry = frappe.new_doc("Stock Entry")
             stock_entry.purpose = purpose
             stock_entry.stock_entry_type = "Material Transfer"
