@@ -31,48 +31,32 @@ frappe.ui.form.on('Importation Approvals', {
                 create_extension(frm);
             }, __('Create'));
         }
-        
-        // Set naming series based on approval type
-        if (frm.doc.approval_type && !frm.doc.naming_series) {
-            if (frm.doc.approval_type === 'Special Importation (SPIMA)') {
-                if (frm.doc.is_modification) {
-                    frm.set_value('naming_series', 'EDA-SPIMA-MD-.YYYY.-.#####');
-                } else if (frm.doc.is_extension) {
-                    frm.set_value('naming_series', 'EDA-SPIMA-EX-.YYYY.-.######');
-                } else {
-                    frm.set_value('naming_series', 'EDA-SPIMA-.YYYY.-.#####');
-                }
-            } else if (frm.doc.approval_type === 'Annual Importation (APIMA)') {
-                if (frm.doc.is_modification) {
-                    frm.set_value('naming_series', 'EDA-APIMA-MD-.YYYY.-.#####');
-                } else if (frm.doc.is_extension) {
-                    frm.set_value('naming_series', 'EDA-APIMA-EX-.YYYY.-.######');
-                } else {
-                    frm.set_value('naming_series', 'EDA-APIMA-.YYYY.-.#####');
-                }
-            }
-        }
     },
     
     approval_type: function(frm) {
-        // Auto-set naming series based on approval type
-        if (frm.doc.approval_type === 'Special Importation (SPIMA)') {
-            if (frm.doc.is_modification) {
-                frm.set_value('naming_series', 'EDA-SPIMA-MD-.YYYY.-.#####');
-            } else if (frm.doc.is_extension) {
-                frm.set_value('naming_series', 'EDA-SPIMA-EX-.YYYY.-.######');
-            } else {
-                frm.set_value('naming_series', 'EDA-SPIMA-.YYYY.-.#####');
-            }
-        } else if (frm.doc.approval_type === 'Annual Importation (APIMA)') {
-            if (frm.doc.is_modification) {
-                frm.set_value('naming_series', 'EDA-APIMA-MD-.YYYY.-.#####');
-            } else if (frm.doc.is_extension) {
-                frm.set_value('naming_series', 'EDA-APIMA-EX-.YYYY.-.######');
-            } else {
-                frm.set_value('naming_series', 'EDA-APIMA-.YYYY.-.#####');
-            }
+        // Clear importation approval request when approval type changes
+        if (frm.doc.importation_approval_request) {
+            frm.set_value('importation_approval_request', '');
+            frm.clear_table('items');
+            frm.refresh_field('items');
         }
+        
+        // Update filter for importation approval request
+        frm.set_query('importation_approval_request', function() {
+            let filters = {
+                'docstatus': 1  // Only submitted requests
+            };
+            
+            if (frm.doc.approval_type === 'Special Importation (SPIMA)') {
+                filters['request_type'] = 'Special Importation (SPIMR)';
+            } else if (frm.doc.approval_type === 'Annual Importation (APIMA)') {
+                filters['request_type'] = 'Annual Importation (APIMR)';
+            }
+            
+            return {
+                filters: filters
+            };
+        });
     },
     
     importation_approval_request: function(frm) {
@@ -176,51 +160,6 @@ frappe.ui.form.on('Importation Approvals', {
             frm.fields_dict.items.grid.get_field('approved_qty').read_only = 1;
             frm.refresh_field('items');
         }
-    },
-    
-    approval_type: function(frm) {
-        // Auto-set naming series based on approval type
-        if (frm.doc.approval_type === 'Special Importation (SPIMA)') {
-            if (frm.doc.is_modification) {
-                frm.set_value('naming_series', 'EDA-SPIMA-MD-.YYYY.-.#####');
-            } else if (frm.doc.is_extension) {
-                frm.set_value('naming_series', 'EDA-SPIMA-EX-.YYYY.-.######');
-            } else {
-                frm.set_value('naming_series', 'EDA-SPIMA-.YYYY.-.#####');
-            }
-        } else if (frm.doc.approval_type === 'Annual Importation (APIMA)') {
-            if (frm.doc.is_modification) {
-                frm.set_value('naming_series', 'EDA-APIMA-MD-.YYYY.-.#####');
-            } else if (frm.doc.is_extension) {
-                frm.set_value('naming_series', 'EDA-APIMA-EX-.YYYY.-.######');
-            } else {
-                frm.set_value('naming_series', 'EDA-APIMA-.YYYY.-.#####');
-            }
-        }
-        
-        // Clear importation approval request when approval type changes
-        if (frm.doc.importation_approval_request) {
-            frm.set_value('importation_approval_request', '');
-            frm.clear_table('items');
-            frm.refresh_field('items');
-        }
-        
-        // Update filter for importation approval request
-        frm.set_query('importation_approval_request', function() {
-            let filters = {
-                'docstatus': 1  // Only submitted requests
-            };
-            
-            if (frm.doc.approval_type === 'Special Importation (SPIMA)') {
-                filters['request_type'] = 'Special Importation (SPIMR)';
-            } else if (frm.doc.approval_type === 'Annual Importation (APIMA)') {
-                filters['request_type'] = 'Annual Importation (APIMR)';
-            }
-            
-            return {
-                filters: filters
-            };
-        });
     },
     
     before_submit: function(frm) {

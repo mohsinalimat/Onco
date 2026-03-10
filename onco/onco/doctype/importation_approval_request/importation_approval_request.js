@@ -67,49 +67,9 @@ frappe.ui.form.on('Importation Approval Request', {
                 create_extension(frm);
             }, __('Create'));
         }
-
-        // Set naming series based on request type
-        if (frm.doc.request_type && !frm.doc.naming_series) {
-            if (frm.doc.request_type === 'Special Importation (SPIMR)') {
-                if (frm.doc.is_modification) {
-                    frm.set_value('naming_series', 'EDA-SPIMR-MD-.YYYY.-.#####');
-                } else if (frm.doc.is_extension) {
-                    frm.set_value('naming_series', 'EDA-SPIMR-EX-.YYYY.-.######');
-                } else {
-                    frm.set_value('naming_series', 'EDA-SPIMR-.YYYY.-.#####');
-                }
-            } else if (frm.doc.request_type === 'Annual Importation (APIMR)') {
-                if (frm.doc.is_modification) {
-                    frm.set_value('naming_series', 'EDA-APIMR-MD-.YYYY.-.#####');
-                } else if (frm.doc.is_extension) {
-                    frm.set_value('naming_series', 'EDA-APIMR-EX-.YYYY.-.######');
-                } else {
-                    frm.set_value('naming_series', 'EDA-APIMR-.YYYY.-.#####');
-                }
-            }
-        }
     },
 
     request_type: function (frm) {
-        // Auto-set naming series based on request type
-        if (frm.doc.request_type === 'Special Importation (SPIMR)') {
-            if (frm.doc.is_modification) {
-                frm.set_value('naming_series', 'EDA-SPIMR-MD-.YYYY.-.#####');
-            } else if (frm.doc.is_extension) {
-                frm.set_value('naming_series', 'EDA-SPIMR-EX-.YYYY.-.######');
-            } else {
-                frm.set_value('naming_series', 'EDA-SPIMR-.YYYY.-.#####');
-            }
-        } else if (frm.doc.request_type === 'Annual Importation (APIMR)') {
-            if (frm.doc.is_modification) {
-                frm.set_value('naming_series', 'EDA-APIMR-MD-.YYYY.-.#####');
-            } else if (frm.doc.is_extension) {
-                frm.set_value('naming_series', 'EDA-APIMR-EX-.YYYY.-.######');
-            } else {
-                frm.set_value('naming_series', 'EDA-APIMR-.YYYY.-.#####');
-            }
-        }
-
         // Clear items when request type changes to ensure proper filtration
         if (frm.doc.items && frm.doc.items.length > 0) {
             frm.clear_table('items');
