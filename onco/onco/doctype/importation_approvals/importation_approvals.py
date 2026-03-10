@@ -3,8 +3,76 @@
 
 import frappe
 from frappe.model.document import Document
+from frappe import _
 
 class ImportationApprovals(Document):
+    def autoname(self):
+        """Generate naming series based on approval type with year from date field"""
+        if not self.approval_type:
+            frappe.throw(_("Approval Type is required for naming"))
+        
+        # Get year from the date field (not posting date)
+        if not self.date:
+            frappe.throw(_("Date is required for naming"))
+        
+        year = frappe.utils.getdate(self.date).year
+        
+        # Determine prefix based on approval type and modification/extension status
+        base_prefix = ""
+        if self.approval_type == 'Special Importation (SPIMA)':
+            base_prefix = "EDA-SPIMA"
+        elif self.approval_type == 'Annual Importation (APIMA)':
+            base_prefix = "EDA-APIMA"
+        else:
+            frappe.throw(_("Invalid Approval Type: {0}").format(self.approval_type))
+        
+        # Add suffix for modifications or extensions
+        if self.is_modification:
+            prefix = f"{base_prefix}-MD"
+        elif self.is_extension:
+            prefix = f"{base_prefix}-EX"
+        else:
+            prefix = base_prefix
+        
+        # Get the next counter for this prefix and year combination
+        counter = self.get_next_counter(prefix, year)
+        
+        # Generate name in format: {PREFIX}-{YYYY}-{XXXXX}
+        # Examples: 
+        # - EDA-SPIMA-2020-00001 (normal)
+        # - EDA-SPIMA-MD-2020-00001 (modification)
+        # - EDA-APIMA-EX-2024-00001 (extension)
+        self.name = f"{prefix}-{year}-{counter:05d}"
+    
+    def get_next_counter(self, prefix, year):
+        """Get auto-incremented counter for naming series specific to year"""
+        # Query Importation Approvals documents with name like "{prefix}-{year}-%"
+        existing = frappe.get_all(
+            "Importation Approvals",
+            filters={
+                "name": ["like", f"{prefix}-{year}-%"]
+            },
+            fields=["name"],
+            order_by="name desc",
+            limit=1
+        )
+        
+        if existing:
+            # Extract counter from name (format: PREFIX-YYYY-XXXXX)
+            # Counter is the last component after splitting by "-"
+            parts = existing[0].name.split("-")
+            if len(parts) >= 3:
+                try:
+                    # Get the last part which should be the counter
+                    last_counter = int(parts[-1])
+                    return last_counter + 1
+                except ValueError:
+                    # If counter is not a valid integer, start from 1
+                    pass
+        
+        # Return 1 if no existing documents or extraction failed
+        return 1
+    
     def validate(self):
         self.validate_items_table()
         self.validate_approval_quantities()
@@ -268,21 +336,17 @@ def create_modification(source_name, modification_reason, requested_modification
     """Create modification of Importation Approvals"""
     source_doc = frappe.get_doc("Importation Approvals", source_name)
     
-    # Create new approval with MD naming series
+    # Create new approval
     new_doc = frappe.copy_doc(source_doc)
     
-    # Update naming series for modification
-    if source_doc.approval_type == 'Special Importation (SPIMA)':
-        new_doc.naming_series = 'EDA-SPIMA-MD-.YYYY.-.#####'
-    elif source_doc.approval_type == 'Annual Importation (APIMA)':
-        new_doc.naming_series = 'EDA-APIMA-MD-.YYYY.-.#####'
-    
-    # Add modification details
+    # Set modification flag - autoname will handle the naming
     new_doc.is_modification = 1
     new_doc.modification_reason = modification_reason
     new_doc.original_document = source_name
     new_doc.special_conditions = new_conditions or new_doc.special_conditions
     
+    # Insert will trigger autoname() which will generate the correct name
+    # Format: EDA-SPIMA-MD-{YEAR}-{COUNTER} or EDA-APIMA-MD-{YEAR}-{COUNTER}
     new_doc.insert()
     
     # Close original document to prevent further Purchase Orders
@@ -296,16 +360,10 @@ def create_extension(source_name, extension_reason, extension_details, new_valid
     """Create extension of Importation Approvals"""
     source_doc = frappe.get_doc("Importation Approvals", source_name)
     
-    # Create new approval with EX naming series
+    # Create new approval
     new_doc = frappe.copy_doc(source_doc)
     
-    # Update naming series for extension
-    if source_doc.approval_type == 'Special Importation (SPIMA)':
-        new_doc.naming_series = 'EDA-SPIMA-EX-.YYYY.-.######'
-    elif source_doc.approval_type == 'Annual Importation (APIMA)':
-        new_doc.naming_series = 'EDA-APIMA-EX-.YYYY.-.######'
-    
-    # Add extension details
+    # Set extension flag - autoname will handle the naming
     new_doc.is_extension = 1
     new_doc.extension_reason = extension_reason
     new_doc.valid_date = new_validation_date
@@ -316,6 +374,8 @@ def create_extension(source_name, extension_reason, extension_details, new_valid
         for item in new_doc.items:
             item.approved_qty = new_quantity
     
+    # Insert will trigger autoname() which will generate the correct name
+    # Format: EDA-SPIMA-EX-{YEAR}-{COUNTER} or EDA-APIMA-EX-{YEAR}-{COUNTER}
     new_doc.insert()
     
     # Close original document to prevent further Purchase Orders

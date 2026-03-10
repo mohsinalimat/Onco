@@ -1,12 +1,11 @@
 {
  "actions": [],
  "allow_rename": 1,
- "autoname": "naming_series:",
+ "autoname": "Prompt",
  "creation": "2026-01-26 10:00:00",
  "doctype": "DocType",
  "engine": "InnoDB",
  "field_order": [
-  "naming_series",
   "approval_type",
   "date",
   "column_break_basic",
@@ -34,14 +33,6 @@
   "amended_from"
  ],
  "fields": [
-  {
-   "fieldname": "naming_series",
-   "fieldtype": "Select",
-   "in_list_view": 1,
-   "label": "Series",
-   "options": "EDA-SPIMA-.YYYY.-.#####\nEDA-APIMA-.YYYY.-.#####\nEDA-SPIMA-MD-.YYYY.-.#####\nEDA-APIMA-MD-.YYYY.-.#####\nEDA-SPIMA-EX-.YYYY.-.######\nEDA-APIMA-EX-.YYYY.-.######",
-   "reqd": 1
-  },
   {
    "fieldname": "approval_type",
    "fieldtype": "Select",

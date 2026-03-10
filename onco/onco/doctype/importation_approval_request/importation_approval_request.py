@@ -3,8 +3,76 @@
 
 import frappe
 from frappe.model.document import Document
+from frappe import _
 
 class ImportationApprovalRequest(Document):
+    def autoname(self):
+        """Generate naming series based on request type with year from date field"""
+        if not self.request_type:
+            frappe.throw(_("Request Type is required for naming"))
+        
+        # Get year from the date field (not posting date)
+        if not self.date:
+            frappe.throw(_("Date is required for naming"))
+        
+        year = frappe.utils.getdate(self.date).year
+        
+        # Determine prefix based on request type and modification/extension status
+        base_prefix = ""
+        if self.request_type == 'Special Importation (SPIMR)':
+            base_prefix = "EDA-SPIMR"
+        elif self.request_type == 'Annual Importation (APIMR)':
+            base_prefix = "EDA-APIMR"
+        else:
+            frappe.throw(_("Invalid Request Type: {0}").format(self.request_type))
+        
+        # Add suffix for modifications or extensions
+        if self.is_modification:
+            prefix = f"{base_prefix}-MD"
+        elif self.is_extension:
+            prefix = f"{base_prefix}-EX"
+        else:
+            prefix = base_prefix
+        
+        # Get the next counter for this prefix and year combination
+        counter = self.get_next_counter(prefix, year)
+        
+        # Generate name in format: {PREFIX}-{YYYY}-{XXXXX}
+        # Examples: 
+        # - EDA-SPIMR-2020-00001 (normal)
+        # - EDA-SPIMR-MD-2020-00001 (modification)
+        # - EDA-APIMR-EX-2024-00001 (extension)
+        self.name = f"{prefix}-{year}-{counter:05d}"
+    
+    def get_next_counter(self, prefix, year):
+        """Get auto-incremented counter for naming series specific to year"""
+        # Query Importation Approval Request documents with name like "{prefix}-{year}-%"
+        existing = frappe.get_all(
+            "Importation Approval Request",
+            filters={
+                "name": ["like", f"{prefix}-{year}-%"]
+            },
+            fields=["name"],
+            order_by="name desc",
+            limit=1
+        )
+        
+        if existing:
+            # Extract counter from name (format: PREFIX-YYYY-XXXXX)
+            # Counter is the last component after splitting by "-"
+            parts = existing[0].name.split("-")
+            if len(parts) >= 3:
+                try:
+                    # Get the last part which should be the counter
+                    last_counter = int(parts[-1])
+                    return last_counter + 1
+                except ValueError:
+                    # If counter is not a valid integer, start from 1
+                    pass
+        
+        # Return 1 if no existing documents or extraction failed
+        return 1
+    
     def validate(self):
         self.calculate_totals()
         self.validate_approval_quantities()
@@ -218,60 +286,7 @@ def create_modification(source_name, modification_reason, requested_modification
     # Create new request
     new_doc = frappe.copy_doc(source_doc)
     
-    # Determine new naming series and base prefix
-    new_series = ""
-    target_prefix = ""
-    
-    if 'SPIMR' in source_doc.naming_series or 'SPIMR' in source_name:
-        new_series = 'EDA-SPIMR-MD-.YYYY.-.#####'
-        target_prefix = 'EDA-SPIMR-MD'
-    elif 'APIMR' in source_doc.naming_series or 'APIMR' in source_name:
-        new_series = 'EDA-APIMR-MD-.YYYY.-.#####'
-        target_prefix = 'EDA-APIMR-MD'
-        
-    new_doc.naming_series = new_series
-    
-    # Custom Naming Logic to preserve sequence number
-    # Extract year and sequence from source name or series
-    # Expected formats: EDA-SPIMR-2026-00004 or EDA-SPIMR-MD-2026-00004
-    
-    parts = source_name.split('-')
-    # Try to find the numeric part at the end
-    seq_number = parts[-1]
-    
-    # Handle existing suffixes (remove them to get base number)
-    if not seq_number.isdigit():
-        # Maybe it has a suffix like 00004-1?
-        # But split('-') splits 00004 and 1.
-        # Let's assume standard format ends with sequence number or sequence-suffix
-        if parts[-1].isdigit():
-             seq_number = parts[-1]
-        elif parts[-2].isdigit():
-             seq_number = parts[-2]
-    
-    # Reconstruct name: PREFIX-YEAR-SEQ
-    # We need the Year. Let's assume current year or source year?
-    # Usually we want the year from the source series.
-    year = frappe.utils.today().split('-')[0]
-    # Ideally reuse source year if present in name
-    for part in parts:
-        if len(part) == 4 and part.isdigit() and part.startswith('20'):
-            year = part
-            break
-            
-    base_name = f"{target_prefix}-{year}-{seq_number}"
-    
-    # Check for availability
-    candidate_name = base_name
-    suffix = 0
-    
-    while frappe.db.exists("Importation Approval Request", candidate_name):
-        suffix += 1
-        candidate_name = f"{base_name}-{suffix}"
-        
-    new_doc.name = candidate_name
-    
-    # Add modification details
+    # Set modification flag - autoname will handle the naming
     new_doc.is_modification = 1
     new_doc.modification_reason = modification_reason
     new_doc.original_document = source_name
@@ -295,6 +310,8 @@ def create_modification(source_name, modification_reason, requested_modification
             item.approved_qty = 0
             item.status = "Pending"
     
+    # Insert will trigger autoname() which will generate the correct name
+    # Format: EDA-SPIMR-MD-{YEAR}-{COUNTER} or EDA-APIMR-MD-{YEAR}-{COUNTER}
     new_doc.insert()
     
     # Close original document
@@ -312,42 +329,7 @@ def create_extension(source_name, extension_reason, extension_details, new_valid
     # Create new request
     new_doc = frappe.copy_doc(source_doc)
     
-    # Determine new naming series and base prefix
-    new_series = ""
-    target_prefix = ""
-    
-    if 'SPIMR' in source_doc.naming_series or 'SPIMR' in source_name:
-        new_series = 'EDA-SPIMR-EX-.YYYY.-.######'
-        target_prefix = 'EDA-SPIMR-EX'
-    elif 'APIMR' in source_doc.naming_series or 'APIMR' in source_name:
-        new_series = 'EDA-APIMR-EX-.YYYY.-.######'
-        target_prefix = 'EDA-APIMR-EX'
-
-    new_doc.naming_series = new_series
-    
-    # Custom Naming Logic
-    parts = source_name.split('-')
-    seq_number = parts[-1]
-    if not seq_number.isdigit() and len(parts) > 1 and parts[-2].isdigit():
-        seq_number = parts[-2] # Handle suffix case
-        
-    year = frappe.utils.today().split('-')[0]
-    for part in parts:
-        if len(part) == 4 and part.isdigit() and part.startswith('20'):
-            year = part
-            break
-            
-    base_name = f"{target_prefix}-{year}-{seq_number}"
-    
-    candidate_name = base_name
-    suffix = 0
-    while frappe.db.exists("Importation Approval Request", candidate_name):
-        suffix += 1
-        candidate_name = f"{base_name}-{suffix}"
-    
-    new_doc.name = candidate_name
-    
-    # Add extension details
+    # Set extension flag - autoname will handle the naming
     new_doc.is_extension = 1
     new_doc.extension_reason = extension_reason
     new_doc.original_document = source_name
@@ -371,6 +353,8 @@ def create_extension(source_name, extension_reason, extension_details, new_valid
             item.approved_qty = 0
             item.status = "Pending"
     
+    # Insert will trigger autoname() which will generate the correct name
+    # Format: EDA-SPIMR-EX-{YEAR}-{COUNTER} or EDA-APIMR-EX-{YEAR}-{COUNTER}
     new_doc.insert()
     
     # Close original document

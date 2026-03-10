@@ -1,14 +1,13 @@
 {
  "actions": [],
  "allow_rename": 1,
- "autoname": "naming_series:",
+ "autoname": "Prompt",
  "creation": "2025-12-23 23:19:06.633855",
  "doctype": "DocType",
  "engine": "InnoDB",
  "field_order": [
   "section_break_n8u4",
   "amended_from",
-  "naming_series",
   "customer_purchase_order_number",
   "sales_type",
   "order_type",
@@ -48,12 +47,6 @@
    "print_hide": 1,
    "read_only": 1,
    "search_index": 1
-  },
-  {
-   "fieldname": "naming_series",
-   "fieldtype": "Select",
-   "label": "Order serial",
-   "options": "\nCPO -PRV-DIR-.#####.-.FY.-.{customer_purchase_order_number}.\nCPO -PRV-TEN-.#####.-.FY.-.{customer_purchase_order_number}.\nCPO -UPA-TEN-.#####.-.FY.-.{customer_purchase_order_number}.\nCPO -UPA-DIR-.#####.-.FY.-.{customer_purchase_order_number}.\nCPO-UPA-DIS-.#####.-.FY.-.{customer_purchase_order_number}."
   },
   {
    "fieldname": "customer_purchase_order_number",

@@ -2,6 +2,7 @@
 # For license information, please see license.txt
 
 import frappe
+from frappe import _
 from frappe.utils import getdate
 from erpnext.buying.doctype.purchase_order.purchase_order import PurchaseOrder
 
@@ -9,68 +10,55 @@ from erpnext.buying.doctype.purchase_order.purchase_order import PurchaseOrder
 class CustomPurchaseOrder(PurchaseOrder):
 	"""
 	Custom Purchase Order class to override autoname method
-	Format: PO-YYYY-XXXX-ZZZ
-	- YYYY: Year from transaction_date
-	- XXXX: Sequential count of POs in that year (4 digits)
-	- ZZZ: Count of how many times this item has appeared in any PO (3 digits)
-	
-	Note: Each Purchase Order should contain exactly one item.
+	Format: PO-YYYY-XXXXX
+	- YYYY: Year from transaction_date (or schedule_date if transaction_date is not set)
+	- XXXXX: Sequential count of POs in that year (5 digits, year-specific counter)
 	"""
 	
 	def autoname(self):
 		"""
-		Custom autoname method for Purchase Order
-		Format: PO-YYYY-XXXX-ZZZ
+		Custom autoname method for Purchase Order with year-based naming
+		Format: PO-YYYY-XXXXX
 		"""
-		# Validate that there is at least one item
-		if not self.items or len(self.items) == 0:
-			frappe.throw("Purchase Order must contain at least one item.")
+		# Get the year from transaction_date field (or schedule_date as fallback)
+		date_field = self.transaction_date or self.schedule_date
+		if not date_field:
+			frappe.throw(_("Transaction Date or Schedule Date is required for Purchase Order naming."))
 		
-		# Get the item code from the first item
-		# Since each PO has only one item, we use the first item
-		item_code = self.items[0].item_code
-		if not item_code:
-			frappe.throw("Item code is required in Purchase Order items.")
+		year = getdate(date_field).year
 		
-		# Get the year from transaction_date field (required)
-		if not self.transaction_date:
-			frappe.throw("Transaction Date is required for Purchase Order naming.")
+		# Get the next counter for this year
+		counter = self.get_next_counter(year)
 		
-		transaction_date = getdate(self.transaction_date)
-		year = transaction_date.year
+		# Generate name in format: PO-{YYYY}-{XXXXX}
+		# Example: PO-2020-00001, PO-2024-00001
+		self.name = f"PO-{year}-{counter:05d}"
+	
+	def get_next_counter(self, year):
+		"""Get auto-incremented counter for naming series specific to year"""
+		# Query Purchase Order documents with name like "PO-{year}-%"
+		existing = frappe.get_all(
+			"Purchase Order",
+			filters={
+				"name": ["like", f"PO-{year}-%"]
+			},
+			fields=["name"],
+			order_by="name desc",
+			limit=1
+		)
 		
-		# Format year as YYYY
-		year_str = str(year)
+		if existing:
+			# Extract counter from name (format: PO-YYYY-XXXXX)
+			# Counter is the last component after splitting by "-"
+			parts = existing[0].name.split("-")
+			if len(parts) >= 3:
+				try:
+					# Get the last part which should be the counter
+					last_counter = int(parts[-1])
+					return last_counter + 1
+				except ValueError:
+					# If counter is not a valid integer, start from 1
+					pass
 		
-		# Calculate XXXX: Count of POs created in this year
-		# Query existing POs with names matching PO-YYYY-* pattern
-		# Count all POs (including drafts and submitted) that match the pattern for this year
-		po_count = frappe.db.sql("""
-			SELECT COUNT(*) 
-			FROM `tabPurchase Order`
-			WHERE name LIKE %s
-			AND docstatus < 2
-		""", (f"PO-{year_str}-%",))[0][0] or 0
-		
-		# Increment for this new PO
-		xxxx = po_count + 1
-		xxxx_str = str(xxxx).zfill(4)  # Pad to 4 digits
-		
-		# Calculate ZZZ: Count of how many times this item has appeared in any PO
-		# Query all Purchase Orders (across all years) that have this item
-		# Since autoname is called before save, self.name will be None/empty, so we don't need to exclude it
-		item_count = frappe.db.sql("""
-			SELECT COUNT(DISTINCT poi.parent)
-			FROM `tabPurchase Order Item` poi
-			INNER JOIN `tabPurchase Order` po ON poi.parent = po.name
-			WHERE poi.item_code = %s
-			AND po.docstatus < 2
-		""", (item_code,))[0][0] or 0
-		
-		# Increment for this new PO
-		zzz = item_count + 1
-		zzz_str = str(zzz).zfill(3)  # Pad to 3 digits
-		
-		# Set the name
-		self.name = f"PO-{year_str}-{xxxx_str}-{zzz_str}"
-
+		# Return 1 if no existing documents or extraction failed
+		return 1
