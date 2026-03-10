@@ -132,7 +132,15 @@ class AuthorityGoodRelease(Document):
 	def before_save(self):
 		"""Called before the document is saved"""
 		self.update_status()
+		self.set_released_goods_warehouse()
 		self.calculate_quantities()
+	
+	def set_released_goods_warehouse(self):
+		"""Set released_goods_warehouse from Incoming Check Report if not already set"""
+		if not self.released_goods_warehouse and self.incoming_check_report:
+			# Set default warehouse
+			self.released_goods_warehouse = "Imported Finished Phr Released Warehouse (Oncopharm) - Onco"
+	
 	def update_status(self):
 		"""Update status field based on document state"""
 		if self.docstatus == 0:
@@ -146,12 +154,24 @@ class AuthorityGoodRelease(Document):
 	def calculate_quantities(self):
 		"""Calculate all derived quantity fields based on release type and subtype"""
 		for item in self.items:
+			# Set requested_qty from actual_quantity (read-only, auto-populated)
+			if not item.requested_qty or item.requested_qty == 0:
+				item.requested_qty = item.actual_quantity or 0
+			
+			# Calculate remaining_qty = requested_qty - released_qty
+			requested = item.requested_qty or 0
+			released = item.released_qty or 0
+			item.remaining_qty = max(0, requested - released)
+			
 			# LRB - Lot Release Batch with Shortage Control Quantity
 			if self.release_type == "Lot Release Batch" and self.lrb_subtype == "With Shortage Control Quantity":
-				# Calculate net_released_qty = released_qty - shortage_control_qty
-				released = item.released_qty or 0
+				# Shortage control logic: shortage_control_qty represents what's being held back
+				# Net released = released_qty - shortage_control_qty
 				shortage = item.shortage_control_qty or 0
-				item.net_released_qty = released - shortage
+				item.net_released_qty = max(0, released - shortage)
+			else:
+				# Without shortage control, net released equals released qty
+				item.net_released_qty = released
 
 			# ABI - Analysis Batch Inspection
 			if self.release_type == "Analysis Batch Inspection":
@@ -529,14 +549,16 @@ class AuthorityGoodRelease(Document):
 		total_net_released = 0
 		total_shortage_control = 0
 		total_sample = 0
+		total_remaining = 0
 		
 		for item in self.items:
 			total_requested += getattr(item, 'requested_qty', 0) or 0
 			total_released += getattr(item, 'released_qty', 0) or 0
-			total_actual += getattr(item, 'actual_qty', 0) or 0
+			total_actual += getattr(item, 'actual_quantity', 0) or 0  # Changed from actual_qty to actual_quantity
 			total_shortage_control += getattr(item, 'shortage_control_qty', 0) or 0
 			total_sample += getattr(item, 'withdrew_sample_qty', 0) or 0
 			total_net_released += getattr(item, 'net_released_qty', 0) or 0
+			total_remaining += getattr(item, 'remaining_qty', 0) or 0
 		
 		self.total_requested_qty = total_requested
 		self.total_released_qty = total_released
@@ -544,6 +566,7 @@ class AuthorityGoodRelease(Document):
 		self.total_net_released_qty = total_net_released
 		self.total_shortage_control_qty = total_shortage_control
 		self.total_sample_qty = total_sample
+		self.total_remaining_qty = total_remaining
 
 	def on_submit(self):
 		# Update status to Submitted
@@ -767,16 +790,14 @@ class AuthorityGoodRelease(Document):
 
 
 	def calculate_net_quantities(self):
-		"""Calculate shortage control and net released quantities
-		Formula: Net released = total released - shortage control quantity
+		"""Calculate net released quantities based on shortage control
+		Formula: Net released = released_qty - shortage_control_qty
 		"""
 		for item in self.items:
 			# If shortage control is enabled for this type
 			if self.lrb_subtype == "With Shortage Control Quantity":
-				# Shortage control quantity is the difference between actual and released
-				item.shortage_control_qty = (item.actual_qty or 0) - (item.released_qty or 0)
 				# Net Released = Released Qty - Shortage Control Qty
-				# This is the quantity that goes to the released warehouse
+				# Shortage control qty is entered by user
 				item.net_released_qty = (item.released_qty or 0) - (item.shortage_control_qty or 0)
 			else:
 				item.shortage_control_qty = 0

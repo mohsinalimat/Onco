@@ -75,9 +75,9 @@ frappe.ui.form.on('Authority Good Release', {
                 has_items = true;
             }
 
-            // Validate released quantity doesn't exceed actual quantity
-            if (item.released_qty > item.actual_qty) {
-                frappe.throw(__(`Released quantity for ${item.item_code} cannot exceed actual quantity`));
+            // Validate released quantity doesn't exceed requested quantity
+            if (item.released_qty > item.requested_qty) {
+                frappe.throw(__(`Released quantity for ${item.item_code} cannot exceed requested quantity`));
             }
         });
 
@@ -106,12 +106,13 @@ frappe.ui.form.on('Authority Good Release', {
 
 frappe.ui.form.on('Authority Good Release Item', {
     released_qty: function (frm, cdt, cdn) {
+        calculate_remaining_qty(frm, cdt, cdn);
         calculate_net_released_qty(frm, cdt, cdn);
         calculate_totals(frm);
     },
 
-    actual_qty: function (frm, cdt, cdn) {
-        calculate_net_released_qty(frm, cdt, cdn);
+    requested_qty: function (frm, cdt, cdn) {
+        calculate_remaining_qty(frm, cdt, cdn);
         calculate_totals(frm);
     },
 
@@ -129,6 +130,12 @@ frappe.ui.form.on('Authority Good Release Item', {
     }
 });
 
+function calculate_remaining_qty(frm, cdt, cdn) {
+    let row = locals[cdt][cdn];
+    let remaining = (row.requested_qty || 0) - (row.released_qty || 0);
+    frappe.model.set_value(cdt, cdn, 'remaining_qty', Math.max(0, remaining));
+}
+
 function toggle_fields_based_on_release_type(frm) {
     if (frm.doc.release_type === 'Lot Release Batch') {
         frm.set_df_property('lrb_subtype', 'hidden', 0);
@@ -145,7 +152,7 @@ function toggle_fields_based_on_release_type(frm) {
 function calculate_net_released_qty(frm, cdt, cdn) {
     let row = locals[cdt][cdn];
     let net_released = (row.released_qty || 0) - (row.shortage_control_qty || 0);
-    frappe.model.set_value(cdt, cdn, 'net_released_qty', net_released);
+    frappe.model.set_value(cdt, cdn, 'net_released_qty', Math.max(0, net_released));
 }
 
 function calculate_totals(frm) {
@@ -155,14 +162,16 @@ function calculate_totals(frm) {
     let total_net_released = 0;
     let total_shortage_control = 0;
     let total_sample = 0;
+    let total_remaining = 0;
 
     frm.doc.items.forEach(function (item) {
         total_requested += item.requested_qty || 0;
         total_released += item.released_qty || 0;
-        total_actual += item.actual_qty || 0;
+        total_actual += item.actual_quantity || 0;  // Changed from actual_qty to actual_quantity
         total_net_released += item.net_released_qty || 0;
         total_shortage_control += item.shortage_control_qty || 0;
         total_sample += item.withdrew_sample_qty || 0;
+        total_remaining += item.remaining_qty || 0;
     });
 
     frm.set_value('total_requested_qty', total_requested);
@@ -171,6 +180,7 @@ function calculate_totals(frm) {
     frm.set_value('total_net_released_qty', total_net_released);
     frm.set_value('total_shortage_control_qty', total_shortage_control);
     frm.set_value('total_sample_qty', total_sample);
+    frm.set_value('total_remaining_qty', total_remaining);
 }
 
 function fetch_items_from_purchase_receipt_report(frm) {
@@ -199,9 +209,9 @@ function fetch_items_from_purchase_receipt_report(frm) {
                     child.use_serial_batch_fields = item.use_serial_batch_fields;
                     child.manufacturing_date = item.manufacturing_date;
                     child.expiry_date = item.expiry_date;
-                    child.requested_qty = item.requested_qty;
-                    child.actual_qty = item.actual_qty;
-                    child.released_qty = item.actual_qty; // Default to actual qty
+                    child.actual_quantity = item.actual_quantity;
+                    child.requested_qty = item.actual_quantity; // Auto-populate from actual_quantity
+                    child.released_qty = 0; // User will edit this before submission
                 });
 
                 frm.refresh_field('items');

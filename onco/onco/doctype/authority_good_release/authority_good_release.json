@@ -23,6 +23,7 @@
   "total_requested_qty",
   "total_released_qty",
   "total_actual_qty",
+  "total_remaining_qty",
   "column_break_quantities",
   "total_net_released_qty",
   "total_shortage_control_qty",
@@ -45,8 +46,6 @@
   "released_goods_warehouse",
   "column_break_warehouses",
   "sample_warehouse",
-  "sales_warehouse",
-  "onco_warehouse",
   "section_break_samples",
   "no_of_samples",
   "status",
@@ -162,6 +161,12 @@
    "read_only": 1
   },
   {
+   "fieldname": "total_remaining_qty",
+   "fieldtype": "Float",
+   "label": "Total Remaining Qty",
+   "read_only": 1
+  },
+  {
    "fieldname": "column_break_quantities",
    "fieldtype": "Column Break"
   },
@@ -273,7 +278,7 @@
    "reqd": 1
   },
   {
-   "default": "Stores - O",
+   "default": "Imported Finished Phr Released Warehouse (Oncopharm) - Onco",
    "fieldname": "released_goods_warehouse",
    "fieldtype": "Link",
    "in_list_view": 1,
@@ -290,18 +295,6 @@
    "fieldname": "sample_warehouse",
    "fieldtype": "Link",
    "label": "Sample Warehouse",
-   "options": "Warehouse"
-  },
-  {
-   "fieldname": "sales_warehouse",
-   "fieldtype": "Link",
-   "label": "Sales Warehouse",
-   "options": "Warehouse"
-  },
-  {
-   "fieldname": "onco_warehouse",
-   "fieldtype": "Link",
-   "label": "Onco Warehouse",
    "options": "Warehouse"
   },
   {
