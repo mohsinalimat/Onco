@@ -70,19 +70,40 @@ frappe.ui.form.on('Authority Good Release', {
     before_submit: function (frm) {
         // Validate quantities
         let has_items = false;
+        let validation_errors = [];
+        
         frm.doc.items.forEach(function (item) {
-            if (item.released_qty > 0) {
-                has_items = true;
+            let released = item.released_qty || 0;
+            let shortage = item.shortage_control_qty || 0;
+            
+            // For LRB with Shortage Control, at least one must be filled
+            if (frm.doc.release_type === 'Lot Release Batch' && frm.doc.lrb_subtype === 'With Shortage Control Quantity') {
+                if (released === 0 && shortage === 0) {
+                    validation_errors.push(`Row #${item.idx}: Either Released Qty or Shortage Control Qty must be entered for ${item.item_code}`);
+                } else {
+                    has_items = true;
+                }
+            } else {
+                // For other types, released_qty is mandatory
+                if (released === 0) {
+                    validation_errors.push(`Row #${item.idx}: Released Qty is required for ${item.item_code}`);
+                } else {
+                    has_items = true;
+                }
             }
 
             // Validate released quantity doesn't exceed requested quantity
-            if (item.released_qty > item.requested_qty) {
-                frappe.throw(__(`Released quantity for ${item.item_code} cannot exceed requested quantity`));
+            if (released > item.requested_qty) {
+                validation_errors.push(`Row #${item.idx}: Released quantity for ${item.item_code} cannot exceed requested quantity`);
             }
         });
 
+        if (validation_errors.length > 0) {
+            frappe.throw(validation_errors.join('<br>'));
+        }
+
         if (!has_items) {
-            frappe.throw(__('Please add at least one item with released quantity'));
+            frappe.throw(__('Please add at least one item with released quantity or shortage control quantity'));
         }
 
         // Validate sample quantities for analysis batch

@@ -287,6 +287,7 @@ class AuthorityGoodRelease(Document):
 	def validate(self):
 		"""Main validation method that orchestrates all validation checks"""
 		self.validate_release_type_and_subtype()
+		self.validate_required_quantity_fields()
 		self.validate_quantities()
 		self.validate_dates()
 		self.validate_attachments()
@@ -294,6 +295,28 @@ class AuthorityGoodRelease(Document):
 		self.validate_cumulative_quantities()
 		self.calculate_net_quantities()
 		self.calculate_totals()
+	
+	def validate_required_quantity_fields(self):
+		"""Validate that either released_qty or shortage_control_qty is filled for each item"""
+		for item in self.items:
+			released = item.released_qty or 0
+			shortage = item.shortage_control_qty or 0
+			
+			# For LRB with Shortage Control, at least one must be filled
+			if self.release_type == "Lot Release Batch" and self.lrb_subtype == "With Shortage Control Quantity":
+				if released == 0 and shortage == 0:
+					frappe.throw(
+						_("Row #{0}: Either Released Qty or Shortage Control Qty must be entered for item {1}").format(
+							item.idx, item.item_code
+						)
+					)
+			# For other types, released_qty is mandatory
+			elif released == 0:
+				frappe.throw(
+					_("Row #{0}: Released Qty is required for item {1}").format(
+						item.idx, item.item_code
+					)
+				)
 	
 	def validate_release_type_and_subtype(self):
 			"""Validate release type and subtype requirements"""
