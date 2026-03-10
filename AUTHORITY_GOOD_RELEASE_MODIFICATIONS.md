@@ -134,12 +134,29 @@ When Authority Good Release is submitted:
 
 - [ ] Create Authority Good Release from Incoming Check Report
 - [ ] Verify `released_goods_warehouse` is auto-populated
-- [ ] Verify `requested_qty` is read-only and equals `actual_quantity`
+- [ ] Verify `requested_qty` is auto-populated from `actual_quantity` (should show 65 in your case)
+- [ ] Verify `requested_qty` is read-only
 - [ ] Edit `released_qty` and verify `remaining_qty` calculates correctly
 - [ ] Test shortage control: verify `net_released_qty = released_qty - shortage_control_qty`
 - [ ] Verify quantity summary totals match child table sums
 - [ ] Submit and verify stock entries are created correctly
 - [ ] Verify `sales_warehouse` and `onco_warehouse` fields are removed
+
+## Bug Fix: Requested Qty Showing Zero
+
+**Issue**: When creating Authority Good Release from Incoming Check Report, `requested_qty` was showing 0 instead of the actual quantity.
+
+**Root Cause**: The `make_authority_good_release` function in `incoming_check_report.py` was mapping `accepted_quantity` to `actual_quantity` but not setting `requested_qty`.
+
+**Fix Applied**:
+1. Added `postprocess` function `update_item()` to the field mapper
+2. Function sets `requested_qty = actual_quantity` when items are created
+3. Also initializes `released_qty = 0` and `remaining_qty = requested_qty`
+4. Added client-side trigger for `actual_quantity` field to auto-populate `requested_qty`
+
+**Files Modified**:
+- `Onco/onco/onco/doctype/incoming_check_report/incoming_check_report.py` - Added postprocess function
+- `Onco/onco/onco/doctype/authority_good_release/authority_good_release.js` - Added actual_quantity trigger
 
 ## Migration Notes
 

@@ -705,6 +705,14 @@ def make_authority_good_release(source_name, target_doc=None):
         # Set sample warehouse to default
         target.sample_warehouse = "Imported Finished Phr Sample warehouse - Onco"
     
+    def update_item(source, target, source_parent):
+        # Set requested_qty from actual_quantity
+        target.requested_qty = target.actual_quantity or 0
+        # Initialize released_qty to 0 (user will edit before submission)
+        target.released_qty = 0
+        # Initialize shortage_control_qty to 0
+        target.shortage_control_qty = 0
+    
     doclist = get_mapped_doc("Incoming Check Report", source_name, {
         "Incoming Check Report": {
             "doctype": "Authority Good Release",
@@ -730,7 +738,8 @@ def make_authority_good_release(source_name, target_doc=None):
                 "over_quantity": "over_quantity",
                 "damage_quantity": "damage_quantity",
                 "accepted_quantity": "actual_quantity"
-            }
+            },
+            "postprocess": update_item
         }
     }, target_doc, set_missing_values)
     

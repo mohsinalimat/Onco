@@ -23,7 +23,6 @@
   "total_requested_qty",
   "total_released_qty",
   "total_actual_qty",
-  "total_remaining_qty",
   "column_break_quantities",
   "total_net_released_qty",
   "total_shortage_control_qty",
@@ -158,12 +157,6 @@
    "fieldname": "total_actual_qty",
    "fieldtype": "Float",
    "label": "Total Actual Qty",
-   "read_only": 1
-  },
-  {
-   "fieldname": "total_remaining_qty",
-   "fieldtype": "Float",
-   "label": "Total Remaining Qty",
    "read_only": 1
   },
   {

@@ -158,20 +158,35 @@ class AuthorityGoodRelease(Document):
 			if not item.requested_qty or item.requested_qty == 0:
 				item.requested_qty = item.actual_quantity or 0
 			
-			# Calculate remaining_qty = requested_qty - released_qty
-			requested = item.requested_qty or 0
-			released = item.released_qty or 0
-			item.remaining_qty = max(0, requested - released)
-			
-			# LRB - Lot Release Batch with Shortage Control Quantity
+			# Toggle relationship between released_qty and shortage_control_qty
+			# For LRB with Shortage Control: one fills, the other auto-calculates
 			if self.release_type == "Lot Release Batch" and self.lrb_subtype == "With Shortage Control Quantity":
-				# Shortage control logic: shortage_control_qty represents what's being held back
-				# Net released = released_qty - shortage_control_qty
+				requested = item.requested_qty or 0
+				released = item.released_qty or 0
 				shortage = item.shortage_control_qty or 0
-				item.net_released_qty = max(0, released - shortage)
+				
+				# If user entered released_qty, calculate shortage_control_qty
+				if released > 0 and shortage == 0:
+					item.shortage_control_qty = max(0, requested - released)
+				# If user entered shortage_control_qty, calculate released_qty
+				elif shortage > 0 and released == 0:
+					item.released_qty = max(0, requested - shortage)
+				# If both are entered, validate they sum to requested_qty
+				elif released > 0 and shortage > 0:
+					if (released + shortage) != requested:
+						frappe.throw(
+							_("For item {0}: Released Qty ({1}) + Shortage Control Qty ({2}) must equal Requested Qty ({3})").format(
+								item.item_code, released, shortage, requested
+							)
+						)
+				
+				# Calculate net released = released - 0 (shortage stays in source warehouse)
+				# Net released is what actually moves to released warehouse
+				item.net_released_qty = item.released_qty or 0
 			else:
 				# Without shortage control, net released equals released qty
-				item.net_released_qty = released
+				item.net_released_qty = item.released_qty or 0
+				item.shortage_control_qty = 0
 
 			# ABI - Analysis Batch Inspection
 			if self.release_type == "Analysis Batch Inspection":
@@ -549,7 +564,6 @@ class AuthorityGoodRelease(Document):
 		total_net_released = 0
 		total_shortage_control = 0
 		total_sample = 0
-		total_remaining = 0
 		
 		for item in self.items:
 			total_requested += getattr(item, 'requested_qty', 0) or 0
@@ -558,7 +572,6 @@ class AuthorityGoodRelease(Document):
 			total_shortage_control += getattr(item, 'shortage_control_qty', 0) or 0
 			total_sample += getattr(item, 'withdrew_sample_qty', 0) or 0
 			total_net_released += getattr(item, 'net_released_qty', 0) or 0
-			total_remaining += getattr(item, 'remaining_qty', 0) or 0
 		
 		self.total_requested_qty = total_requested
 		self.total_released_qty = total_released
@@ -566,7 +579,6 @@ class AuthorityGoodRelease(Document):
 		self.total_net_released_qty = total_net_released
 		self.total_shortage_control_qty = total_shortage_control
 		self.total_sample_qty = total_sample
-		self.total_remaining_qty = total_remaining
 
 	def on_submit(self):
 		# Update status to Submitted

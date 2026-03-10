@@ -21,7 +21,6 @@
         "column_break_quantities",
         "requested_qty",
         "released_qty",
-        "remaining_qty",
         "section_break_conditional_quantities",
         "withdrew_sample_qty",
         "partial_released_qty",
@@ -132,15 +131,7 @@
             "fieldname": "released_qty",
             "fieldtype": "Float",
             "in_list_view": 1,
-            "label": "Released Qty",
-            "reqd": 1
-        },
-        {
-            "fieldname": "remaining_qty",
-            "fieldtype": "Float",
-            "in_list_view": 1,
-            "label": "Remaining Qty",
-            "read_only": 1
+            "label": "Released Qty"
         },
         {
             "fieldname": "section_break_conditional_quantities",
