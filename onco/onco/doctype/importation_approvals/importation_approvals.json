@@ -134,13 +134,13 @@
    "fieldname": "valid_date",
    "fieldtype": "Date",
    "label": "Valid Date",
-   "reqd": 1
+   "reqd": 0
   },
   {
    "fieldname": "special_conditions",
    "fieldtype": "Text",
    "label": "Special Condition",
-   "reqd": 1
+   "reqd": 0
   },
   {
    "fieldname": "column_break_approval_details",
@@ -150,7 +150,7 @@
    "fieldname": "hard_copy_attachment",
    "fieldtype": "Attach",
    "label": "Attach Hard Copy",
-   "reqd": 1
+   "reqd": 0
   },
   {
    "fieldname": "section_break_email",

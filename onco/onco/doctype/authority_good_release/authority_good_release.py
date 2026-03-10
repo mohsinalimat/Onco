@@ -344,7 +344,7 @@ class AuthorityGoodRelease(Document):
 				'shortage_control_qty': item.shortage_control_qty or 0,
 				'withdrew_sample_qty': item.withdrew_sample_qty or 0,
 				'partial_released_qty': item.partial_released_qty or 0,
-				'actual_qty': item.actual_qty or 0,
+				'actual_quantity': item.actual_quantity or 0,
 				'invoice_quantity': item.invoice_quantity or 0
 			}
 			
@@ -356,20 +356,20 @@ class AuthorityGoodRelease(Document):
 						)
 					)
 			
-			# Verify released_qty <= actual_qty
-			if item.released_qty and item.actual_qty:
-				if item.released_qty > item.actual_qty:
+			# Verify released_qty <= actual_quantity
+			if item.released_qty and item.actual_quantity:
+				if item.released_qty > item.actual_quantity:
 					frappe.throw(
 						_("Released quantity ({0}) cannot exceed actual quantity ({1}) for item {2}").format(
-							item.released_qty, item.actual_qty, item.item_code
+							item.released_qty, item.actual_quantity, item.item_code
 						)
 					)
 			
-			# If lrb_subtype == "With Shortage Control Quantity": verify released_qty + shortage_control_qty <= actual_qty
+			# If lrb_subtype == "With Shortage Control Quantity": verify released_qty + shortage_control_qty <= actual_quantity
 			if self.lrb_subtype == "With Shortage Control Quantity":
 				released = item.released_qty or 0
 				shortage = item.shortage_control_qty or 0
-				actual = item.actual_qty or 0
+				actual = item.actual_quantity or 0
 				
 				if (released + shortage) > actual:
 					frappe.throw(
@@ -549,11 +549,11 @@ class AuthorityGoodRelease(Document):
 			# For "With Shortage Control Quantity", validate against shortage control limit
 			if self.lrb_subtype == "With Shortage Control Quantity":
 				# Calculate the shortage control limit for this batch
-				# Shortage control limit = actual_qty - released_qty (from previous AGRs)
+				# Shortage control limit = actual_quantity - released_qty (from previous AGRs)
 				previous_released = cumulative_released - (item.released_qty or 0)
 				previous_sample = cumulative_sample - (item.withdrew_sample_qty or 0)
 				
-				# Remaining available = actual_qty - (previous_released + previous_sample)
+				# Remaining available = actual_quantity - (previous_released + previous_sample)
 				remaining_available = icr_item.accepted_quantity - (previous_released + previous_sample)
 				
 				# Current release (released + sample) should not exceed remaining available
@@ -569,9 +569,9 @@ class AuthorityGoodRelease(Document):
 					)
 				
 				# Additionally, for shortage control, the released_qty in this batch should not exceed
-				# the shortage control quantity limit (which is actual_qty - released_qty)
+				# the shortage control quantity limit (which is actual_quantity - released_qty)
 				# This ensures progressive release in batches
-				shortage_control_limit = item.actual_qty - item.released_qty
+				shortage_control_limit = item.actual_quantity - item.released_qty
 				if item.released_qty > shortage_control_limit:
 					frappe.throw(
 						_("Released quantity ({0}) exceeds shortage control limit ({1}) for item {2} (batch: {3})").format(
@@ -702,12 +702,12 @@ class AuthorityGoodRelease(Document):
 					total_released_qty += (released - sample)
 
 			# Calculate remaining_unreleased_qty
-			# This is the total actual_qty from ICR minus total_released_qty
-			total_actual_qty = 0
+			# This is the total actual_quantity from ICR minus total_released_qty
+			total_actual_quantity = 0
 			for icr_item in icr_doc.items:
-				total_actual_qty += icr_item.accepted_quantity or 0
+				total_actual_quantity += icr_item.accepted_quantity or 0
 
-			remaining_unreleased_qty = total_actual_qty - total_released_qty
+			remaining_unreleased_qty = total_actual_quantity - total_released_qty
 
 			# Ensure remaining_unreleased_qty is not negative
 			remaining_unreleased_qty = max(0, remaining_unreleased_qty)
@@ -934,7 +934,7 @@ class AuthorityGoodRelease(Document):
 		Update Incoming Check Report with AGR reference and calculated quantities
 		- Add current AGR to authority_good_releases child table if not already present
 		- Calculate and update total_released_qty (sum of released_qty across all linked AGRs)
-		- Calculate and update remaining_unreleased_qty (actual_qty - total_released_qty)
+		- Calculate and update remaining_unreleased_qty (actual_quantity - total_released_qty)
 		"""
 		# Skip if incoming_check_report is empty
 		if not self.incoming_check_report:
@@ -971,12 +971,12 @@ class AuthorityGoodRelease(Document):
 					total_released_qty += (released - sample)
 			
 			# Calculate remaining_unreleased_qty
-			# This is the total actual_qty from ICR minus total_released_qty
-			total_actual_qty = 0
+			# This is the total actual_quantity from ICR minus total_released_qty
+			total_actual_quantity = 0
 			for icr_item in icr_doc.items:
-				total_actual_qty += icr_item.accepted_quantity or 0
+				total_actual_quantity += icr_item.accepted_quantity or 0
 			
-			remaining_unreleased_qty = total_actual_qty - total_released_qty
+			remaining_unreleased_qty = total_actual_quantity - total_released_qty
 			
 			# Ensure remaining_unreleased_qty is not negative
 			remaining_unreleased_qty = max(0, remaining_unreleased_qty)
