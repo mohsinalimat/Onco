@@ -137,7 +137,8 @@ doctype_js = {
 # Override standard doctype classes
 
 override_doctype_class = {
-	"Purchase Order": "onco.onco.purchase_order.CustomPurchaseOrder"
+	"Purchase Order": "onco.onco.purchase_order.CustomPurchaseOrder",
+	"Purchase Invoice": "onco.onco.purchase_invoice_naming.CustomPurchaseInvoice"
 }
 
 # Document Events

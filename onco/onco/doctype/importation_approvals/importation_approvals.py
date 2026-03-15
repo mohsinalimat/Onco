@@ -34,15 +34,20 @@ class ImportationApprovals(Document):
         else:
             prefix = base_prefix
         
-        # Get the next counter for this prefix and year combination
-        counter = self.get_next_counter(prefix, year)
-        
-        # Generate name in format: {PREFIX}-{YYYY}-{XXXXX}
+        # Format: {PREFIX}-{YYYY}-{IMP_NO}
         # Examples: 
-        # - EDA-SPIMA-2020-00001 (normal)
-        # - EDA-SPIMA-MD-2020-00001 (modification)
-        # - EDA-APIMA-EX-2024-00001 (extension)
-        self.name = f"{prefix}-{year}-{counter:05d}"
+        # - EDA-SPIMA-2026-IMP123 (normal with authority approval number)
+        # - EDA-SPIMA-MD-2026-IMP123 (modification)
+        # - EDA-APIMA-EX-2026-IMP456 (extension)
+        # - EDA-SPIMA-2026-00001 (fallback if no authority number)
+        
+        if self.authority_approval_number:
+            # Use authority approval number as IMP_NO
+            self.name = f"{prefix}-{year}-{self.authority_approval_number}"
+        else:
+            # Fallback to auto-counter if no authority approval number provided
+            counter = self.get_next_counter(prefix, year)
+            self.name = f"{prefix}-{year}-{counter:05d}"
     
     def get_next_counter(self, prefix, year):
         """Get auto-incremented counter for naming series specific to year"""
@@ -342,12 +347,18 @@ def create_modification(source_name, modification_reason, requested_modification
     # Set modification flag - autoname will handle the naming
     new_doc.is_modification = 1
     new_doc.modification_reason = modification_reason
-    new_doc.original_document = source_name
     new_doc.special_conditions = new_conditions or new_doc.special_conditions
+    
+    # Store original document name as string reference instead of link
+    # This prevents CancelledLinkError when original is cancelled
+    new_doc.original_document = source_name
+    
+    # Clear the link field to prevent validation error
+    new_doc.flags.ignore_links = True
     
     # Insert will trigger autoname() which will generate the correct name
     # Format: EDA-SPIMA-MD-{YEAR}-{COUNTER} or EDA-APIMA-MD-{YEAR}-{COUNTER}
-    new_doc.insert()
+    new_doc.insert(ignore_links=True)
     
     # Close original document to prevent further Purchase Orders
     source_doc.db_set('docstatus', 2)  # Cancel the original
@@ -367,7 +378,13 @@ def create_extension(source_name, extension_reason, extension_details, new_valid
     new_doc.is_extension = 1
     new_doc.extension_reason = extension_reason
     new_doc.valid_date = new_validation_date
+    
+    # Store original document name as string reference instead of link
+    # This prevents CancelledLinkError when original is cancelled
     new_doc.original_document = source_name
+    
+    # Clear the link field to prevent validation error
+    new_doc.flags.ignore_links = True
     
     # Update quantities if provided
     if new_quantity:
@@ -376,7 +393,13 @@ def create_extension(source_name, extension_reason, extension_details, new_valid
     
     # Insert will trigger autoname() which will generate the correct name
     # Format: EDA-SPIMA-EX-{YEAR}-{COUNTER} or EDA-APIMA-EX-{YEAR}-{COUNTER}
-    new_doc.insert()
+    new_doc.insert(ignore_links=True)
+    
+    # Close original document to prevent further Purchase Orders
+    source_doc.db_set('docstatus', 2)  # Cancel the original
+    frappe.db.commit()
+    
+    return new_doc.name
     
     # Close original document to prevent further Purchase Orders
     source_doc.db_set('docstatus', 2)  # Cancel the original

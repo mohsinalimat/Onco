@@ -11,6 +11,7 @@
   "column_break_basic",
   "importation_approval_request",
   "reference_no",
+  "authority_approval_number",
   "section_break_modification",
   "is_modification",
   "is_extension",
@@ -69,6 +70,13 @@
    "read_only": 1
   },
   {
+   "fieldname": "authority_approval_number",
+   "fieldtype": "Data",
+   "label": "Authority Approval Number (IMP_NO)",
+   "description": "Enter the approval number issued by the authority (EDA). This will be appended to the document ID.",
+   "in_list_view": 1
+  },
+  {
    "collapsible": 1,
    "fieldname": "section_break_modification",
    "fieldtype": "Section Break",
@@ -90,9 +98,8 @@
   },
   {
    "fieldname": "original_document",
-   "fieldtype": "Link",
+   "fieldtype": "Data",
    "label": "Original Document",
-   "options": "Importation Approvals",
    "read_only": 1
   },
   {

@@ -10,15 +10,15 @@ from erpnext.buying.doctype.purchase_order.purchase_order import PurchaseOrder
 class CustomPurchaseOrder(PurchaseOrder):
 	"""
 	Custom Purchase Order class to override autoname method
-	Format: PO-YYYY-XXXXX
-	- YYYY: Year from transaction_date (or schedule_date if transaction_date is not set)
-	- XXXXX: Sequential count of POs in that year (5 digits, year-specific counter)
+	Format: 
+	- Local: PO-LOC-YYYY-#####
+	- Imported: PO-IMP-YYYY-#####
 	"""
 	
 	def autoname(self):
 		"""
-		Custom autoname method for Purchase Order with year-based naming
-		Format: PO-YYYY-XXXXX
+		Custom autoname method for Purchase Order with local/imported distinction
+		Format: PO-LOC-YYYY-##### or PO-IMP-YYYY-#####
 		"""
 		# Get the year from transaction_date field (or schedule_date as fallback)
 		date_field = self.transaction_date or self.schedule_date
@@ -27,20 +27,37 @@ class CustomPurchaseOrder(PurchaseOrder):
 		
 		year = getdate(date_field).year
 		
-		# Get the next counter for this year
-		counter = self.get_next_counter(year)
+		# Determine if this is local or imported purchase
+		# Check custom_purchase_order_type or custom_importation_approval
+		is_imported = False
 		
-		# Generate name in format: PO-{YYYY}-{XXXXX}
-		# Example: PO-2020-00001, PO-2024-00001
-		self.name = f"PO-{year}-{counter:05d}"
+		if self.custom_purchase_order_type == "Imported Purchase":
+			is_imported = True
+		elif self.custom_importation_approval:
+			is_imported = True
+		elif self.custom_purchase_order_type == "Local Purchase":
+			is_imported = False
+		else:
+			# Default to local if not specified
+			is_imported = False
+		
+		# Set prefix based on type
+		prefix = "PO-IMP" if is_imported else "PO-LOC"
+		
+		# Get the next counter for this prefix and year
+		counter = self.get_next_counter(prefix, year)
+		
+		# Generate name in format: PO-LOC-YYYY-##### or PO-IMP-YYYY-#####
+		# Examples: PO-LOC-2026-00001, PO-IMP-2026-00001
+		self.name = f"{prefix}-{year}-{counter:05d}"
 	
-	def get_next_counter(self, year):
-		"""Get auto-incremented counter for naming series specific to year"""
-		# Query Purchase Order documents with name like "PO-{year}-%"
+	def get_next_counter(self, prefix, year):
+		"""Get auto-incremented counter for naming series specific to prefix and year"""
+		# Query Purchase Order documents with name like "{prefix}-{year}-%"
 		existing = frappe.get_all(
 			"Purchase Order",
 			filters={
-				"name": ["like", f"PO-{year}-%"]
+				"name": ["like", f"{prefix}-{year}-%"]
 			},
 			fields=["name"],
 			order_by="name desc",
@@ -48,10 +65,10 @@ class CustomPurchaseOrder(PurchaseOrder):
 		)
 		
 		if existing:
-			# Extract counter from name (format: PO-YYYY-XXXXX)
+			# Extract counter from name (format: PO-LOC-YYYY-##### or PO-IMP-YYYY-#####)
 			# Counter is the last component after splitting by "-"
 			parts = existing[0].name.split("-")
-			if len(parts) >= 3:
+			if len(parts) >= 4:
 				try:
 					# Get the last part which should be the counter
 					last_counter = int(parts[-1])
