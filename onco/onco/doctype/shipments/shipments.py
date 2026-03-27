@@ -59,9 +59,80 @@ class Shipments(Document):
                 )
     
     def before_submit(self):
-        """Validate before submission"""
-        # Validation removed - invoice data is present
-        pass
+        """Validate before submission - ensure all required fields are filled"""
+        # Validate mode of shipping and related fields
+        if not self.mode_of_shipping:
+            frappe.throw(_("Mode of Shipping is required"))
+        
+        # Validate AWB/SWB based on mode
+        if self.mode_of_shipping == "Air freight":
+            if not self.awb_no:
+                frappe.throw(_("AWB No is required for Air freight"))
+            if not self.awb_date:
+                frappe.throw(_("AWB Date is required for Air freight"))
+            if not self.awb_attach:
+                frappe.throw(_("AWB File attachment is required for Air freight"))
+        elif self.mode_of_shipping == "Sea freight":
+            if not self.swb_no:
+                frappe.throw(_("SWB No is required for Sea freight"))
+            if not self.swb_date:
+                frappe.throw(_("SWB Date is required for Sea freight"))
+            if not self.swb_attach:
+                frappe.throw(_("SWB File attachment is required for Sea freight"))
+        
+        # Validate required document attachments
+        if not self.invoice:
+            frappe.throw(_("Invoice attachment is required"))
+        if not self.packing_list:
+            frappe.throw(_("Packing List attachment is required"))
+        if not self.certificate_of_analysis_:
+            frappe.throw(_("Certificate of Analysis attachment is required"))
+        if not self.certificate_of_origin:
+            frappe.throw(_("Certificate of Origin attachment is required"))
+        
+        # Validate Purchase Invoices child table
+        if not self.custom_invoices or len(self.custom_invoices) == 0:
+            frappe.throw(_("At least one Purchase Invoice must be linked"))
+        
+        # Validate that all checkboxes in the tracking flow are checked
+        # These represent the milestones that must be completed before submission
+        if not self.arrived:
+            frappe.throw(_("Shipment must be marked as 'Arrived' before submission"))
+        
+        if not self.bank_authenticated:
+            frappe.throw(_("Bank Authentication must be completed before submission"))
+        
+        # Restricted release is optional, so we don't validate it
+        
+        if not self.customs_release_status:
+            frappe.throw(_("Customs Release must be completed before submission"))
+        
+        if not self.received_at_warehouse:
+            frappe.throw(_("Shipment must be received at warehouse before submission"))
+        
+        # Validate dates are filled for completed milestones
+        if self.arrived and not self.arrivail_date:
+            frappe.throw(_("Arrival Date is required when shipment is marked as arrived"))
+        
+        if self.bank_authenticated:
+            if not self.date_of_submission_bank:
+                frappe.throw(_("Date of Submission (Bank) is required"))
+            if not self.bank_authenticating_date:
+                frappe.throw(_("Date of Approval (Bank) is required"))
+        
+        if self.customs_release_status:
+            if not self.date_of_submission_customs:
+                frappe.throw(_("Date of Submission (Customs) is required"))
+            if not self.customs_release_date:
+                frappe.throw(_("Date of Customs Release is required"))
+            if not self.customs_release_no:
+                frappe.throw(_("Customs Release No is required"))
+        
+        if self.received_at_warehouse:
+            if not self.received_date:
+                frappe.throw(_("Date of Received is required"))
+            if not self.received_warehouse:
+                frappe.throw(_("Received Warehouse is required"))
     
     def validate_status_sequence(self):
         """Prevent users from manually changing status field - Enhanced validation"""

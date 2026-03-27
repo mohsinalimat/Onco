@@ -890,23 +890,15 @@ class AuthorityGoodRelease(Document):
 					# Sum total_unreleased_qty from all items in this AGR
 					cumulative_unreleased_qty += agr_item.total_unreleased_qty or 0
 			
-			# Fetch Shipment document
-			shipment_doc = frappe.get_doc("Shipments", self.shipment_no)
-			
-			# Update shipment fields
-			shipment_doc.release_type = self.release_type
-			shipment_doc.release_subtype = self.get_subtype_display()
-			shipment_doc.total_released_qty = cumulative_released_qty
-			shipment_doc.total_unreleased_qty = cumulative_unreleased_qty
-			
-			# Set release_complete = True if total_unreleased_qty == 0, else False
-			shipment_doc.release_complete = 1 if cumulative_unreleased_qty == 0 else 0
-			
-			# Save Shipment document
-			# Use flags to bypass validation and avoid recursion
-			shipment_doc.flags.ignore_validate = True
-			shipment_doc.flags.ignore_mandatory = True
-			shipment_doc.save()
+			# Update Shipment fields using db_set to avoid validation issues
+			# Use db_set instead of doc.save() to bypass read-only field restrictions
+			frappe.db.set_value("Shipments", self.shipment_no, {
+				"release_type": self.release_type,
+				"release_subtype": self.get_subtype_display(),
+				"total_released_qty": cumulative_released_qty,
+				"total_unreleased_qty": cumulative_unreleased_qty,
+				"release_complete": 1 if cumulative_unreleased_qty == 0 else 0
+			}, update_modified=False)
 			
 			frappe.msgprint(
 				_("Shipment {0} updated: Release Type = {1}, Total Released Qty = {2}, Total Unreleased Qty = {3}, Release Complete = {4}").format(
@@ -1088,9 +1080,9 @@ class AuthorityGoodRelease(Document):
 					"s_warehouse": source_warehouse,
 					"t_warehouse": self.sample_warehouse,
 					"batch_no": item.batch_no,
-					"serial_no": getattr(item, "serial_no", None),
-					"serial_and_batch_bundle": getattr(item, "serial_and_batch_bundle", None),
-					"use_serial_batch_fields": getattr(item, "use_serial_batch_fields", 0),
+					# DO NOT copy serial_and_batch_bundle - let ERPNext create new one
+					# "serial_and_batch_bundle": getattr(item, "serial_and_batch_bundle", None),
+					"use_serial_batch_fields": 1,  # Enable serial/batch fields
 					"manufacturing_date": item.manufacturing_date,
 					"expiry_date": item.expiry_date,
 					"uom": frappe.db.get_value("Item", item.item_code, "stock_uom")
@@ -1197,9 +1189,9 @@ class AuthorityGoodRelease(Document):
 					"s_warehouse": source_warehouse,
 					"t_warehouse": self.released_goods_warehouse,
 					"batch_no": item.batch_no,
-					"serial_no": getattr(item, "serial_no", None),
-					"serial_and_batch_bundle": getattr(item, "serial_and_batch_bundle", None),
-					"use_serial_batch_fields": getattr(item, "use_serial_batch_fields", 0),
+					# DO NOT copy serial_and_batch_bundle - let ERPNext create new one
+					# "serial_and_batch_bundle": getattr(item, "serial_and_batch_bundle", None),
+					"use_serial_batch_fields": 1,  # Enable serial/batch fields
 					"manufacturing_date": item.manufacturing_date,
 					"expiry_date": item.expiry_date,
 					"uom": frappe.db.get_value("Item", item.item_code, "stock_uom")

@@ -6,6 +6,7 @@
  "editable_grid": 1,
  "engine": "InnoDB",
  "field_order": [
+  "registration_number",
   "price",
   "from_date",
   "to_date",
@@ -14,6 +15,12 @@
   "status"
  ],
  "fields": [
+  {
+   "fieldname": "registration_number",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Registration Number"
+  },
   {
    "fieldname": "price",
    "fieldtype": "Currency",
