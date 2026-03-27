@@ -515,8 +515,6 @@ class AuthorityGoodRelease(Document):
 				# Find matching items in the AGR document
 				for agr_item in agr_doc.items:
 					if (agr_item.item_code == item.item_code and 
-						getattr(agr_item, "serial_and_batch_bundle", None) == getattr(item, "serial_and_batch_bundle", None) and
-						getattr(agr_item, "serial_no", None) == getattr(item, "serial_no", None) and
 						agr_item.batch_no == item.batch_no):
 						cumulative_released += agr_item.released_qty or 0
 						cumulative_sample += agr_item.withdrew_sample_qty or 0
@@ -525,8 +523,6 @@ class AuthorityGoodRelease(Document):
 			icr_item = None
 			for icr_item_row in icr_doc.items:
 				if (icr_item_row.item_code == item.item_code and 
-					getattr(icr_item_row, "serial_and_batch_bundle", None) == getattr(item, "serial_and_batch_bundle", None) and
-					getattr(icr_item_row, "serial_no", None) == getattr(item, "serial_no", None) and
 					icr_item_row.batch_no == item.batch_no):
 					icr_item = icr_item_row
 					break
