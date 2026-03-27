@@ -19,6 +19,11 @@ All 8 issues (#19-26) have been analyzed and addressed. 6 issues required code c
 - **Change**: Added comprehensive `before_submit()` validation
 - **Impact**: Prevents submission without required fields and milestones
 
+### ✅ Issue #20: Total Net Released Qty Calculation (CRITICAL FIX)
+- **File**: `authority_good_release.py`
+- **Change**: Fixed `calculate_net_quantities()` method - wrong formula was causing negative values
+- **Impact**: Net Released Qty now shows correct positive values
+
 ### ✅ Issue #21: Release Type Change Error  
 - **File**: `authority_good_release.py`
 - **Change**: Used `db_set()` instead of `doc.save()` for Shipment updates
@@ -29,10 +34,10 @@ All 8 issues (#19-26) have been analyzed and addressed. 6 issues required code c
 - **Change**: Added `registration_number` field to child table
 - **Impact**: Users can now enter registration numbers
 
-### ✅ Issue #24: Remove update_stock Default
+### ✅ Issue #24: Remove update_stock Default - UPDATED
 - **File**: `purchase_invoice.json`
-- **Change**: Removed property setter for `update_stock` default value
-- **Impact**: Field no longer defaults to checked
+- **Change**: Removed property setter for default value AND added hidden property setter
+- **Impact**: Field is now completely hidden from Purchase Invoice form
 
 ### ✅ Issue #26: Serial and Batch Bundle Error (CRITICAL)
 - **File**: `authority_good_release.py`
@@ -42,10 +47,6 @@ All 8 issues (#19-26) have been analyzed and addressed. 6 issues required code c
 ---
 
 ## Issues Verified (No Changes Needed)
-
-### ✅ Issue #20: Total Net Released Qty
-- **Status**: Logic is correct
-- **Recommendation**: If users see issues, it's likely a refresh/caching problem
 
 ### ✅ Issue #22: Material Transfer Type
 - **Status**: Implementation is correct
@@ -92,7 +93,9 @@ All 8 issues (#19-26) have been analyzed and addressed. 6 issues required code c
 
 ## Critical Notes
 
-⚠️ **Issue #26 (Serial/Batch Bundle)** was the most critical - it was blocking stock entry creation entirely. This has been fixed.
+🔴 **Issue #20 (Net Released Qty)** - MOST CRITICAL FIX - Was causing negative values and incorrect stock movements. The wrong formula `released - shortage` was being used instead of correct formula `released = net_released`. This has been fixed.
+
+⚠️ **Issue #26 (Serial/Batch Bundle)** was blocking stock entry creation entirely. This has been fixed.
 
 ⚠️ **Issue #19 (Shipments Validation)** is important for data integrity - prevents incomplete shipments from being submitted.
 
@@ -105,12 +108,13 @@ All 8 issues (#19-26) have been analyzed and addressed. 6 issues required code c
 Before marking as complete, test:
 
 - [ ] Shipments cannot be submitted without all required fields
+- [ ] Net Released Qty shows positive values (not negative)
+- [ ] Total Net Released Qty calculates correctly
 - [ ] Authority Good Release updates Shipment without errors
 - [ ] Registration Number field appears in Item Price Registration
 - [ ] Update Stock checkbox is unchecked by default in Purchase Invoice
 - [ ] Stock Entries create successfully from Authority Good Release
 - [ ] No "Serial and Batch Bundle already used" errors
-- [ ] Total Net Released Qty calculates correctly
 - [ ] Material Transfer type is correct in all stock entries
 
 ---

@@ -27,19 +27,28 @@ All 8 issues have been addressed with code modifications. Below is the detailed 
 
 ---
 
-### ✅ Issue #20: Total Net Released Qty Calculation - VERIFIED
+### ✅ Issue #20: Total Net Released Qty Calculation - FIXED (CRITICAL)
 
-**Status**: No changes needed - logic is correct
+**Problem**: Net Released Qty showing negative values (-100) when it should be positive (200)
 
-**Verification**:
-- Child table `net_released_qty` calculation: Line 197-210 in `authority_good_release.py`
-- Parent total calculation: Line 697-710 in `authority_good_release.py`
-- Logic matches: Parent sums all child `net_released_qty` fields
+**Root Cause**: TWO methods calculating `net_released_qty` with conflicting logic:
+1. `calculate_quantities()`: Correct formula `net_released = released_qty`
+2. `calculate_net_quantities()`: Wrong formula `net_released = released_qty - shortage_control_qty`
 
-**Recommendation**: If users see discrepancies, it's likely a refresh/caching issue. Advise them to:
-1. Save the document
-2. Refresh the page
-3. Check if totals update correctly
+The second method was overwriting the correct value with wrong calculation.
+
+**Correct Understanding**:
+- Formula: `Requested Qty = Released Qty + Shortage Control Qty`
+- Example: 500 = 200 + 300
+- Net Released Qty = Released Qty = 200 (what moves to warehouse)
+- Shortage Control Qty = 300 (what stays in source warehouse)
+
+**Solution**: Fixed `calculate_net_quantities()` to use correct formula
+
+**Files Modified**:
+- `Onco/onco/onco/doctype/authority_good_release/authority_good_release.py` - Lines 163-193 and 830-850
+
+**Impact**: Net Released Qty now shows correct positive values, stock entries create with correct quantities
 
 ---
 
@@ -243,6 +252,15 @@ bench restart
 4. Fill all required fields and milestones
 5. Submit successfully
 
+**Test #20 - Net Released Qty Calculation**:
+1. Create Authority Good Release
+2. Select "Lot Release Batch" with "With Shortage Control Quantity"
+3. Add item: Requested=500, Released=200, Shortage Control=300
+4. Save document
+5. Verify Net Released Qty = 200 (NOT -100)
+6. Verify Total Net Released Qty = 200
+7. No negative values should appear
+
 **Test #21 - Release Type Update**:
 1. Create and submit Authority Good Release
 2. Verify Shipment fields are updated
@@ -255,10 +273,12 @@ bench restart
 4. Add a row and enter registration number
 5. Save successfully
 
-**Test #24 - Update Stock Default**:
-1. Create new Purchase Invoice
-2. Verify "Update Stock" checkbox is NOT checked by default
-3. User must manually check it if needed
+**Test #24 - Update Stock Hidden**:
+1. Open any Purchase Invoice (new or existing)
+2. Look for "Update Stock" checkbox in the form
+3. **Verify**: Field is completely hidden (not visible at all)
+4. Check that stock is NOT updated when saving Purchase Invoice
+5. Verify stock updates only happen through Purchase Receipt
 
 **Test #26 - Stock Entry Creation**:
 1. Create Authority Good Release from Incoming Check Report

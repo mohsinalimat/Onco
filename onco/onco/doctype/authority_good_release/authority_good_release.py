@@ -180,8 +180,11 @@ class AuthorityGoodRelease(Document):
 							)
 						)
 				
-				# Calculate net released = released - 0 (shortage stays in source warehouse)
-				# Net released is what actually moves to released warehouse
+				# Net released = released qty (what actually moves to released warehouse)
+				# Shortage control qty stays in source warehouse
+				# Formula: Requested = Released + Shortage Control
+				# Example: 500 = 200 + 300
+				# Net Released = 200 (moves to warehouse)
 				item.net_released_qty = item.released_qty or 0
 			else:
 				# Without shortage control, net released equals released qty
@@ -826,14 +829,23 @@ class AuthorityGoodRelease(Document):
 
 	def calculate_net_quantities(self):
 		"""Calculate net released quantities based on shortage control
-		Formula: Net released = released_qty - shortage_control_qty
+		
+		IMPORTANT: Net Released Qty = Released Qty (the amount going to warehouse)
+		The shortage control quantity stays in the source warehouse.
+		
+		Formula: Requested Qty = Released Qty + Shortage Control Qty
+		Example: 500 = 200 + 300
+		
+		Net Released Qty = Released Qty = 200 (what moves to released warehouse)
+		Shortage Control Qty = 300 (what stays in source warehouse)
 		"""
 		for item in self.items:
 			# If shortage control is enabled for this type
 			if self.lrb_subtype == "With Shortage Control Quantity":
-				# Net Released = Released Qty - Shortage Control Qty
-				# Shortage control qty is entered by user
-				item.net_released_qty = (item.released_qty or 0) - (item.shortage_control_qty or 0)
+				# Net Released = Released Qty (NOT released - shortage!)
+				# The shortage control qty stays in source warehouse
+				# The released qty is what actually moves to released warehouse
+				item.net_released_qty = item.released_qty or 0
 			else:
 				item.shortage_control_qty = 0
 				# Without shortage control, net released equals released qty
