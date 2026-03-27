@@ -51,6 +51,7 @@
   "items_section",
   "items",
   "section_break_stock_transfer",
+  "notify_user",
   "create_stock_entry",
   "stock_entry_created",
   "amended_from"
@@ -324,6 +325,12 @@
    "fieldname": "section_break_stock_transfer",
    "fieldtype": "Section Break",
    "label": "Stock Transfer"
+  },
+  {
+   "fieldname": "notify_user",
+   "fieldtype": "Link",
+   "label": "Notify User",
+   "options": "User"
   },
   {
    "default": "0",

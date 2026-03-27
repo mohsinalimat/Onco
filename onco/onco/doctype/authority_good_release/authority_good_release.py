@@ -599,6 +599,73 @@ class AuthorityGoodRelease(Document):
 			self.create_stock_entries()
 		self.update_shipment_release_status()
 		self.update_incoming_check_report()
+		# Send notification to selected user
+		self.send_notification_to_user()
+	
+	def send_notification_to_user(self):
+		"""
+		Send notification to the selected user when Authority Good Release is submitted
+		"""
+		if not self.notify_user:
+			return
+		
+		try:
+			# Create notification message
+			message = _("New Authority Good Release {0} has been submitted for {1}").format(
+				self.name,
+				self.release_type
+			)
+			
+			# Add details to message
+			details = []
+			if self.incoming_check_report:
+				details.append(_("Incoming Check Report: {0}").format(self.incoming_check_report))
+			if self.shipment_no:
+				details.append(_("Shipment: {0}").format(self.shipment_no))
+			if self.batch_no:
+				details.append(_("Batch: {0}").format(self.batch_no))
+			if self.total_released_qty:
+				details.append(_("Total Released Qty: {0}").format(self.total_released_qty))
+			
+			if details:
+				message += "<br><br>" + "<br>".join(details)
+			
+			# Send notification
+			frappe.share.add(
+				"Authority Good Release",
+				self.name,
+				user=self.notify_user,
+				read=1,
+				write=0,
+				submit=0,
+				share=0,
+				notify=1
+			)
+			
+			# Create notification document
+			notification = frappe.get_doc({
+				"doctype": "Notification Log",
+				"subject": _("New Authority Good Release: {0}").format(self.name),
+				"for_user": self.notify_user,
+				"type": "Alert",
+				"document_type": "Authority Good Release",
+				"document_name": self.name,
+				"email_content": message
+			})
+			notification.insert(ignore_permissions=True)
+			
+			frappe.msgprint(
+				_("Notification sent to {0}").format(self.notify_user),
+				alert=True,
+				indicator='green'
+			)
+			
+		except Exception as e:
+			frappe.log_error(
+				message=f"Failed to send notification for AGR {self.name}: {str(e)}",
+				title="Authority Good Release - Notification Failed"
+			)
+			# Don't throw error, just log it - notification failure shouldn't block submission
 	
 	@frappe.whitelist()
 	def create_stock_entries_manually(self):
