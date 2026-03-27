@@ -1070,8 +1070,12 @@ class AuthorityGoodRelease(Document):
 		Returns:
 			Stock Entry document
 		"""
-		# Get source warehouse from Incoming Check Report
-		source_warehouse = self.get_source_warehouse()
+		# Use source_warehouse field from the document
+		source_warehouse = self.source_warehouse
+		
+		# Validate source_warehouse is set
+		if not source_warehouse:
+			frappe.throw(_("Source Warehouse is required to create sample stock entry"))
 		
 		# Create new Stock Entry document
 		se = frappe.new_doc("Stock Entry")
@@ -1168,8 +1172,12 @@ class AuthorityGoodRelease(Document):
 		Returns:
 			Stock Entry document
 		"""
-		# Get source warehouse from Incoming Check Report
-		source_warehouse = self.get_source_warehouse()
+		# Use source_warehouse field from the document
+		source_warehouse = self.source_warehouse
+		
+		# Validate source_warehouse is set
+		if not source_warehouse:
+			frappe.throw(_("Source Warehouse is required to create released stock entry"))
 		
 		# Validate released_goods_warehouse is set
 		if not self.released_goods_warehouse:
