@@ -566,17 +566,6 @@ class AuthorityGoodRelease(Document):
 							previous_released + previous_sample, icr_item.accepted_quantity
 						)
 					)
-				
-				# Additionally, for shortage control, the released_qty in this batch should not exceed
-				# the shortage control quantity limit (which is actual_quantity - released_qty)
-				# This ensures progressive release in batches
-				shortage_control_limit = item.actual_quantity - item.released_qty
-				if item.released_qty > shortage_control_limit:
-					frappe.throw(
-						_("Released quantity ({0}) exceeds shortage control limit ({1}) for item {2} (batch: {3})").format(
-							item.released_qty, shortage_control_limit, item.item_code, item.batch_no
-						)
-					)
 
 	def calculate_totals(self):
 		"""Calculate total quantities from items"""
