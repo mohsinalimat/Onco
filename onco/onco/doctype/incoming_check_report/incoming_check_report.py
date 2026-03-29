@@ -358,11 +358,6 @@ class IncomingCheckReport(Document):
                 indicator='red'
             )
             return None
-                _("Failed to create Stock Entry: {0}").format(str(e)),
-                alert=True,
-                indicator='red'
-            )
-            return None
 
 
 @frappe.whitelist()
