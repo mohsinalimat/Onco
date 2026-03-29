@@ -1566,3 +1566,74 @@ def create_stock_entry(authority_good_release):
 		return stock_entry.name
 	else:
 		frappe.throw("No items to transfer")
+
+
+@frappe.whitelist()
+def create_subsequent_release(source_agr):
+	"""
+	Create a new Authority Good Release to release shortage control quantities
+	from a previous AGR that had shortage control
+	"""
+	# Get the source AGR document
+	source_doc = frappe.get_doc("Authority Good Release", source_agr)
+	
+	# Validate that source AGR has shortage control quantities
+	if source_doc.total_shortage_control_qty <= 0:
+		frappe.throw(_("No shortage control quantities available to release"))
+	
+	# Create new AGR document
+	new_agr = frappe.new_doc("Authority Good Release")
+	
+	# Copy header fields from source
+	new_agr.incoming_check_report = source_doc.incoming_check_report
+	new_agr.shipment_no = source_doc.shipment_no
+	new_agr.invoice_no = source_doc.invoice_no
+	new_agr.date = frappe.utils.today()
+	new_agr.release_type = source_doc.release_type
+	new_agr.lrb_subtype = source_doc.lrb_subtype
+	new_agr.abi_subtype = source_doc.abi_subtype
+	new_agr.source_warehouse = source_doc.source_warehouse
+	new_agr.released_goods_warehouse = source_doc.released_goods_warehouse
+	new_agr.sample_warehouse = source_doc.sample_warehouse
+	
+	# Add comment linking to source AGR
+	new_agr.add_comment('Comment', f'Created from {source_agr} to release shortage control quantities')
+	
+	# Copy items with shortage control quantities as the new requested quantities
+	for source_item in source_doc.items:
+		if source_item.shortage_control_qty > 0:
+			new_item = new_agr.append("items", {})
+			new_item.item_code = source_item.item_code
+			new_item.item_name = source_item.item_name
+			new_item.batch_no = source_item.batch_no
+			new_item.serial_no = source_item.serial_no
+			new_item.serial_and_batch_bundle = source_item.serial_and_batch_bundle
+			new_item.use_serial_batch_fields = source_item.use_serial_batch_fields
+			new_item.manufacturing_date = source_item.manufacturing_date
+			new_item.expiry_date = source_item.expiry_date
+			new_item.invoice_quantity = source_item.invoice_quantity
+			new_item.over_quantity = source_item.over_quantity
+			new_item.damage_quantity = source_item.damage_quantity
+			
+			# The shortage control qty from previous AGR becomes the actual/requested qty for this AGR
+			new_item.actual_quantity = source_item.shortage_control_qty
+			new_item.requested_qty = source_item.shortage_control_qty
+			
+			# Initialize release quantities to 0 (user will fill these)
+			new_item.released_qty = 0
+			new_item.shortage_control_qty = 0
+			new_item.net_released_qty = 0
+			new_item.withdrew_sample_qty = 0
+	
+	# Insert the new AGR (don't submit yet - let user review and edit)
+	new_agr.insert()
+	
+	frappe.msgprint(
+		_("New Authority Good Release {0} created for releasing shortage control quantities from {1}").format(
+			new_agr.name, source_agr
+		),
+		alert=True,
+		indicator='green'
+	)
+	
+	return new_agr.name

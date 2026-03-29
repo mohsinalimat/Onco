@@ -31,6 +31,33 @@ frappe.ui.form.on('Authority Good Release', {
             }, __('Actions'));
         }
 
+        // Add "Release Shortage Control" button if there are shortage control quantities
+        if (frm.doc.docstatus === 1 && frm.doc.total_shortage_control_qty > 0) {
+            frm.add_custom_button(__('Release Shortage Control'), function () {
+                frappe.confirm(
+                    __('Create a new Authority Good Release to release the shortage control quantities ({0} units)?', [frm.doc.total_shortage_control_qty]),
+                    function () {
+                        // Create new AGR from shortage control quantities
+                        frappe.call({
+                            method: 'onco.onco.doctype.authority_good_release.authority_good_release.create_subsequent_release',
+                            args: {
+                                source_agr: frm.doc.name
+                            },
+                            callback: function (r) {
+                                if (r.message) {
+                                    frappe.set_route('Form', 'Authority Good Release', r.message);
+                                    frappe.show_alert({
+                                        message: __('New Authority Good Release created for shortage control quantities'),
+                                        indicator: 'green'
+                                    });
+                                }
+                            }
+                        });
+                    }
+                );
+            }, __('Actions'));
+        }
+
         // Show/hide fields based on release type
         toggle_fields_based_on_release_type(frm);
     },
