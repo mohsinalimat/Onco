@@ -139,7 +139,7 @@ class AuthorityGoodRelease(Document):
 		"""Set released_goods_warehouse from Incoming Check Report if not already set"""
 		if not self.released_goods_warehouse and self.incoming_check_report:
 			# Set default warehouse
-			self.released_goods_warehouse = "Imported Finished Phr Released Warehouse (Oncopharm) - Onco"
+			self.released_goods_warehouse = "Imported Finished Phr Released Warehouse (Oncopharm)  - Onco"
 	
 	def update_status(self):
 		"""Update status field based on document state"""

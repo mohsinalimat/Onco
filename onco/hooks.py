@@ -147,6 +147,7 @@ override_doctype_class = {
 
 doc_events = {
 	"Purchase Receipt": {
+		"validate": "onco.onco.doctype.shipments.shipments.on_purchase_receipt_validate",
 		"on_submit": "onco.onco.doctype.shipments.shipments.on_purchase_receipt_submit"
 	},
 	"Stock Entry": {

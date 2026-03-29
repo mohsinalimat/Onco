@@ -328,3 +328,14 @@ def on_purchase_receipt_submit(doc, method):
 			"received_date": frappe.utils.now()
 		})
 		frappe.msgprint(f"Shipment {doc.custom_shipment_ref} status updated to Received at Warehouse.")
+
+def on_purchase_receipt_validate(doc, method):
+	"""Ensure warehouse names have correct spacing for Shipment-related Purchase Receipts"""
+	if doc.get("custom_shipment_ref") and doc.get("custom_purchase_receipt_type") == "Shipment":
+		# Ensure set_warehouse has correct spacing (2 spaces before dash)
+		if doc.set_warehouse and "Imported Finished Phr Receipt and Inspection Warehouse" in doc.set_warehouse:
+			doc.set_warehouse = "Imported Finished Phr Receipt and Inspection Warehouse  - Onco"
+		
+		# Ensure rejected_warehouse has correct spacing
+		if doc.rejected_warehouse and "Imported Finished Phr (Damage & Losses)" in doc.rejected_warehouse:
+			doc.rejected_warehouse = "Imported Finished Phr (Damage & Losses) warehouse - Onco"

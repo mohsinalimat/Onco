@@ -29,10 +29,24 @@ class IncomingCheckReport(Document):
             set_warehouse = frappe.db.get_value("Purchase Receipt", self.purchase_receipt, "set_warehouse")
             if set_warehouse:
                 self.inspection_warehouse = set_warehouse
+            else:
+                # Fallback to default with correct spacing (2 spaces before dash)
+                self.inspection_warehouse = "Imported Finished Phr Receipt and Inspection Warehouse  - Onco"
         elif self.stock_entry and not self.inspection_warehouse:
             to_warehouse = frappe.db.get_value("Stock Entry", self.stock_entry, "to_warehouse")
             if to_warehouse:
                 self.inspection_warehouse = to_warehouse
+            else:
+                # Fallback to default with correct spacing (2 spaces before dash)
+                self.inspection_warehouse = "Imported Finished Phr Receipt and Inspection Warehouse  - Onco"
+        
+        # Auto-populate accepted_warehouse if not set
+        if not self.accepted_warehouse:
+            self.accepted_warehouse = "Imported Finished Phr Unrelease Warehouse (Oncopharm)  - Onco"
+        
+        # Auto-populate rejected_warehouse if not set
+        if not self.rejected_warehouse:
+            self.rejected_warehouse = "Imported Finished Phr (Damage & Losses) warehouse - Onco"
     
     def fetch_reference_data(self):
         """Fetch all reference data from Purchase Receipt chain"""
@@ -243,7 +257,9 @@ class IncomingCheckReport(Document):
                     'item_code': item.item_code,
                     'qty': item.accepted_quantity,
                     'batch_no': item.batch_no,
-                    'item_name': item.item_name
+                    'item_name': item.item_name,
+                    'serial_and_batch_bundle': item.serial_and_batch_bundle,
+                    'use_serial_batch_fields': item.use_serial_batch_fields
                 })
             
             # Add damaged/rejected quantity items
@@ -253,7 +269,9 @@ class IncomingCheckReport(Document):
                     'item_code': item.item_code,
                     'qty': damage_qty,
                     'batch_no': item.batch_no,
-                    'item_name': item.item_name
+                    'item_name': item.item_name,
+                    'serial_and_batch_bundle': item.serial_and_batch_bundle,
+                    'use_serial_batch_fields': item.use_serial_batch_fields
                 })
         
         # Create Stock Entry for accepted items
@@ -287,33 +305,11 @@ class IncomingCheckReport(Document):
                 )
     
     def create_stock_entry(self, items, target_warehouse, purpose, remarks):
-        """Create a Stock Entry document"""
+        """Create a Stock Entry document with proper batch bundle handling for ERPNext v15"""
         try:
-            # Validate batch stock availability before creating stock entry
-            for item_data in items:
-                if item_data.get('batch_no'):
-                    available_qty = frappe.db.sql("""
-                        SELECT SUM(actual_qty) as qty
-                        FROM `tabStock Ledger Entry`
-                        WHERE item_code = %s
-                        AND batch_no = %s
-                        AND warehouse = %s
-                        AND is_cancelled = 0
-                    """, (item_data['item_code'], item_data['batch_no'], self.inspection_warehouse), as_dict=True)
-                    
-                    available = available_qty[0].qty if available_qty and available_qty[0].qty else 0
-                    
-                    if available < item_data['qty']:
-                        frappe.throw(_(
-                            "Insufficient stock for Item {0}, Batch {1} in warehouse {2}. "
-                            "Available: {3}, Required: {4}"
-                        ).format(
-                            item_data['item_code'],
-                            item_data['batch_no'],
-                            self.inspection_warehouse,
-                            available,
-                            item_data['qty']
-                        ))
+            # Validate inspection_warehouse is set
+            if not self.inspection_warehouse:
+                frappe.throw(_("Inspection Warehouse is required to create stock entries"))
             
             stock_entry = frappe.new_doc("Stock Entry")
             stock_entry.purpose = purpose
@@ -331,16 +327,20 @@ class IncomingCheckReport(Document):
             
             # Add items
             for item_data in items:
-                stock_entry.append("items", {
+                se_item = stock_entry.append("items", {
                     "item_code": item_data['item_code'],
                     "item_name": item_data.get('item_name'),
                     "qty": item_data['qty'],
                     "s_warehouse": self.inspection_warehouse,
                     "t_warehouse": target_warehouse,
-                    "batch_no": item_data.get('batch_no'),
                     "transfer_qty": item_data['qty'],
                     "uom": frappe.db.get_value("Item", item_data['item_code'], "stock_uom")
                 })
+                
+                # Handle batch for v15 - use use_serial_batch_fields
+                if item_data.get('batch_no'):
+                    se_item.batch_no = item_data['batch_no']
+                    se_item.use_serial_batch_fields = 1
             
             stock_entry.insert()
             stock_entry.submit()
@@ -353,6 +353,11 @@ class IncomingCheckReport(Document):
                 title="Incoming Check Report - Stock Entry Creation Failed"
             )
             frappe.msgprint(
+                _("Failed to create Stock Entry: {0}").format(str(e)),
+                alert=True,
+                indicator='red'
+            )
+            return None
                 _("Failed to create Stock Entry: {0}").format(str(e)),
                 alert=True,
                 indicator='red'
@@ -506,7 +511,13 @@ def make_incoming_check_report_from_pr(source_name, target_doc=None):
     def set_missing_values(source, target):
         target.purchase_receipt = source.name
         target.inspection_date = frappe.utils.today()
-        target.inspection_warehouse = source.set_warehouse
+        # Explicitly set inspection_warehouse from Purchase Receipt's set_warehouse
+        # Ensure we use the exact warehouse name with correct spacing (2 spaces before dash)
+        if source.set_warehouse:
+            target.inspection_warehouse = source.set_warehouse
+        else:
+            # Fallback to default with correct spacing
+            target.inspection_warehouse = "Imported Finished Phr Receipt and Inspection Warehouse  - Onco"
         
         # Get Shipment reference
         if source.get("custom_shipment_ref"):
@@ -698,9 +709,16 @@ def make_authority_good_release(source_name, target_doc=None):
         if source.shipment:
             target.shipment_no = source.shipment
         
-        # Set source warehouse from accepted_warehouse
+        # Set source warehouse from accepted_warehouse (where goods currently are)
         if source.accepted_warehouse:
             target.source_warehouse = source.accepted_warehouse
+        else:
+            # Fallback to default with correct spacing (2 spaces before dash)
+            target.source_warehouse = "Imported Finished Phr Unrelease Warehouse (Oncopharm)  - Onco"
+        
+        # Set released goods warehouse (where goods will go after release)
+        if not target.released_goods_warehouse:
+            target.released_goods_warehouse = "Imported Finished Phr Released Warehouse (Oncopharm)  - Onco"
         
         # Set sample warehouse to default
         target.sample_warehouse = "Imported Finished Phr Sample warehouse - Onco"
