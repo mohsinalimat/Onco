@@ -10,78 +10,95 @@ frappe.ui.form.on('Authority Good Release', {
             });
         }
 
-        // Add manual stock entry creation button if document is submitted and auto-create is disabled
-        if (frm.doc.docstatus === 1 && !frm.doc.create_stock_entry && !frm.doc.stock_entry_created) {
-            frm.add_custom_button(__('Create Stock Entries'), function () {
-                frappe.confirm(
-                    __('Are you sure you want to create stock entries for this Authority Good Release?'),
-                    function () {
-                        // User confirmed
-                        frappe.call({
-                            method: 'create_stock_entries_manually',
-                            doc: frm.doc,
-                            callback: function (r) {
-                                if (r.message && r.message.length > 0) {
-                                    frm.reload_doc();
-                                }
-                            }
-                        });
+        // Check if stock entries exist for this AGR
+        if (frm.doc.docstatus === 1) {
+            frappe.call({
+                method: 'frappe.client.get_count',
+                args: {
+                    doctype: 'Stock Entry',
+                    filters: {
+                        custom_authority_good_release: frm.doc.name,
+                        docstatus: 1
                     }
-                );
-            }, __('Actions'));
-        }
-
-        // Add "Release Shortage Control" button if there are shortage control quantities
-        // Only show if stock entries haven't been created yet
-        if (frm.doc.docstatus === 1 && frm.doc.total_shortage_control_qty > 0 && !frm.doc.stock_entry_created) {
-            frm.add_custom_button(__('Release Shortage Control'), function () {
-                frappe.confirm(
-                    __('Create a new Authority Good Release to release the shortage control quantities ({0} units)?', [frm.doc.total_shortage_control_qty]),
-                    function () {
-                        // Create new AGR from shortage control quantities
-                        frappe.call({
-                            method: 'onco.onco.doctype.authority_good_release.authority_good_release.create_subsequent_release',
-                            args: {
-                                source_agr: frm.doc.name
-                            },
-                            callback: function (r) {
-                                if (r.message) {
-                                    frappe.set_route('Form', 'Authority Good Release', r.message);
-                                    frappe.show_alert({
-                                        message: __('New Authority Good Release created for shortage control quantities'),
-                                        indicator: 'green'
+                },
+                callback: function(r) {
+                    let has_stock_entries = r.message > 0;
+                    
+                    // Add manual stock entry creation button if no stock entries exist yet
+                    if (!has_stock_entries && !frm.doc.create_stock_entry) {
+                        frm.add_custom_button(__('Create Stock Entries'), function () {
+                            frappe.confirm(
+                                __('Are you sure you want to create stock entries for this Authority Good Release?'),
+                                function () {
+                                    // User confirmed
+                                    frappe.call({
+                                        method: 'create_stock_entries_manually',
+                                        doc: frm.doc,
+                                        callback: function (r) {
+                                            if (r.message && r.message.length > 0) {
+                                                frm.reload_doc();
+                                            }
+                                        }
                                     });
                                 }
-                            }
-                        });
+                            );
+                        }, __('Actions'));
                     }
-                );
-            }, __('Actions'));
-        }
 
-        // Add "View Stock Entries" button if stock entries have been created
-        if (frm.doc.docstatus === 1 && frm.doc.stock_entry_created) {
-            frm.add_custom_button(__('View Stock Entries'), function () {
-                frappe.route_options = {
-                    "custom_authority_good_release": frm.doc.name
-                };
-                frappe.set_route("List", "Stock Entry");
-            }, __('View'));
-        }
+                    // Add "Release Shortage Control" button if there are shortage control quantities
+                    // Show this regardless of whether stock entries exist, as long as there's shortage control qty
+                    if (frm.doc.total_shortage_control_qty > 0) {
+                        frm.add_custom_button(__('Release Shortage Control'), function () {
+                            frappe.confirm(
+                                __('Create a new Authority Good Release to release the shortage control quantities ({0} units)?', [frm.doc.total_shortage_control_qty]),
+                                function () {
+                                    // Create new AGR from shortage control quantities
+                                    frappe.call({
+                                        method: 'onco.onco.doctype.authority_good_release.authority_good_release.create_subsequent_release',
+                                        args: {
+                                            source_agr: frm.doc.name
+                                        },
+                                        callback: function (r) {
+                                            if (r.message) {
+                                                frappe.set_route('Form', 'Authority Good Release', r.message);
+                                                frappe.show_alert({
+                                                    message: __('New Authority Good Release created for shortage control quantities'),
+                                                    indicator: 'green'
+                                                });
+                                            }
+                                        }
+                                    });
+                                }
+                            );
+                        }, __('Actions'));
+                    }
 
-        // Add "View Original AGR Stock Entries" button if this is a subsequent release
-        if (frm.doc.docstatus === 1 && frm.doc.original_agr && frm.doc.original_agr !== frm.doc.name) {
-            frm.add_custom_button(__('View Original AGR Stock Entries'), function () {
-                frappe.route_options = {
-                    "custom_authority_good_release": frm.doc.original_agr
-                };
-                frappe.set_route("List", "Stock Entry");
-            }, __('View'));
-            
-            // Also add button to view the original AGR document
-            frm.add_custom_button(__('View Original AGR'), function () {
-                frappe.set_route("Form", "Authority Good Release", frm.doc.original_agr);
-            }, __('View'));
+                    // Add "View Stock Entries" button if stock entries have been created
+                    if (has_stock_entries) {
+                        frm.add_custom_button(__('View Stock Entries'), function () {
+                            frappe.route_options = {
+                                "custom_authority_good_release": frm.doc.name
+                            };
+                            frappe.set_route("List", "Stock Entry");
+                        }, __('View'));
+                    }
+
+                    // Add "View Original AGR Stock Entries" button if this is a subsequent release
+                    if (frm.doc.original_agr && frm.doc.original_agr !== frm.doc.name) {
+                        frm.add_custom_button(__('View Original AGR Stock Entries'), function () {
+                            frappe.route_options = {
+                                "custom_authority_good_release": frm.doc.original_agr
+                            };
+                            frappe.set_route("List", "Stock Entry");
+                        }, __('View'));
+                        
+                        // Also add button to view the original AGR document
+                        frm.add_custom_button(__('View Original AGR'), function () {
+                            frappe.set_route("Form", "Authority Good Release", frm.doc.original_agr);
+                        }, __('View'));
+                    }
+                }
+            });
         }
 
         // Show/hide fields based on release type
