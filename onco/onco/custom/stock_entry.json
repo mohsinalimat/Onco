@@ -20,6 +20,26 @@
    "read_only": 1,
    "no_copy": 1,
    "fetch_from": "custom_purchase_receipt.custom_shipment_ref"
+  },
+  {
+   "dt": "Stock Entry",
+   "fieldname": "custom_authority_good_release",
+   "fieldtype": "Link",
+   "label": "Authority Good Release",
+   "options": "Authority Good Release",
+   "insert_after": "custom_shipment_ref",
+   "read_only": 1,
+   "no_copy": 1
+  },
+  {
+   "dt": "Stock Entry",
+   "fieldname": "custom_final_release",
+   "fieldtype": "Check",
+   "label": "Final Release",
+   "insert_after": "custom_authority_good_release",
+   "read_only": 1,
+   "no_copy": 1,
+   "default": 0
   }
  ],
  "custom_perms": [],
