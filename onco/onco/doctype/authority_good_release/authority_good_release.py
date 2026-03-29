@@ -1584,8 +1584,13 @@ def create_subsequent_release(source_agr):
 	# Create new AGR document
 	new_agr = frappe.new_doc("Authority Good Release")
 	
+	# Track the original AGR (the first one in the chain)
+	# If source_doc has an original_agr, use that; otherwise, source_doc IS the original
+	original_agr = source_doc.get("original_agr") or source_agr
+	
 	# Copy header fields from source
 	new_agr.incoming_check_report = source_doc.incoming_check_report
+	new_agr.original_agr = original_agr  # Store reference to first AGR in chain
 	new_agr.shipment_no = source_doc.shipment_no
 	new_agr.invoice_no = source_doc.invoice_no
 	new_agr.date = frappe.utils.today()
@@ -1596,8 +1601,8 @@ def create_subsequent_release(source_agr):
 	new_agr.released_goods_warehouse = source_doc.released_goods_warehouse
 	new_agr.sample_warehouse = source_doc.sample_warehouse
 	
-	# Add comment linking to source AGR
-	new_agr.add_comment('Comment', f'Created from {source_agr} to release shortage control quantities')
+	# Add a prominent note about the source AGR in remarks
+	new_agr.remarks = f"Subsequent release created from {source_agr} to release shortage control quantities ({source_doc.total_shortage_control_qty} units)."
 	
 	# Copy items with shortage control quantities as the new requested quantities
 	for source_item in source_doc.items:
@@ -1630,25 +1635,15 @@ def create_subsequent_release(source_agr):
 	new_agr.flags.ignore_validate = True
 	new_agr.insert(ignore_permissions=True)
 	
-	# Calculate totals manually
-	total_requested = 0
-	total_actual = 0
-	for item in new_agr.items:
-		total_requested += item.requested_qty or 0
-		total_actual += item.actual_quantity or 0
-	
-	new_agr.total_requested_qty = total_requested
-	new_agr.total_actual_qty = total_actual
-	new_agr.total_released_qty = 0  # User will fill this
-	new_agr.total_net_released_qty = 0
-	new_agr.total_shortage_control_qty = 0
-	new_agr.total_sample_qty = 0
+	# Calculate totals using the same method as validate
+	new_agr.calculate_totals()
 	
 	# Save the calculated totals
+	new_agr.flags.ignore_validate = True
 	new_agr.save(ignore_permissions=True)
 	
 	frappe.msgprint(
-		_("New Authority Good Release {0} created for releasing shortage control quantities from {1}").format(
+		_("New Authority Good Release {0} created for releasing shortage control quantities from {1}. Please fill in the Released Qty for each item.").format(
 			new_agr.name, source_agr
 		),
 		alert=True,

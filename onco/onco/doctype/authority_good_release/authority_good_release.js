@@ -32,7 +32,8 @@ frappe.ui.form.on('Authority Good Release', {
         }
 
         // Add "Release Shortage Control" button if there are shortage control quantities
-        if (frm.doc.docstatus === 1 && frm.doc.total_shortage_control_qty > 0) {
+        // Only show if stock entries haven't been created yet
+        if (frm.doc.docstatus === 1 && frm.doc.total_shortage_control_qty > 0 && !frm.doc.stock_entry_created) {
             frm.add_custom_button(__('Release Shortage Control'), function () {
                 frappe.confirm(
                     __('Create a new Authority Good Release to release the shortage control quantities ({0} units)?', [frm.doc.total_shortage_control_qty]),
@@ -56,6 +57,31 @@ frappe.ui.form.on('Authority Good Release', {
                     }
                 );
             }, __('Actions'));
+        }
+
+        // Add "View Stock Entries" button if stock entries have been created
+        if (frm.doc.docstatus === 1 && frm.doc.stock_entry_created) {
+            frm.add_custom_button(__('View Stock Entries'), function () {
+                frappe.route_options = {
+                    "custom_authority_good_release": frm.doc.name
+                };
+                frappe.set_route("List", "Stock Entry");
+            }, __('View'));
+        }
+
+        // Add "View Original AGR Stock Entries" button if this is a subsequent release
+        if (frm.doc.docstatus === 1 && frm.doc.original_agr && frm.doc.original_agr !== frm.doc.name) {
+            frm.add_custom_button(__('View Original AGR Stock Entries'), function () {
+                frappe.route_options = {
+                    "custom_authority_good_release": frm.doc.original_agr
+                };
+                frappe.set_route("List", "Stock Entry");
+            }, __('View'));
+            
+            // Also add button to view the original AGR document
+            frm.add_custom_button(__('View Original AGR'), function () {
+                frappe.set_route("Form", "Authority Good Release", frm.doc.original_agr);
+            }, __('View'));
         }
 
         // Show/hide fields based on release type

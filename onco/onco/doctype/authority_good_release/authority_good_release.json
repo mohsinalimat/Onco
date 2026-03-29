@@ -8,6 +8,7 @@
  "field_order": [
   "naming_series",
   "incoming_check_report",
+  "original_agr",
   "shipment_no",
   "invoice_no",
   "date",
@@ -68,6 +69,14 @@
    "fieldtype": "Link",
    "label": "Incoming Check Report",
    "options": "Incoming Check Report"
+  },
+  {
+   "fieldname": "original_agr",
+   "fieldtype": "Link",
+   "label": "Original Authority Good Release",
+   "options": "Authority Good Release",
+   "read_only": 1,
+   "description": "Reference to the first AGR in the release chain (for subsequent releases)"
   },
   {
    "fieldname": "shipment_no",
