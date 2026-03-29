@@ -718,7 +718,7 @@ def make_authority_good_release(source_name, target_doc=None):
         
         # Set released goods warehouse (where goods will go after release)
         if not target.released_goods_warehouse:
-            target.released_goods_warehouse = "Imported Finished Phr Released Warehouse (Oncopharm)  - Onco"
+            target.released_goods_warehouse = "Imported Finished Phr Released Warehouse (Oncopharm) - Onco"
         
         # Set sample warehouse to default
         target.sample_warehouse = "Imported Finished Phr Sample warehouse - Onco"

@@ -15,6 +15,11 @@ def validate(doc, method):
         for item in doc.items:
             if not item.use_serial_batch_fields:
                 item.use_serial_batch_fields = 1
+            
+            # Set warehouse to Incoming Warehouse if not set (for batch creation)
+            # Note: 2 spaces after "Imported", 1 space before dash
+            if not item.warehouse:
+                item.warehouse = "Imported  Finished Phr Incoming Warehouse - Onco"
     
     # Validate batch numbers for items that require them
     for item in doc.items:

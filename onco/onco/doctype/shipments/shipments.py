@@ -240,9 +240,9 @@ def make_purchase_receipt(source_name, target_doc=None):
 		target.run_method("calculate_taxes_and_totals")
 		# Link Shipment
 		target.custom_shipment_ref = source_name
-		# Set warehouse and type defaults
-		target.set_warehouse = "Imported Finished Phr Receipt and Inspection Warehouse  - Onco"
-		target.rejected_warehouse = "Imported Finished Phr (Damage & Losses) warehouse - Onco"
+		# Set warehouse and type defaults (match exact database names)
+		target.set_warehouse = "Imported Finished Phr Receipt and Inspection Warehouse  - Onco"  # 2 spaces before dash
+		target.rejected_warehouse = "Imported Finished Phr (Damage & Losses) warehouse - Onco"  # 1 space before dash
 		target.custom_purchase_receipt_type = "Shipment"
 
 	# Map the first invoice to create the target doc
@@ -332,10 +332,10 @@ def on_purchase_receipt_submit(doc, method):
 def on_purchase_receipt_validate(doc, method):
 	"""Ensure warehouse names have correct spacing for Shipment-related Purchase Receipts"""
 	if doc.get("custom_shipment_ref") and doc.get("custom_purchase_receipt_type") == "Shipment":
-		# Ensure set_warehouse has correct spacing (2 spaces before dash)
+		# Ensure set_warehouse has correct spacing (2 spaces before dash - matches database)
 		if doc.set_warehouse and "Imported Finished Phr Receipt and Inspection Warehouse" in doc.set_warehouse:
 			doc.set_warehouse = "Imported Finished Phr Receipt and Inspection Warehouse  - Onco"
 		
-		# Ensure rejected_warehouse has correct spacing
+		# Ensure rejected_warehouse has correct spacing (1 space before dash - matches database)
 		if doc.rejected_warehouse and "Imported Finished Phr (Damage & Losses)" in doc.rejected_warehouse:
 			doc.rejected_warehouse = "Imported Finished Phr (Damage & Losses) warehouse - Onco"
