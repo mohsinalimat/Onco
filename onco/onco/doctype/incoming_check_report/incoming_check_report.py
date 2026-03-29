@@ -514,6 +514,14 @@ def make_incoming_check_report_from_pr(source_name, target_doc=None):
             # Fallback to default with correct spacing
             target.inspection_warehouse = "Imported Finished Phr Receipt and Inspection Warehouse  - Onco"
         
+        # Set accepted_warehouse (where goods go after passing inspection)
+        # 2 spaces before dash - matches database
+        target.accepted_warehouse = "Imported Finished Phr Unrelease Warehouse (Oncopharm)  - Onco"
+        
+        # Set rejected_warehouse (where damaged/rejected goods go)
+        # 1 space before dash - matches database
+        target.rejected_warehouse = "Imported Finished Phr (Damage & Losses) warehouse - Onco"
+        
         # Get Shipment reference
         if source.get("custom_shipment_ref"):
             target.shipment = source.custom_shipment_ref
