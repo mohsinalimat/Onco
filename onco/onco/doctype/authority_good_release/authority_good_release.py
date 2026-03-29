@@ -1620,23 +1620,52 @@ def create_subsequent_release(source_agr):
 			new_item.over_quantity = source_item.over_quantity
 			new_item.damage_quantity = source_item.damage_quantity
 			
-			# The shortage control qty from previous AGR becomes the actual/requested qty for this AGR
-			new_item.actual_quantity = source_item.shortage_control_qty
+			# Keep actual_quantity the same as the original (total received quantity)
+			new_item.actual_quantity = source_item.actual_quantity
+			
+			# The shortage control qty from previous AGR becomes the requested qty for this AGR
 			new_item.requested_qty = source_item.shortage_control_qty
 			
-			# Initialize release quantities to 0 (user will fill these)
-			new_item.released_qty = 0
+			# Auto-fill released_qty with the full shortage control amount (user can edit if needed)
+			new_item.released_qty = source_item.shortage_control_qty
+			
+			# No more shortage control (releasing everything)
 			new_item.shortage_control_qty = 0
-			new_item.net_released_qty = 0
+			
+			# Net released is what's being released now
+			new_item.net_released_qty = source_item.shortage_control_qty
+			
+			# No samples
 			new_item.withdrew_sample_qty = 0
 	
 	# Insert the new AGR (don't submit yet - let user review and edit)
-	# Bypass validation during insert since user needs to fill released quantities
+	# Bypass validation during insert since user might want to adjust quantities
 	new_agr.flags.ignore_validate = True
 	new_agr.insert(ignore_permissions=True)
 	
 	# Calculate totals using the same method as validate
 	new_agr.calculate_totals()
+	
+	# Now adjust totals to be cumulative across the chain
+	# Get all previous AGRs in the chain to calculate cumulative released qty
+	all_agrs_in_chain = frappe.get_all(
+		"Authority Good Release",
+		filters={
+			"incoming_check_report": source_doc.incoming_check_report,
+			"docstatus": 1,
+			"name": ["!=", new_agr.name]
+		},
+		fields=["total_released_qty", "total_sample_qty"]
+	)
+	
+	# Calculate cumulative released quantity
+	cumulative_released = sum(agr.get("total_released_qty", 0) for agr in all_agrs_in_chain)
+	cumulative_sample = sum(agr.get("total_sample_qty", 0) for agr in all_agrs_in_chain)
+	
+	# Update totals to show cumulative values
+	# total_released_qty should be cumulative (previous releases + current release)
+	new_agr.total_released_qty = cumulative_released + new_agr.total_net_released_qty
+	new_agr.total_sample_qty = cumulative_sample + new_agr.total_sample_qty
 	
 	# Save the calculated totals
 	new_agr.flags.ignore_validate = True
