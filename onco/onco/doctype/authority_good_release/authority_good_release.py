@@ -1630,6 +1630,23 @@ def create_subsequent_release(source_agr):
 	new_agr.flags.ignore_validate = True
 	new_agr.insert(ignore_permissions=True)
 	
+	# Calculate totals manually
+	total_requested = 0
+	total_actual = 0
+	for item in new_agr.items:
+		total_requested += item.requested_qty or 0
+		total_actual += item.actual_quantity or 0
+	
+	new_agr.total_requested_qty = total_requested
+	new_agr.total_actual_qty = total_actual
+	new_agr.total_released_qty = 0  # User will fill this
+	new_agr.total_net_released_qty = 0
+	new_agr.total_shortage_control_qty = 0
+	new_agr.total_sample_qty = 0
+	
+	# Save the calculated totals
+	new_agr.save(ignore_permissions=True)
+	
 	frappe.msgprint(
 		_("New Authority Good Release {0} created for releasing shortage control quantities from {1}").format(
 			new_agr.name, source_agr
