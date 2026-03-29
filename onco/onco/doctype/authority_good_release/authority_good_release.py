@@ -1626,7 +1626,9 @@ def create_subsequent_release(source_agr):
 			new_item.withdrew_sample_qty = 0
 	
 	# Insert the new AGR (don't submit yet - let user review and edit)
-	new_agr.insert()
+	# Bypass validation during insert since user needs to fill released quantities
+	new_agr.flags.ignore_validate = True
+	new_agr.insert(ignore_permissions=True)
 	
 	frappe.msgprint(
 		_("New Authority Good Release {0} created for releasing shortage control quantities from {1}").format(
