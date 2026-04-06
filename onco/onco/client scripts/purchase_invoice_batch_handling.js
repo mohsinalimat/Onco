@@ -1,16 +1,9 @@
 frappe.ui.form.on('Purchase Invoice', {
     refresh: function(frm) {
-        // Ensure update_stock is checked by default
-        // if (frm.is_new() && !frm.doc.update_stock) {
-        //     frm.set_value('update_stock', 1);
-        // }
-    },
-    
-    onload: function(frm) {
-        // When loading a Purchase Invoice, ensure update_stock is set
-        // if (!frm.doc.update_stock) {
-        //     frm.set_value('update_stock', 1);
-        // }
+        // Set update_stock to checked by default for new invoices only
+        if (frm.is_new() && frm.doc.update_stock !== 1) {
+            frm.set_value('update_stock', 1);
+        }
     },
     
     update_stock: function(frm) {
