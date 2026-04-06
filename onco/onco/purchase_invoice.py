@@ -7,8 +7,8 @@ def validate(doc, method):
     Ensure batch numbers are provided for items that require them
     """
     # Ensure update_stock is set to 1 for importation cycle
-    if not doc.update_stock:
-        doc.update_stock = 1
+    # if not doc.update_stock:
+    #     doc.update_stock = 1
     
     # Set use_serial_batch_fields for all items when update_stock is enabled
     if doc.update_stock:
@@ -44,10 +44,11 @@ def before_insert(doc, method):
     Actions to perform before inserting a new Purchase Invoice
     """
     # Set update_stock to 1 by default
-    if not doc.update_stock:
-        doc.update_stock = 1
+    # if not doc.update_stock:
+    #     doc.update_stock = 1
     
-    # Set use_serial_batch_fields for all items
-    for item in doc.items:
-        if not item.use_serial_batch_fields:
-            item.use_serial_batch_fields = 1
+    # Set use_serial_batch_fields for all items when update_stock is enabled
+    if doc.update_stock:
+        for item in doc.items:
+            if not item.use_serial_batch_fields:
+                item.use_serial_batch_fields = 1
