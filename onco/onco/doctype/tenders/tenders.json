@@ -10,6 +10,8 @@
         "naming_series",
         "tender_type",
         "workflow_status",
+        "is_accepted_tender",
+        "source_awarded_tender",
         "category",
         "tender_number",
         "year_of_tender",
@@ -62,7 +64,7 @@
             "fieldtype": "Select",
             "in_list_view": 1,
             "label": "Tender Type",
-            "options": "\nTenders for market data\nAwarded Tenders\nAccepted Tenders",
+            "options": "\nTenders for market data\nAwarded Tenders",
             "reqd": 1
         },
         {
@@ -72,6 +74,22 @@
             "in_list_view": 1,
             "label": "Workflow Status",
             "options": "\nAwarded\nSubmission\nAccepted",
+            "read_only": 1
+        },
+        {
+            "fieldname": "is_accepted_tender",
+            "fieldtype": "Check",
+            "label": "Is Accepted Tender",
+            "hidden": 1,
+            "read_only": 1,
+            "default": 0
+        },
+        {
+            "depends_on": "eval:doc.is_accepted_tender == 1",
+            "fieldname": "source_awarded_tender",
+            "fieldtype": "Link",
+            "label": "Source Awarded Tender",
+            "options": "Tenders",
             "read_only": 1
         },
         {
@@ -199,14 +217,14 @@
             "options": "Items FMD"
         },
         {
-            "depends_on": "eval:doc.tender_type == \"Awarded Tenders\" || doc.tender_type == \"Accepted Tenders\"",
+            "depends_on": "eval:doc.tender_type == \"Awarded Tenders\" || doc.is_accepted_tender == 1",
             "fieldname": "item_tender",
             "fieldtype": "Table",
             "label": "Item Tender",
             "options": "Item Tender"
         },
         {
-            "depends_on": "eval:(doc.tender_type == \"Awarded Tenders\" && doc.workflow_status == \"Submission\") || doc.tender_type == \"Accepted Tenders\"",
+            "depends_on": "eval:(doc.tender_type == \"Awarded Tenders\" && doc.workflow_status == \"Submission\") || doc.is_accepted_tender == 1",
             "fieldname": "tender_supplier",
             "fieldtype": "Table",
             "label": "Tender Supplier",

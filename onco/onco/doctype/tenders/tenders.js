@@ -172,15 +172,20 @@ function set_naming_series_options(frm) {
 	let options = [];
 	const type = frm.doc.tender_type;
 	const category = frm.doc.category;
+	const is_accepted = frm.doc.is_accepted_tender;
 
 	if (type === "Tenders for market data") {
 		options = ["TNDR-FMD-.YYYY.-.####"];
 	} else if (type === "Awarded Tenders") {
-		if (category === "UPA Tender") options = ["TNDR-AWR-UPA-.YYYY.-.{tender_number}."];
-		else if (category === "Private Tender") options = ["TNDR-AWR-PRV-.YYYY.-.{tender_number}."];
-	} else if (type === "Accepted Tenders") {
-		if (category === "UPA Tender") options = ["TNDR-ACP-UPA-.YYYY.-.{tender_number}."];
-		else if (category === "Private Tender") options = ["TNDR-ACP-PRV-.YYYY.-.{tender_number}."];
+		if (is_accepted) {
+			// Accepted tender naming
+			if (category === "UPA Tender") options = ["TNDR-ACP-UPA-.YYYY.-.{tender_number}."];
+			else if (category === "Private Tender") options = ["TNDR-ACP-PRV-.YYYY.-.{tender_number}."];
+		} else {
+			// Awarded tender naming
+			if (category === "UPA Tender") options = ["TNDR-AWR-UPA-.YYYY.-.{tender_number}."];
+			else if (category === "Private Tender") options = ["TNDR-AWR-PRV-.YYYY.-.{tender_number}."];
+		}
 	}
 
 	if (options.length > 0) {

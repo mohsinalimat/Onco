@@ -15,7 +15,7 @@ class Tenders(Document):
 		self.validate_tender_dates()
 		self.check_tender_rule_change_permission()
 		
-		if self.tender_type == "Accepted Tenders":
+		if self.tender_type == "Awarded Tenders" and self.is_accepted_tender:
 			self.populate_tender_price_deviation_details()
 
 	def on_submit(self):
@@ -23,12 +23,8 @@ class Tenders(Document):
 		self.update_tender_end_date_if_extended()
 		
 		# Set initial workflow status for Awarded Tenders
-		if self.tender_type == "Awarded Tenders" and not self.workflow_status:
+		if self.tender_type == "Awarded Tenders" and not self.workflow_status and not self.is_accepted_tender:
 			self.db_set("workflow_status", "Awarded")
-		
-		# Auto-fetch from awarded tender if accepted
-		if self.tender_type == "Accepted Tenders":
-			self.auto_fetch_from_awarded_tender()
 
 	def apply_tender_rules(self):
 		"""Apply extra quantities and extended time rules to tender"""
@@ -49,7 +45,7 @@ class Tenders(Document):
 
 		if self.tender_type == "Tenders for market data":
 			self._apply_extra_qty_to_items_fmd()
-		elif self.tender_type in ["Awarded Tenders", "Accepted Tenders"]:
+		elif self.tender_type == "Awarded Tenders":
 			self._apply_extra_qty_to_item_tender()
 			self._apply_extra_qty_to_tender_supplier()
 
@@ -210,66 +206,6 @@ class Tenders(Document):
 		if self.apply_extended_time and self.extended_end_date:
 			self.db_update({"tender_end_date": self.extended_end_date})
 
-	def auto_fetch_from_awarded_tender(self):
-		"""Auto-fetch data from awarded tender with Submission status to accepted tender"""
-		if not self.tender_number or not self.category:
-			return
-
-		# Find awarded tender with same tender number, category, and Submission status
-		awarded_tenders = frappe.db.get_list("Tenders",
-			filters={
-				"tender_type": "Awarded Tenders",
-				"tender_number": self.tender_number,
-				"category": self.category,
-				"workflow_status": "Submission",
-				"docstatus": 1
-			},
-			fields=["name"],
-			limit=1)
-
-		if not awarded_tenders:
-			return
-			
-		awarded_tender = frappe.get_doc("Tenders", awarded_tenders[0].name)
-		
-		# Copy basic details
-		self.hospitalagent_name = awarded_tender.hospitalagent_name
-		self.year_of_tender = awarded_tender.year_of_tender
-		self.tender_start_date = awarded_tender.tender_start_date
-		self.tender_end_date = awarded_tender.tender_end_date
-		self.supplying_by = awarded_tender.supplying_by
-		
-		# Copy item tenders
-		self.item_tender = []
-		for row in awarded_tender.item_tender or []:
-			self.append("item_tender", {
-				"item_code": row.item_code,
-				"item_group": row.item_group,
-				"item_name": row.item_name,
-				"tender_qty": row.tender_qty,
-				"tender_price": row.tender_price if hasattr(row, 'tender_price') else 0,
-				"tender_start_date": row.tender_start_date,
-				"tender_end_date": row.tender_end_date
-			})
-
-		# Copy suppliers if applicable
-		if awarded_tender.supplying_by and awarded_tender.supplying_by != "Oncopharm":
-			self.tender_supplier = []
-			for row in awarded_tender.tender_supplier or []:
-				self.append("tender_supplier", {
-					"supplying_by": row.supplying_by if hasattr(row, 'supplying_by') else "",
-					"supplier": row.supplier if hasattr(row, 'supplier') else "",
-					"supply_qty": row.supply_qty if hasattr(row, 'supply_qty') else 0
-				})
-		
-		# Copy tender rules
-		self.apply_extra_quantities = awarded_tender.apply_extra_quantities
-		self.extra_qty_type = awarded_tender.extra_qty_type
-		self.extra_qty_value = awarded_tender.extra_qty_value
-		self.apply_extended_time = awarded_tender.apply_extended_time
-		self.extended_start_date = awarded_tender.extended_start_date
-		self.extended_end_date = awarded_tender.extended_end_date
-
 	def get_deviation_summary(self):
 		"""Get summary of price deviations"""
 		if not self.tender_price_deviation:
@@ -395,9 +331,11 @@ def create_accepted_from_submission(source_name):
 	if source_doc.tender_type != "Awarded Tenders" or source_doc.workflow_status != "Submission":
 		frappe.throw(_("Can only create Accepted Tender from Awarded Tender with Submission status"))
 	
-	# Create new Accepted Tender
+	# Create new Accepted Tender (same doctype, different flag)
 	target_doc = frappe.new_doc("Tenders")
-	target_doc.tender_type = "Accepted Tenders"
+	target_doc.tender_type = "Awarded Tenders"  # Keep same type
+	target_doc.is_accepted_tender = 1  # Mark as accepted
+	target_doc.source_awarded_tender = source_name
 	target_doc.category = source_doc.category
 	target_doc.tender_number = source_doc.tender_number
 	target_doc.year_of_tender = source_doc.year_of_tender
