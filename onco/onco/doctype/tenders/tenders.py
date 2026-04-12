@@ -17,7 +17,7 @@ class Tenders(Document):
 		self.validate_tender_dates()
 		self.check_tender_rule_change_permission()
 		
-		if self.tender_type == "Awarded Tenders" and self.is_accepted_tender:
+		if self.tender_type == "Accepted Tenders":
 			self.populate_tender_price_deviation_details()
 
 	def validate_naming_series(self):
@@ -34,34 +34,45 @@ class Tenders(Document):
 		elif self.tender_type == "Awarded Tenders":
 			if not self.category:
 				frappe.throw(_("Category is required for Awarded Tenders"))
-			
-			if self.is_accepted_tender:
-				# Accepted tender validation
-				if self.category == "UPA Tender" and "ACP-UPA" not in self.naming_series:
-					frappe.throw(_("Naming series must be TNDR-ACP-UPA-.YYYY.-.{{tender_number}}. for Accepted UPA Tender"))
-				elif self.category == "Private Tender" and "ACP-PRV" not in self.naming_series:
-					frappe.throw(_("Naming series must be TNDR-ACP-PRV-.YYYY.-.{{tender_number}}. for Accepted Private Tender"))
-			else:
-				# Awarded tender validation
-				if self.category == "UPA Tender" and "AWR-UPA" not in self.naming_series:
-					frappe.throw(_("Naming series must be TNDR-AWR-UPA-.YYYY.-.{{tender_number}}. for Awarded UPA Tender"))
-				elif self.category == "Private Tender" and "AWR-PRV" not in self.naming_series:
-					frappe.throw(_("Naming series must be TNDR-AWR-PRV-.YYYY.-.{{tender_number}}. for Awarded Private Tender"))
-			
-			# Ensure FMD series is not used for Awarded Tenders
+			if self.category == "UPA Tender" and "AWR-UPA" not in self.naming_series:
+				frappe.throw(_("Naming series must be TNDR-AWR-UPA-.YYYY.-.{{tender_number}}. for Awarded UPA Tender"))
+			elif self.category == "Private Tender" and "AWR-PRV" not in self.naming_series:
+				frappe.throw(_("Naming series must be TNDR-AWR-PRV-.YYYY.-.{{tender_number}}. for Awarded Private Tender"))
 			if "FMD" in self.naming_series:
-				frappe.throw(_("Cannot use FMD (For Market Data) naming series for Awarded Tenders. Please select the correct category first."))
+				frappe.throw(_("Cannot use FMD naming series for Awarded Tenders."))
+		
+		# Check for Tender Submission
+		elif self.tender_type == "Tender Submission":
+			if not self.category:
+				frappe.throw(_("Category is required for Tender Submission"))
+			if self.category == "UPA Tender" and "SUB-UPA" not in self.naming_series:
+				frappe.throw(_("Naming series must be TNDR-SUB-UPA-.YYYY.-.{{tender_number}}. for UPA Submission"))
+			elif self.category == "Private Tender" and "SUB-PRV" not in self.naming_series:
+				frappe.throw(_("Naming series must be TNDR-SUB-PRV-.YYYY.-.{{tender_number}}. for Private Submission"))
+		
+		# Check for Accepted Tenders
+		elif self.tender_type == "Accepted Tenders":
+			if not self.category:
+				frappe.throw(_("Category is required for Accepted Tenders"))
+			if self.category == "UPA Tender" and "ACP-UPA" not in self.naming_series:
+				frappe.throw(_("Naming series must be TNDR-ACP-UPA-.YYYY.-.{{tender_number}}. for Accepted UPA Tender"))
+			elif self.category == "Private Tender" and "ACP-PRV" not in self.naming_series:
+				frappe.throw(_("Naming series must be TNDR-ACP-PRV-.YYYY.-.{{tender_number}}. for Accepted Private Tender"))
 
 	def on_submit(self):
 		"""Actions to perform on tender submission"""
 		self.update_tender_end_date_if_extended()
 		
-		# Set initial workflow status for Awarded Tenders
-		if self.tender_type == "Awarded Tenders" and not self.workflow_status and not self.is_accepted_tender:
+		# Set initial workflow status only for base Awarded Tenders
+		if self.tender_type == "Awarded Tenders" and not self.workflow_status:
 			self.db_set("workflow_status", "Awarded")
 
 	def apply_tender_rules(self):
 		"""Apply extra quantities and extended time rules to tender"""
+		# Only apply from day one if master switch is activated
+		if not getattr(self, "applying_rules", 0):
+			return
+			
 		# Apply Extra Quantities
 		if self.apply_extra_quantities and self.extra_qty_type and self.extra_qty_value:
 			self.apply_extra_quantity_logic()
@@ -79,7 +90,7 @@ class Tenders(Document):
 
 		if self.tender_type == "Tenders for market data":
 			self._apply_extra_qty_to_items_fmd()
-		elif self.tender_type == "Awarded Tenders":
+		elif self.tender_type in ["Awarded Tenders", "Tender Submission", "Accepted Tenders"]:
 			self._apply_extra_qty_to_item_tender()
 			self._apply_extra_qty_to_tender_supplier()
 
@@ -129,6 +140,7 @@ class Tenders(Document):
 		if self.tender_type in ["Awarded Tenders", "Tender Submission", "Accepted Tenders"] and self.item_tender:
 			items_to_check = self.item_tender
 
+
 		# Calculate deviations for each item
 		for row in items_to_check:
 			item_code = row.item_code if hasattr(row, 'item_code') else None
@@ -169,6 +181,7 @@ class Tenders(Document):
 			items_to_track = [(row.item, row.quantity) for row in self.items_fmd if hasattr(row, 'item') and row.item]
 		elif self.tender_type in ["Awarded Tenders", "Tender Submission", "Accepted Tenders"] and self.item_tender:
 			items_to_track = [(row.item_code, row.tender_qty) for row in self.item_tender if hasattr(row, 'item_code') and row.item_code]
+
 
 		if not items_to_track:
 			return
@@ -369,13 +382,12 @@ def create_submission_from_awarded(source_name):
 	"""Create Submission Tender from Awarded Tender"""
 	source_doc = frappe.get_doc("Tenders", source_name)
 	
-	if source_doc.tender_type != "Awarded Tenders" or source_doc.workflow_status not in [None, "Awarded"]:
+	if source_doc.tender_type != "Awarded Tenders" or source_doc.workflow_status not in [None, "", "Awarded"]:
 		frappe.throw(_("Can only create Submission Tender from Awarded Tender with Awarded status"))
 	
-	# Create new Submission Tender (same doctype, different series)
+	# Create new Submission Tender (same doctype, separate tender_type)
 	target_doc = frappe.new_doc("Tenders")
-	target_doc.tender_type = "Awarded Tenders"
-	target_doc.workflow_status = "Submission"
+	target_doc.tender_type = "Tender Submission"  # Explicit type
 	target_doc.category = source_doc.category
 	target_doc.tender_number = source_doc.tender_number
 	target_doc.year_of_tender = source_doc.year_of_tender
@@ -384,6 +396,8 @@ def create_submission_from_awarded(source_name):
 	target_doc.tender_start_date = source_doc.tender_start_date
 	target_doc.tender_end_date = source_doc.tender_end_date
 	target_doc.supplying_by = source_doc.supplying_by
+	target_doc.number_of_distributors = source_doc.get("number_of_distributors")
+	target_doc.source_awarded_tender = source_name
 	
 	# Copy items
 	for row in source_doc.item_tender or []:
@@ -398,12 +412,15 @@ def create_submission_from_awarded(source_name):
 		})
 	
 	# Copy tender rules
+	target_doc.applying_rules = source_doc.applying_rules
 	target_doc.apply_extra_quantities = source_doc.apply_extra_quantities
 	target_doc.extra_qty_type = source_doc.extra_qty_type
 	target_doc.extra_qty_value = source_doc.extra_qty_value
 	target_doc.apply_extended_time = source_doc.apply_extended_time
 	target_doc.extended_start_date = source_doc.extended_start_date
 	target_doc.extended_end_date = source_doc.extended_end_date
+	
+	target_doc.number_of_distributors = source_doc.get("number_of_distributors")
 	
 	# Set naming series for Submission
 	if source_doc.category == "UPA Tender":
@@ -413,24 +430,23 @@ def create_submission_from_awarded(source_name):
 	
 	target_doc.insert()
 	
-	# Mark source as having submission created
+	# Mark source as having a submission created
 	source_doc.db_set("workflow_status", "Submission")
 	
 	return target_doc.name
 
 @frappe.whitelist()
 def create_accepted_from_submission(source_name):
-	"""Create Accepted Tender from Awarded Tender with Submission status"""
+	"""Create Accepted Tender from a Tender Submission"""
 	source_doc = frappe.get_doc("Tenders", source_name)
 	
-	if source_doc.tender_type != "Awarded Tenders" or source_doc.workflow_status != "Submission":
-		frappe.throw(_("Can only create Accepted Tender from Awarded Tender with Submission status"))
+	if source_doc.tender_type != "Tender Submission":
+		frappe.throw(_("Can only create Accepted Tender from a Tender Submission"))
 	
-	# Create new Accepted Tender (same doctype, different flag)
+	# Create new Accepted Tender (explicit type)
 	target_doc = frappe.new_doc("Tenders")
-	target_doc.tender_type = "Awarded Tenders"  # Keep same type
-	target_doc.is_accepted_tender = 1  # Mark as accepted
-	target_doc.source_awarded_tender = source_name
+	target_doc.tender_type = "Accepted Tenders"  # Explicit type
+	target_doc.source_awarded_tender = source_doc.source_awarded_tender or source_name
 	target_doc.category = source_doc.category
 	target_doc.tender_number = source_doc.tender_number
 	target_doc.year_of_tender = source_doc.year_of_tender
@@ -439,6 +455,7 @@ def create_accepted_from_submission(source_name):
 	target_doc.tender_start_date = source_doc.tender_start_date
 	target_doc.tender_end_date = source_doc.tender_end_date
 	target_doc.supplying_by = source_doc.supplying_by
+	target_doc.number_of_distributors = source_doc.get("number_of_distributors")
 	
 	# Copy items
 	for row in source_doc.item_tender or []:
@@ -460,13 +477,31 @@ def create_accepted_from_submission(source_name):
 			"supply_qty": row.supply_qty if hasattr(row, 'supply_qty') else 0
 		})
 	
+	# Copy offers from submission
+	for row in source_doc.onco_price_offer or []:
+		target_doc.append("onco_price_offer", row.as_dict())
+	for row in source_doc.onco_technical_offer or []:
+		target_doc.append("onco_technical_offer", row.as_dict())
+	for row in source_doc.distributors_price_offer or []:
+		target_doc.append("distributors_price_offer", row.as_dict())
+	for row in source_doc.distributors_technical_offer or []:
+		target_doc.append("distributors_technical_offer", row.as_dict())
+	
 	# Copy tender rules
+	target_doc.applying_rules = source_doc.applying_rules
 	target_doc.apply_extra_quantities = source_doc.apply_extra_quantities
 	target_doc.extra_qty_type = source_doc.extra_qty_type
 	target_doc.extra_qty_value = source_doc.extra_qty_value
 	target_doc.apply_extended_time = source_doc.apply_extended_time
 	target_doc.extended_start_date = source_doc.extended_start_date
 	target_doc.extended_end_date = source_doc.extended_end_date
+	
+	# Copy price lists
+	for row in source_doc.tender_price_list or []:
+		target_doc.append("tender_price_list", {
+			"distributor": row.distributor if hasattr(row, 'distributor') else "",
+			"price_list": row.price_list if hasattr(row, 'price_list') else ""
+		})
 	
 	# Set naming series
 	if source_doc.category == "UPA Tender":
@@ -476,7 +511,7 @@ def create_accepted_from_submission(source_name):
 	
 	target_doc.insert()
 	
-	# Mark source as Accepted
+	# Mark source submission as Accepted
 	source_doc.db_set("workflow_status", "Accepted")
 	
 	return target_doc.name

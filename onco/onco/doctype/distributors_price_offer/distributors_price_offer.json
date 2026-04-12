@@ -37,14 +37,14 @@
    "fieldname": "quantity",
    "fieldtype": "Float",
    "in_list_view": 1,
-   "label": "Quantity"
+   "label": "Tender Quantity"
   },
   {
    "allow_on_submit": 1,
    "fieldname": "price",
    "fieldtype": "Currency",
    "in_list_view": 1,
-   "label": "Price"
+   "label": "Tender Price"
   },
   {
    "allow_on_submit": 1,

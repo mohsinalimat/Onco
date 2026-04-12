@@ -3,41 +3,65 @@
 
 frappe.ui.form.on("Tenders", {
 	refresh(frm) {
-		// Add custom buttons
+		// Add custom buttons based on tender_type
 		if (frm.doc.docstatus === 1) {
-			// Workflow transition buttons for Awarded Tenders
+
+			// === AWARDED TENDERS ===
+			// Only show Mark as Submission when it hasn't been submitted yet
 			if (frm.doc.tender_type === "Awarded Tenders") {
 				if (!frm.doc.workflow_status || frm.doc.workflow_status === "Awarded") {
 					frm.add_custom_button(__('Mark as Submission'), function () {
 						mark_as_submission(frm);
 					}, __('Workflow'));
 				}
-				
-				if (frm.doc.workflow_status === "Submission") {
+			}
+
+			// === TENDER SUBMISSION ===
+			// Show Create Accepted Tender button
+			if (frm.doc.tender_type === "Tender Submission") {
+				if (!frm.doc.workflow_status || frm.doc.workflow_status !== "Accepted") {
 					frm.add_custom_button(__('Create Accepted Tender'), function () {
 						create_accepted_tender(frm);
 					}, __('Workflow'));
 				}
 			}
-			
-			if (frm.doc.tender_price_deviation && frm.doc.tender_price_deviation.length > 0) {
-				frm.add_custom_button(__('Approve All Price Deviations'), function () {
-					approve_all_deviations(frm);
+
+			// === ACCEPTED TENDERS ===
+			// Show actions specific to accepted tenders
+			if (frm.doc.tender_type === "Accepted Tenders") {
+				// Create Sales Order from accepted tender
+				frm.add_custom_button(__('Create Sales Order'), function () {
+					create_sales_order_from_tender(frm);
 				}, __('Actions'));
+
+				// Update fulfillment status from invoices
+				frm.add_custom_button(__('Update Status from Invoices'), function () {
+					update_status_from_invoices(frm);
+				}, __('Actions'));
+
+				// Approve price deviations if any
+				if (frm.doc.tender_price_deviation && frm.doc.tender_price_deviation.length > 0) {
+					frm.add_custom_button(__('Approve All Price Deviations'), function () {
+						approve_all_deviations(frm);
+					}, __('Actions'));
+				}
 			}
 
-			// Button to update status from sales invoices
-			frm.add_custom_button(__('Update Status from Invoices'), function () {
-				update_status_from_invoices(frm);
-			}, __('Actions'));
+			// === SHARED ACTIONS (Awarded + Submission) ===
+			if (["Awarded Tenders", "Tender Submission"].includes(frm.doc.tender_type)) {
+				if (frm.doc.tender_price_deviation && frm.doc.tender_price_deviation.length > 0) {
+					frm.add_custom_button(__('Approve All Price Deviations'), function () {
+						approve_all_deviations(frm);
+					}, __('Actions'));
+				}
 
-			// Button to approve rule changes (Role restriction removed for testing)
-			frm.add_custom_button(__('Approve Rule Change'), function () {
-				approve_rule_change(frm);
-			}, __('Approvals'));
+				frm.add_custom_button(__('Approve Rule Change'), function () {
+					approve_rule_change(frm);
+				}, __('Approvals'));
+			}
 		}
 
-		// Add Upload Data button for FMD
+		// Add Upload Data button for FMD (draft only)
 		if (frm.doc.tender_type === "Tenders for market data" && !frm.doc.__islocal && frm.doc.docstatus === 0) {
 			frm.add_custom_button(__('Upload FMD Data'), function () {
 				upload_fmd_data(frm);
@@ -79,20 +103,29 @@ frappe.ui.form.on("Tenders", {
 		});
 
 		// Filter price lists in tender_price_list by supplier
-		frm.set_query("price_list", "tender_price_list", function(doc, cdt, cdn) {
+		frm.set_query("price_list", "tender_price_list", function (doc, cdt, cdn) {
 			let row = locals[cdt][cdn];
 			let filters = {
 				"buying": 1,
 				"enabled": 1
 			};
-			
+
 			// Filter by supplier if selected
 			if (row.distributor) {
 				filters["applicable_for"] = row.distributor;
 			}
-			
+
 			return {
 				filters: filters
+			};
+		});
+
+		// Add filter for distributor in tender_price_list - should be from Pharmaceuticals Local Distributors Companies
+		frm.set_query("distributor", "tender_price_list", function () {
+			return {
+				filters: {
+					"customer_group": "Pharmaceuticals Local Distributors Companies"
+				}
 			};
 		});
 	},
@@ -109,6 +142,7 @@ frappe.ui.form.on("Tenders", {
 			frm.set_value("apply_extra_quantities", 0);
 		}
 		toggle_item_tables(frm);
+		toggle_offer_sections(frm);
 		set_naming_series_options(frm);
 	},
 
@@ -118,42 +152,31 @@ frappe.ui.form.on("Tenders", {
 
 	supplying_by(frm) {
 		toggle_offer_sections(frm);
-		
-		// Auto-populate Oncopharm when "By Oncopharm Only" selected
-		if (frm.doc.supplying_by === "By Oncopharm Only" || frm.doc.supplying_by === "By Oncopharm & Distributor") {
-			let has_oncopharm = false;
-			(frm.doc.tender_supplier || []).forEach(row => {
-				if (row.supplying_by === "By Oncopharm") {
-					has_oncopharm = true;
-				}
-			});
-			
-			if (!has_oncopharm) {
-				// Search for Oncopharm customer
-				frappe.call({
-					method: 'frappe.client.get_list',
-					args: {
-						doctype: 'Customer',
-						filters: {
-							'customer_name': ['like', '%ONCOPHARM%']
-						},
-						fields: ['name'],
-						limit: 1
-					},
-					callback: function(r) {
-						if (r.message && r.message.length > 0) {
-							let row = frm.add_child("tender_supplier");
-							row.supplying_by = "By Oncopharm";
-							row.supplier = r.message[0].name;
-							frm.refresh_field("tender_supplier");
-						} else {
-							// Just add the row without supplier if not found
-							let row = frm.add_child("tender_supplier");
-							row.supplying_by = "By Oncopharm";
-							frm.refresh_field("tender_supplier");
-						}
+
+		// Auto-populate Oncopharm in tender supplier table
+		if (frm.doc.supplying_by && frm.doc.supplying_by.includes("Oncopharm")) {
+			let exists = (frm.doc.tender_supplier || []).some(row => row.supplying_by === "By Oncopharm Only");
+			if (!exists) {
+				let row = frm.add_child("tender_supplier");
+				row.supplying_by = "By Oncopharm Only";
+				// Supplier name will be filled by the user or can default to Oncopharm if exists
+				frm.refresh_field("tender_supplier");
+			}
+
+			// Auto-populate onco_price_offer from item_tender
+			if (frm.doc.item_tender && frm.doc.item_tender.length > 0) {
+				frm.doc.item_tender.forEach(item => {
+					let offer_exists = (frm.doc.onco_price_offer || []).some(offer => offer.item === item.item_code);
+					if (!offer_exists) {
+						let new_offer = frm.add_child("onco_price_offer");
+						new_offer.item = item.item_code;
+						new_offer.item_group = item.item_group;
+						new_offer.quantity = item.tender_qty;
+						new_offer.start_date = item.tender_start_date;
+						new_offer.end_date = item.tender_end_date;
 					}
 				});
+				frm.refresh_field("onco_price_offer");
 			}
 		}
 	},
@@ -195,7 +218,7 @@ frappe.ui.form.on("Item Tender", {
 	item_tender_add(frm, cdt, cdn) {
 		populate_tender_status_realtime(frm);
 	},
-	
+
 	item_tender_remove(frm, cdt, cdn) {
 		let child = locals[cdt][cdn];
 		// Remove corresponding tender_status row
@@ -210,11 +233,11 @@ frappe.ui.form.on("Item Tender", {
 		}
 		frm.refresh_field("tender_status");
 	},
-	
+
 	item_code(frm, cdt, cdn) {
 		populate_tender_status_realtime(frm);
 	},
-	
+
 	tender_qty(frm, cdt, cdn) {
 		populate_tender_status_realtime(frm);
 	}
@@ -241,9 +264,9 @@ function populate_tender_status_realtime(frm) {
 		if (!item_row.item_code || seen_items.has(item_row.item_code)) {
 			return;
 		}
-		
+
 		seen_items.add(item_row.item_code);
-		
+
 		let tender_qty = item_row.tender_qty || 0;
 
 		if (existing_status[item_row.item_code]) {
@@ -279,7 +302,7 @@ function toggle_item_tables(frm) {
 	// Show/hide item tables based on tender type
 	let show_items_fmd = frm.doc.tender_type === "Tenders for market data";
 	let show_item_tender = ["Awarded Tenders", "Tender Submission", "Accepted Tenders"].includes(frm.doc.tender_type);
-	let show_tender_supplier = ["Tender Submission", "Accepted Tenders"].includes(frm.doc.tender_type) || (frm.doc.tender_type === "Awarded Tenders" && frm.doc.supplying_by && frm.doc.supplying_by !== "Oncopharm");
+	let show_tender_supplier = ["Tender Submission", "Accepted Tenders"].includes(frm.doc.tender_type);
 
 	frm.set_df_property("items_fmd", "hidden", !show_items_fmd);
 	frm.set_df_property("item_tender", "hidden", !show_item_tender);
@@ -310,30 +333,27 @@ function set_naming_series_options(frm) {
 	let options = [];
 	const type = frm.doc.tender_type;
 	const category = frm.doc.category;
-	const is_accepted = frm.doc.is_accepted_tender;
 
 	if (type === "Tenders for market data") {
 		options = ["TNDR-FMD-.YYYY.-.####"];
 	} else if (type === "Awarded Tenders") {
-		if (is_accepted) {
-			// Accepted tender naming
-			if (category === "UPA Tender") options = ["TNDR-ACP-UPA-.YYYY.-.{tender_number}."];
-			else if (category === "Private Tender") options = ["TNDR-ACP-PRV-.YYYY.-.{tender_number}."];
-		} else {
-			// Awarded tender naming
-			if (category === "UPA Tender") options = ["TNDR-AWR-UPA-.YYYY.-.{tender_number}."];
-			else if (category === "Private Tender") options = ["TNDR-AWR-PRV-.YYYY.-.{tender_number}."];
-		}
+		if (category === "UPA Tender") options = ["TNDR-AWR-UPA-.YYYY.-.{tender_number}."];
+		else if (category === "Private Tender") options = ["TNDR-AWR-PRV-.YYYY.-.{tender_number}."];
+	} else if (type === "Tender Submission") {
+		if (category === "UPA Tender") options = ["TNDR-SUB-UPA-.YYYY.-.{tender_number}."];
+		else if (category === "Private Tender") options = ["TNDR-SUB-PRV-.YYYY.-.{tender_number}."];
+	} else if (type === "Accepted Tenders") {
+		if (category === "UPA Tender") options = ["TNDR-ACP-UPA-.YYYY.-.{tender_number}."];
+		else if (category === "Private Tender") options = ["TNDR-ACP-PRV-.YYYY.-.{tender_number}."];
 	}
 
 	if (options.length > 0) {
 		frm.set_df_property("naming_series", "options", options);
-		// Always set the correct series based on current selection
-		if (!options.includes(frm.doc.naming_series) || frm.doc.naming_series.includes("FMD") && type !== "Tenders for market data") {
+		if (!options.includes(frm.doc.naming_series)) {
 			frm.set_value("naming_series", options[0]);
 		}
-	} else if (type === "Awarded Tenders" && !category) {
-		// If Awarded Tender is selected but no category, show message
+	} else if (["Awarded Tenders", "Tender Submission", "Accepted Tenders"].includes(type) && !category) {
+		// If type requires category but none selected, show message
 		frappe.msgprint({
 			title: __('Category Required'),
 			indicator: 'orange',
@@ -512,6 +532,59 @@ function show_fulfillment_status(frm) {
 	if ($('.tender-fulfillment-status').length === 0) {
 		$(frm.form_layout.form_section[0]).after(status_html).addClass('tender-fulfillment-status');
 	}
+}
+
+
+function create_sales_order_from_tender(frm) {
+	frappe.prompt([
+		{
+			fieldtype: 'Link',
+			fieldname: 'customer',
+			label: 'Customer',
+			options: 'Customer',
+			reqd: 1,
+			default: frm.doc.hospitalagent_name
+		},
+		{
+			fieldtype: 'Date',
+			fieldname: 'delivery_date',
+			label: 'Delivery Date',
+			reqd: 1,
+			default: frm.doc.tender_end_date
+		}
+	], function (values) {
+		if (!frm.doc.item_tender || frm.doc.item_tender.length === 0) {
+			frappe.msgprint(__('No items found to create a Sales Order.'));
+			return;
+		}
+
+		let items = frm.doc.item_tender.map(row => ({
+			item_code: row.item_code,
+			item_name: row.item_name,
+			qty: row.tender_qty,
+			rate: row.tender_price,
+			delivery_date: values.delivery_date
+		})).filter(i => i.item_code);
+
+		frappe.call({
+			method: 'frappe.client.insert',
+			args: {
+				doc: {
+					doctype: 'Sales Order',
+					customer: values.customer,
+					delivery_date: values.delivery_date,
+					custom_tender_ref: frm.doc.name,
+					items: items
+				}
+			},
+			callback: function (r) {
+				if (r.message) {
+					frappe.set_route('Form', 'Sales Order', r.message.name);
+					frappe.show_alert({ message: __('Sales Order created: ') + r.message.name, indicator: 'green' });
+				}
+			}
+		});
+	}, __('Create Sales Order'), __('Create'));
 }
 
 

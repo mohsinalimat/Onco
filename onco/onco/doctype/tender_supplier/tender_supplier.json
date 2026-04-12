@@ -16,7 +16,7 @@
    "fieldtype": "Select",
    "in_list_view": 1,
    "label": "Supplying By",
-   "options": "\nBy Oncopharm\nBy Distributor\nBy Oncopharm & Distributor"
+   "options": "\nBy Oncopharm Only\nBy Distributor Only\nBy Oncopharm & Distributor"
   },
   {
    "fieldname": "supplier",
@@ -24,7 +24,7 @@
    "in_list_view": 1,
    "label": "Distributor Name",
    "options": "Customer",
-   "read_only_depends_on": "eval:doc.supplying_by == 'By Oncopharm'"
+   "read_only_depends_on": "eval:doc.supplying_by == 'By Oncopharm Only'"
   },
   {
    "fieldname": "supply_qty",
