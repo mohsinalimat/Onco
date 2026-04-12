@@ -250,10 +250,12 @@ class Tenders(Document):
 
 					if total_tender_qty > 0:
 						fulfillment_percent = (total_supplied_qty / total_tender_qty)
-						if fulfillment_percent >= 0.8:
-							# Check if user is Tender Manager
-							if "Tender Manager" not in frappe.get_roles(frappe.session.user):
-								frappe.throw(_("Any change in tender rules after date of start can’t be made before selling 80% from total quantities and require permission from only tender manager."))
+						
+						if fulfillment_percent < 0.8:
+							frappe.throw(_("Any change in tender rules cannot be made before selling 80% of the total quantities."))
+							
+						if "Tender Manager" not in frappe.get_roles(frappe.session.user):
+							frappe.throw(_("Even after 80% fulfillment, only the Tender Manager has permission to change tender rules."))
 
 	def update_tender_end_date_if_extended(self):
 		"""Update tender end date after submission if extended time is applied"""

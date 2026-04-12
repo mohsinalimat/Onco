@@ -1,80 +1,80 @@
 {
- "actions": [],
- "allow_rename": 1,
- "creation": "2025-12-31 23:46:54.195884",
- "doctype": "DocType",
- "editable_grid": 1,
- "engine": "InnoDB",
- "field_order": [
-  "item",
-  "item_group",
-  "quantity",
-  "price",
-  "amount",
-  "start_date",
-  "end_date"
- ],
- "fields": [
-  {
-   "fieldname": "item",
-   "fieldtype": "Link",
-   "in_list_view": 1,
-   "label": "Item",
-   "options": "Item"
-  },
-  {
-   "default": "Finished Pharmaceutical Products Item",
-   "fieldname": "item_group",
-   "fieldtype": "Link",
-   "label": "Item Group",
-   "options": "Item Group"
-  },
-  {
-   "allow_on_submit": 1,
-   "fieldname": "quantity",
-   "fieldtype": "Float",
-   "in_list_view": 1,
-   "label": "Tender Quantity"
-  },
-  {
-   "allow_on_submit": 1,
-   "fieldname": "price",
-   "fieldtype": "Currency",
-   "in_list_view": 1,
-   "label": "Tender Price"
-  },
-  {
-   "allow_on_submit": 1,
-   "fieldname": "amount",
-   "fieldtype": "Currency",
-   "in_list_view": 1,
-   "label": "Amount"
-  },
-  {
-   "fieldname": "start_date",
-   "fieldtype": "Date",
-   "in_list_view": 1,
-   "label": "Start Date"
-  },
-  {
-   "fieldname": "end_date",
-   "fieldtype": "Date",
-   "in_list_view": 1,
-   "label": "End Date"
-  }
- ],
- "grid_page_length": 50,
- "index_web_pages_for_search": 1,
- "istable": 1,
- "links": [],
- "modified": "2026-01-01 02:25:19.407212",
- "modified_by": "Administrator",
- "module": "Onco",
- "name": "Onco Price Offer",
- "owner": "Administrator",
- "permissions": [],
- "row_format": "Dynamic",
- "sort_field": "modified",
- "sort_order": "DESC",
- "states": []
+    "actions": [],
+    "allow_rename": 1,
+    "creation": "2025-12-31 23:46:54.195884",
+    "doctype": "DocType",
+    "editable_grid": 1,
+    "engine": "InnoDB",
+    "field_order": [
+        "item",
+        "item_group",
+        "quantity",
+        "price",
+        "amount",
+        "start_date",
+        "end_date"
+    ],
+    "fields": [
+        {
+            "fieldname": "item",
+            "fieldtype": "Link",
+            "in_list_view": 1,
+            "label": "Item",
+            "options": "Item"
+        },
+        {
+            "default": "Local Finished Pharmaceutical Products Item",
+            "fieldname": "item_group",
+            "fieldtype": "Link",
+            "label": "Item Group",
+            "options": "Item Group"
+        },
+        {
+            "allow_on_submit": 1,
+            "fieldname": "quantity",
+            "fieldtype": "Float",
+            "in_list_view": 1,
+            "label": "Tender Quantity"
+        },
+        {
+            "allow_on_submit": 1,
+            "fieldname": "price",
+            "fieldtype": "Currency",
+            "in_list_view": 1,
+            "label": "Tender Price"
+        },
+        {
+            "allow_on_submit": 1,
+            "fieldname": "amount",
+            "fieldtype": "Currency",
+            "in_list_view": 1,
+            "label": "Amount"
+        },
+        {
+            "fieldname": "start_date",
+            "fieldtype": "Date",
+            "in_list_view": 1,
+            "label": "Start Date"
+        },
+        {
+            "fieldname": "end_date",
+            "fieldtype": "Date",
+            "in_list_view": 1,
+            "label": "End Date"
+        }
+    ],
+    "grid_page_length": 50,
+    "index_web_pages_for_search": 1,
+    "istable": 1,
+    "links": [],
+    "modified": "2026-01-01 02:25:19.407212",
+    "modified_by": "Administrator",
+    "module": "Onco",
+    "name": "Onco Price Offer",
+    "owner": "Administrator",
+    "permissions": [],
+    "row_format": "Dynamic",
+    "sort_field": "modified",
+    "sort_order": "DESC",
+    "states": []
 }

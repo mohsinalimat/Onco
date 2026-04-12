@@ -1,86 +1,86 @@
 {
- "actions": [],
- "allow_rename": 1,
- "creation": "2025-07-16 19:19:13.110403",
- "doctype": "DocType",
- "editable_grid": 1,
- "engine": "InnoDB",
- "field_order": [
-  "item_group",
-  "item_code",
-  "item_name",
-  "tender_qty",
-  "tender_price",
-  "tender_start_date",
-  "tender_end_date"
- ],
- "fields": [
-  {
-   "columns": 2,
-   "fieldname": "item_code",
-   "fieldtype": "Link",
-   "in_list_view": 1,
-   "label": "Item Code",
-   "options": "Item"
-  },
-  {
-   "columns": 2,
-   "default": "Finished Pharmaceutical Products Item",
-   "fieldname": "item_group",
-   "fieldtype": "Link",
-   "in_list_view": 1,
-   "label": "Item Group",
-   "options": "Item Group"
-  },
-  {
-   "columns": 2,
-   "fetch_from": "item_code.item_name",
-   "fieldname": "item_name",
-   "fieldtype": "Data",
-   "in_list_view": 1,
-   "label": "Item Name"
-  },
-  {
-   "columns": 1,
-   "fieldname": "tender_qty",
-   "fieldtype": "Float",
-   "in_list_view": 1,
-   "label": "Tender Qty"
-  },
-  {
-   "columns": 1,
-   "fieldname": "tender_price",
-   "fieldtype": "Currency",
-   "in_list_view": 1,
-   "label": "Tender Price"
-  },
-  {
-   "columns": 1,
-   "fieldname": "tender_start_date",
-   "fieldtype": "Date",
-   "in_list_view": 1,
-   "label": "Tender Start Date"
-  },
-  {
-   "columns": 1,
-   "fieldname": "tender_end_date",
-   "fieldtype": "Date",
-   "in_list_view": 1,
-   "label": "Tender End Date"
-  }
- ],
- "grid_page_length": 50,
- "index_web_pages_for_search": 1,
- "istable": 1,
- "links": [],
- "modified": "2025-12-29 23:21:14.653660",
- "modified_by": "Administrator",
- "module": "Onco",
- "name": "Item Tender",
- "owner": "Administrator",
- "permissions": [],
- "row_format": "Dynamic",
- "sort_field": "modified",
- "sort_order": "DESC",
- "states": []
+    "actions": [],
+    "allow_rename": 1,
+    "creation": "2025-07-16 19:19:13.110403",
+    "doctype": "DocType",
+    "editable_grid": 1,
+    "engine": "InnoDB",
+    "field_order": [
+        "item_group",
+        "item_code",
+        "item_name",
+        "tender_qty",
+        "tender_price",
+        "tender_start_date",
+        "tender_end_date"
+    ],
+    "fields": [
+        {
+            "columns": 2,
+            "fieldname": "item_code",
+            "fieldtype": "Link",
+            "in_list_view": 1,
+            "label": "Item Code",
+            "options": "Item"
+        },
+        {
+            "columns": 2,
+            "default": "Local Finished Pharmaceutical Products Item",
+            "fieldname": "item_group",
+            "fieldtype": "Link",
+            "in_list_view": 1,
+            "label": "Item Group",
+            "options": "Item Group"
+        },
+        {
+            "columns": 2,
+            "fetch_from": "item_code.item_name",
+            "fieldname": "item_name",
+            "fieldtype": "Data",
+            "in_list_view": 1,
+            "label": "Item Name"
+        },
+        {
+            "columns": 1,
+            "fieldname": "tender_qty",
+            "fieldtype": "Float",
+            "in_list_view": 1,
+            "label": "Tender Qty"
+        },
+        {
+            "columns": 1,
+            "fieldname": "tender_price",
+            "fieldtype": "Currency",
+            "in_list_view": 1,
+            "label": "Tender Price"
+        },
+        {
+            "columns": 1,
+            "fieldname": "tender_start_date",
+            "fieldtype": "Date",
+            "in_list_view": 1,
+            "label": "Tender Start Date"
+        },
+        {
+            "columns": 1,
+            "fieldname": "tender_end_date",
+            "fieldtype": "Date",
+            "in_list_view": 1,
+            "label": "Tender End Date"
+        }
+    ],
+    "grid_page_length": 50,
+    "index_web_pages_for_search": 1,
+    "istable": 1,
+    "links": [],
+    "modified": "2025-12-29 23:21:14.653660",
+    "modified_by": "Administrator",
+    "module": "Onco",
+    "name": "Item Tender",
+    "owner": "Administrator",
+    "permissions": [],
+    "row_format": "Dynamic",
+    "sort_field": "modified",
+    "sort_order": "DESC",
+    "states": []
 }
