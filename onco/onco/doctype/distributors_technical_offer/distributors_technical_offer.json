@@ -17,25 +17,29 @@
    "fieldtype": "Link",
    "in_list_view": 1,
    "label": "Distributor",
-   "options": "Customer"
+   "options": "Customer",
+   "allow_on_submit": 1
   },
   {
    "fieldname": "date_of_submission",
    "fieldtype": "Date",
    "in_list_view": 1,
-   "label": "Date of Submission"
+   "label": "Date of Submission",
+   "allow_on_submit": 1
   },
   {
    "fieldname": "subject",
    "fieldtype": "Data",
    "in_list_view": 1,
-   "label": "Subject"
+   "label": "Subject",
+   "allow_on_submit": 1
   },
   {
    "fieldname": "attachment",
    "fieldtype": "Attach",
    "in_list_view": 1,
-   "label": "Attachment"
+   "label": "Attachment",
+   "allow_on_submit": 1
   }
  ],
  "grid_page_length": 50,

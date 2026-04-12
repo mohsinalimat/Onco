@@ -565,4 +565,40 @@ def upload_fmd_items(parent, file_url):
         frappe.log_error(frappe.get_traceback(), "FMD Upload Error")
         frappe.throw(f"Error parsing file: {str(e)}")
 
+@frappe.whitelist()
+def check_sales_invoice_deviations(sales_invoice_name):
+	"""
+	Whitelisted method for client-side to check for deviations without throwing an error.
+	Used to prompt the user for approval.
+	"""
+	doc = frappe.get_doc("Sales Invoice", sales_invoice_name)
+	if not doc.get("custom_tender_ref"):
+		return {"deviations": []}
+
+	tender = frappe.get_doc("Tenders", doc.custom_tender_ref)
+	
+	# Build map of tender prices
+	tender_prices = {}
+	for row in tender.item_tender or []:
+		if row.item_code:
+			tender_prices[row.item_code] = row.tender_price
+	
+	# Detect deviations
+	deviations = []
+	for item in doc.items:
+		if item.item_code in tender_prices:
+			t_price = tender_prices[item.item_code]
+			if item.rate < t_price:
+				deviations.append({
+					"item_code": item.item_code,
+					"invoice_rate": item.rate,
+					"tender_price": t_price,
+					"qty": item.qty
+				})
+	
+	return {
+		"deviations": deviations,
+		"already_approved": doc.get("custom_price_deviation_approved") or 0
+	}
+
 

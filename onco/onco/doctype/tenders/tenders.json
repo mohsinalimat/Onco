@@ -181,6 +181,7 @@
             "fieldtype": "Column Break"
         },
         {
+            "allow_on_submit": 1,
             "depends_on": "eval:doc.apply_extra_quantities == 1",
             "fieldname": "extra_qty_type",
             "fieldtype": "Select",
@@ -188,6 +189,7 @@
             "options": "\nPercent\nQuantity"
         },
         {
+            "allow_on_submit": 1,
             "depends_on": "eval:doc.apply_extra_quantities == 1",
             "fieldname": "extra_qty_value",
             "fieldtype": "Float",
@@ -206,12 +208,14 @@
             "fieldtype": "Column Break"
         },
         {
+            "allow_on_submit": 1,
             "depends_on": "eval:doc.apply_extended_time == 1",
             "fieldname": "extended_start_date",
             "fieldtype": "Date",
             "label": "Extended Start Date"
         },
         {
+            "allow_on_submit": 1,
             "depends_on": "eval:doc.apply_extended_time == 1",
             "fieldname": "extended_end_date",
             "fieldtype": "Date",
@@ -306,7 +310,7 @@
             "options": "Tender Price Deviation Details"
         },
         {
-            "depends_on": "eval:doc.docstatus == 1 && ['Tender Submission','Accepted Tenders'].includes(doc.tender_type)",
+            "depends_on": "eval:['Accepted Tenders'].includes(doc.tender_type)",
             "fieldname": "offers_tab",
             "fieldtype": "Tab Break",
             "label": "Offers"

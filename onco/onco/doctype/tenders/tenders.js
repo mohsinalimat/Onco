@@ -63,6 +63,16 @@ frappe.ui.form.on("Tenders", {
 						approve_all_deviations(frm);
 					}, __('Actions'));
 				}
+
+				// Allow inserting Technical/Price offers onto submitted Accepted Tenders 
+				// bridging Frappe's natively disabled 'Add Row' UI for child grids.
+				frm.add_custom_button(__('Add Price Offer'), function () {
+					open_add_price_offer_dialog(frm);
+				}, __('Offers'));
+
+				frm.add_custom_button(__('Add Technical Offer'), function () {
+					open_add_technical_offer_dialog(frm);
+				}, __('Offers'));
 			}
 
 			// === SHARED ACTIONS (Awarded + Submission) ===
@@ -122,17 +132,27 @@ frappe.ui.form.on("Tenders", {
 
 		// Filter price lists in tender_price_list
 		frm.set_query("price_list", "tender_price_list", function (doc, cdt, cdn) {
-			let filters = {
-				"buying": 1,
-				"enabled": 1
-			};
-
 			return {
-				filters: filters
+				filters: {
+					"custom_price_list_type": "Tender Price List ",
+					"buying": 1,
+					"enabled": 1
+				}
 			};
 		});
 
-		// Add filter for distributor in tender_price_list - should be from Pharmaceuticals Local Distributors Companies
+		// Filter price lists in price_list_for_tender
+		frm.set_query("price_list", "tender_price_list", function (doc, cdt, cdn) {
+			return {
+				filters: {
+					"custom_price_list_type": "Tender Price List ",
+					"buying": 1,
+					"enabled": 1
+				}
+			};
+		});
+
+		// Add filter for distributor in price_list_for_tender - should be from Pharmaceuticals Local Distributors Companies
 		frm.set_query("distributor", "tender_price_list", function () {
 			return {
 				filters: {
@@ -140,6 +160,34 @@ frappe.ui.form.on("Tenders", {
 				}
 			};
 		});
+
+		// Add filters for Price Offers items (filtered by item group)
+		frm.set_query("item", "onco_price_offer", function (doc, cdt, cdn) {
+			let row = locals[cdt][cdn];
+			if (row.item_group) {
+				return { filters: { "item_group": row.item_group } };
+			}
+		});
+		frm.set_query("item", "distributors_price_offer", function (doc, cdt, cdn) {
+			let row = locals[cdt][cdn];
+			if (row.item_group) {
+				return { filters: { "item_group": row.item_group } };
+			}
+		});
+
+		// Add filters for Distributors in the Distributor Offers tables
+		let get_valid_distributors = function () {
+			let valid_distributors = (frm.doc.tender_supplier || [])
+				.map(row => row.supplier)
+				.filter(sup => sup);
+			if (valid_distributors.length > 0) {
+				return { filters: [['name', 'in', valid_distributors]] };
+			}
+			return { filters: { "customer_group": "Pharmaceuticals Local Distributors Companies" } };
+		};
+
+		frm.set_query("distributor", "distributors_price_offer", get_valid_distributors);
+		frm.set_query("distributor", "distributors_technical_offer", get_valid_distributors);
 	},
 
 	before_load(frm) {
@@ -417,18 +465,8 @@ function set_naming_series_options(frm) {
 }
 
 function toggle_tender_rules_fields(frm) {
-	// Toggle extra quantities fields
-	frm.set_df_property("extra_quantities_column", "hidden", !frm.doc.apply_extra_quantities);
-	frm.set_df_property("extra_qty_type", "hidden", !frm.doc.apply_extra_quantities);
-	frm.set_df_property("extra_qty_value", "hidden", !frm.doc.apply_extra_quantities);
-
-	// Toggle extended time fields
-	frm.set_df_property("extended_time_column", "hidden", !frm.doc.apply_extended_time);
-	frm.set_df_property("extended_start_date", "hidden", !frm.doc.apply_extended_time);
-	frm.set_df_property("extended_end_date", "hidden", !frm.doc.apply_extended_time);
-
-	frm.refresh_field("extra_quantities_column");
-	frm.refresh_field("extended_time_column");
+	// Let Frappe's native depends_on handle this. 
+	// Double-toggling fields inside a column break via JS causes them to permanently disappear.
 }
 
 function approve_all_deviations(frm) {
@@ -459,6 +497,169 @@ function approve_all_deviations(frm) {
 			});
 		}
 	);
+}
+
+function open_add_price_offer_dialog(frm) {
+	let supplying_by = frm.doc.supplying_by || "";
+	let offer_for_options = [];
+	if (supplying_by.includes("Oncopharm")) offer_for_options.push("Oncopharm");
+	if (supplying_by.includes("Distributor")) offer_for_options.push("Distributor");
+
+	if (offer_for_options.length === 0) {
+		frappe.msgprint(__('Please set "Supplying By" first.'));
+		return;
+	}
+
+	let valid_distributors = (frm.doc.tender_supplier || [])
+		.map(row => row.supplier)
+		.filter(sup => sup);
+
+	let dialog_fields = [
+		{
+			fieldname: 'offer_for',
+			fieldtype: 'Select',
+			label: __('Offer For'),
+			options: offer_for_options.join('\n'),
+			reqd: 1,
+			hidden: offer_for_options.length === 1 ? 1 : 0,
+			default: offer_for_options[0]
+		},
+		{
+			fieldname: 'distributor',
+			fieldtype: 'Link',
+			label: __('Distributor'),
+			options: 'Customer',
+			reqd: 1,
+			depends_on: 'eval:doc.offer_for == "Distributor"',
+			get_query: function () {
+				if (valid_distributors.length > 0) {
+					return { filters: [['name', 'in', valid_distributors]] };
+				}
+				return { filters: { "customer_group": "Pharmaceuticals Local Distributors Companies" } };
+			}
+		},
+		{ fieldtype: 'Column Break' },
+		{ fieldname: 'item_group', fieldtype: 'Link', label: __('Item Group'), options: 'Item Group', default: 'Finished Pharmaceutical Products Item', reqd: 1 },
+		{
+			fieldname: 'item', fieldtype: 'Link', label: __('Item Code'), options: 'Item', reqd: 1,
+			get_query: function () {
+				let ig = dialog.get_value('item_group');
+				return ig ? { filters: { item_group: ig } } : {};
+			}
+		},
+		{ fieldname: 'quantity', fieldtype: 'Float', label: __('Tender Quantity'), reqd: 1 },
+		{ fieldname: 'price', fieldtype: 'Currency', label: __('Tender Price'), reqd: 1 },
+		{ fieldname: 'amount', fieldtype: 'Currency', label: __('Amount'), read_only: 1 },
+		{ fieldtype: 'Section Break' },
+		{ fieldname: 'start_date', fieldtype: 'Date', label: __('Tender Start Date'), default: frm.doc.tender_start_date },
+		{ fieldname: 'end_date', fieldtype: 'Date', label: __('Tender End Date'), default: frm.doc.tender_end_date },
+		{ fieldtype: 'Column Break' },
+		{ fieldname: 'discount_percent', fieldtype: 'Percent', label: __('Discount Percent'), depends_on: 'eval:doc.offer_for == "Distributor"' },
+		{ fieldname: 'credit_limit', fieldtype: 'Currency', label: __('Credit Limit'), depends_on: 'eval:doc.offer_for == "Distributor"' },
+	];
+
+	let dialog = new frappe.ui.Dialog({
+		title: __('Add Price Offer'),
+		fields: dialog_fields,
+		primary_action_label: __('Add Price Offer'),
+		primary_action(values) {
+			values.amount = (values.quantity || 0) * (values.price || 0);
+
+			if (values.offer_for === 'Oncopharm') {
+				let row = frm.add_child('onco_price_offer');
+				Object.assign(row, values);
+			} else {
+				let row = frm.add_child('distributors_price_offer');
+				Object.assign(row, values);
+			}
+			frm.refresh_fields();
+			dialog.hide();
+			frm.save('Update');
+			frappe.show_alert({ message: __('Price offer successfully submitted'), indicator: 'green' });
+		}
+	});
+
+	// Auto-calculate amount
+	dialog.fields_dict.quantity.df.onchange = () => {
+		let q = dialog.get_value('quantity') || 0;
+		let p = dialog.get_value('price') || 0;
+		dialog.set_value('amount', q * p);
+	};
+	dialog.fields_dict.price.df.onchange = () => {
+		let q = dialog.get_value('quantity') || 0;
+		let p = dialog.get_value('price') || 0;
+		dialog.set_value('amount', q * p);
+	};
+
+	dialog.show();
+}
+
+function open_add_technical_offer_dialog(frm) {
+	let supplying_by = frm.doc.supplying_by || "";
+	let offer_for_options = [];
+	if (supplying_by.includes("Oncopharm")) offer_for_options.push("Oncopharm");
+	if (supplying_by.includes("Distributor")) offer_for_options.push("Distributor");
+
+	if (offer_for_options.length === 0) {
+		frappe.msgprint(__('Please set "Supplying By" first.'));
+		return;
+	}
+
+	let valid_distributors = (frm.doc.tender_supplier || [])
+		.map(row => row.supplier)
+		.filter(sup => sup);
+
+	let dialog_fields = [
+		{
+			fieldname: 'offer_for',
+			fieldtype: 'Select',
+			label: __('Offer For'),
+			options: offer_for_options.join('\n'),
+			reqd: 1,
+			hidden: offer_for_options.length === 1 ? 1 : 0,
+			default: offer_for_options[0]
+		},
+		{
+			fieldname: 'distributor',
+			fieldtype: 'Link',
+			label: __('Distributor'),
+			options: 'Customer',
+			reqd: 1,
+			depends_on: 'eval:doc.offer_for == "Distributor"',
+			get_query: function () {
+				if (valid_distributors.length > 0) {
+					return { filters: [['name', 'in', valid_distributors]] };
+				}
+				return { filters: { "customer_group": "Pharmaceuticals Local Distributors Companies" } };
+			}
+		},
+		{ fieldtype: 'Column Break' },
+		{ fieldname: 'date_of_submission', fieldtype: 'Date', label: __('Date of Submission'), default: frappe.datetime.nowdate(), reqd: 1 },
+		{ fieldtype: 'Section Break' },
+		{ fieldname: 'subject', fieldtype: 'Data', label: __('Subject'), reqd: 1 },
+		{ fieldname: 'attachment', fieldtype: 'Attach', label: __('Attachment') }
+	];
+
+	let dialog = new frappe.ui.Dialog({
+		title: __('Add Technical Offer'),
+		fields: dialog_fields,
+		primary_action_label: __('Add Technical Offer'),
+		primary_action(values) {
+			if (values.offer_for === 'Oncopharm') {
+				let row = frm.add_child('onco_technical_offer');
+				Object.assign(row, values);
+			} else {
+				let row = frm.add_child('distributors_technical_offer');
+				Object.assign(row, values);
+			}
+			frm.refresh_fields();
+			dialog.hide();
+			frm.save('Update');
+			frappe.show_alert({ message: __('Technical offer successfully submitted'), indicator: 'green' });
+		}
+	});
+
+	dialog.show();
 }
 
 function update_status_from_invoices(frm) {
@@ -694,3 +895,31 @@ function create_accepted_tender(frm) {
 		}
 	);
 }
+
+frappe.ui.form.on("Onco Price Offer", {
+	item_group(frm, cdt, cdn) {
+		frappe.model.set_value(cdt, cdn, "item", "");
+	},
+	quantity(frm, cdt, cdn) {
+		let row = locals[cdt][cdn];
+		frappe.model.set_value(cdt, cdn, "amount", (row.quantity || 0) * (row.price || 0));
+	},
+	price(frm, cdt, cdn) {
+		let row = locals[cdt][cdn];
+		frappe.model.set_value(cdt, cdn, "amount", (row.quantity || 0) * (row.price || 0));
+	}
+});
+
+frappe.ui.form.on("Distributors Price Offer", {
+	item_group(frm, cdt, cdn) {
+		frappe.model.set_value(cdt, cdn, "item", "");
+	},
+	quantity(frm, cdt, cdn) {
+		let row = locals[cdt][cdn];
+		frappe.model.set_value(cdt, cdn, "amount", (row.quantity || 0) * (row.price || 0));
+	},
+	price(frm, cdt, cdn) {
+		let row = locals[cdt][cdn];
+		frappe.model.set_value(cdt, cdn, "amount", (row.quantity || 0) * (row.price || 0));
+	}
+});
