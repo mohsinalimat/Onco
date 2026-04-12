@@ -347,7 +347,7 @@ class Tenders(Document):
 			invoice_no = last_sale[0].parent if last_sale else None
 			
 			# 3. Tender Price is the awarded price
-			tender_price = item.price or 0
+			tender_price = item.tender_price or 0
 			
 			# 4. Calculate Losses: if tender price < cost, we are losing money
 			losses = 0
@@ -363,6 +363,60 @@ class Tenders(Document):
 				"quantity_with_loss": item.tender_qty if tender_price < item_cost else 0,
 				"losses_value": losses
 			})
+
+@frappe.whitelist()
+def create_submission_from_awarded(source_name):
+	"""Create Submission Tender from Awarded Tender"""
+	source_doc = frappe.get_doc("Tenders", source_name)
+	
+	if source_doc.tender_type != "Awarded Tenders" or source_doc.workflow_status not in [None, "Awarded"]:
+		frappe.throw(_("Can only create Submission Tender from Awarded Tender with Awarded status"))
+	
+	# Create new Submission Tender (same doctype, different series)
+	target_doc = frappe.new_doc("Tenders")
+	target_doc.tender_type = "Awarded Tenders"
+	target_doc.workflow_status = "Submission"
+	target_doc.category = source_doc.category
+	target_doc.tender_number = source_doc.tender_number
+	target_doc.year_of_tender = source_doc.year_of_tender
+	target_doc.hospitalagent_name = source_doc.hospitalagent_name
+	target_doc.date = frappe.utils.today()
+	target_doc.tender_start_date = source_doc.tender_start_date
+	target_doc.tender_end_date = source_doc.tender_end_date
+	target_doc.supplying_by = source_doc.supplying_by
+	
+	# Copy items
+	for row in source_doc.item_tender or []:
+		target_doc.append("item_tender", {
+			"item_code": row.item_code,
+			"item_group": row.item_group,
+			"item_name": row.item_name,
+			"tender_qty": row.tender_qty,
+			"tender_price": row.tender_price if hasattr(row, 'tender_price') else 0,
+			"tender_start_date": row.tender_start_date,
+			"tender_end_date": row.tender_end_date
+		})
+	
+	# Copy tender rules
+	target_doc.apply_extra_quantities = source_doc.apply_extra_quantities
+	target_doc.extra_qty_type = source_doc.extra_qty_type
+	target_doc.extra_qty_value = source_doc.extra_qty_value
+	target_doc.apply_extended_time = source_doc.apply_extended_time
+	target_doc.extended_start_date = source_doc.extended_start_date
+	target_doc.extended_end_date = source_doc.extended_end_date
+	
+	# Set naming series for Submission
+	if source_doc.category == "UPA Tender":
+		target_doc.naming_series = "TNDR-SUB-UPA-.YYYY.-.{tender_number}."
+	elif source_doc.category == "Private Tender":
+		target_doc.naming_series = "TNDR-SUB-PRV-.YYYY.-.{tender_number}."
+	
+	target_doc.insert()
+	
+	# Mark source as having submission created
+	source_doc.db_set("workflow_status", "Submission")
+	
+	return target_doc.name
 
 @frappe.whitelist()
 def create_accepted_from_submission(source_name):

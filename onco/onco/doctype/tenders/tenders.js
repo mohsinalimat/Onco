@@ -87,8 +87,8 @@ frappe.ui.form.on("Tenders", {
 			};
 			
 			// Filter by supplier if selected
-			if (row.supplier_name) {
-				filters["applicable_for"] = row.supplier_name;
+			if (row.distributor) {
+				filters["applicable_for"] = row.distributor;
 			}
 			
 			return {
@@ -266,11 +266,11 @@ function populate_tender_status_realtime(frm) {
 	frm.refresh_field("tender_status");
 }
 
-// Price List for Tender - filter by supplier and tender type
+// Price List for Tender - filter by distributor and tender type
 frappe.ui.form.on("Price List for Tender", {
-	supplier_name(frm, cdt, cdn) {
+	distributor(frm, cdt, cdn) {
 		let row = locals[cdt][cdn];
-		// Clear price list when supplier changes
+		// Clear price list when distributor changes
 		frappe.model.set_value(cdt, cdn, "price_list", "");
 	}
 });
@@ -530,19 +530,18 @@ function upload_fmd_data(frm) {
 
 function mark_as_submission(frm) {
 	frappe.confirm(
-		__("Mark this Awarded Tender as Submission? This will allow adding supplier offers."),
+		__("Mark this Awarded Tender as Submission? This will create a new Submission tender with SUB series."),
 		function () {
 			frappe.call({
-				method: 'frappe.client.set_value',
+				method: 'onco.onco.doctype.tenders.tenders.create_submission_from_awarded',
 				args: {
-					doctype: 'Tenders',
-					name: frm.doc.name,
-					fieldname: 'workflow_status',
-					value: 'Submission'
+					source_name: frm.doc.name
 				},
-				callback: function () {
-					frappe.show_alert({ message: __("Tender marked as Submission"), indicator: "green" });
-					frm.reload_doc();
+				callback: function (r) {
+					if (r.message) {
+						frappe.set_route('Form', 'Tenders', r.message);
+						frappe.show_alert({ message: __("Submission Tender created"), indicator: "green" });
+					}
 				}
 			});
 		}

@@ -11,10 +11,10 @@
  ],
  "fields": [
   {
-   "fieldname": "supplier_name",
+   "fieldname": "distributor",
    "fieldtype": "Link",
    "in_list_view": 1,
-   "label": "Supplier Name",
+   "label": "Distributor",
    "options": "Supplier",
    "reqd": 1
   },

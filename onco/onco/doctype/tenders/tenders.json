@@ -57,7 +57,7 @@
             "fieldname": "naming_series",
             "fieldtype": "Select",
             "label": "Series",
-            "options": "\nTNDR-FMD-.YYYY.-.####\nTNDR-AWR-UPA-.YYYY.-.{tender_number}.\nTNDR-AWR-PRV-.YYYY.-.{tender_number}.\nTNDR-ACP-UPA-.YYYY.-.{tender_number}.\nTNDR-ACP-PRV-.YYYY.-.{tender_number}.",
+            "options": "\nTNDR-FMD-.YYYY.-.####\nTNDR-AWR-UPA-.YYYY.-.{tender_number}.\nTNDR-AWR-PRV-.YYYY.-.{tender_number}.\nTNDR-SUB-UPA-.YYYY.-.{tender_number}.\nTNDR-SUB-PRV-.YYYY.-.{tender_number}.\nTNDR-ACP-UPA-.YYYY.-.{tender_number}.\nTNDR-ACP-PRV-.YYYY.-.{tender_number}.",
             "hidden": 1
         },
         {
