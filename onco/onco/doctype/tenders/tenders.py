@@ -21,8 +21,13 @@ class Tenders(Document):
 	def on_submit(self):
 		"""Actions to perform on tender submission"""
 		self.update_tender_end_date_if_extended()
-		# Auto-fetch from awarded tender if submission or accepted
-		if self.tender_type in ["Tender Submission", "Accepted Tenders"]:
+		
+		# Set initial workflow status for Awarded Tenders
+		if self.tender_type == "Awarded Tenders" and not self.workflow_status:
+			self.db_set("workflow_status", "Awarded")
+		
+		# Auto-fetch from awarded tender if accepted
+		if self.tender_type == "Accepted Tenders":
 			self.auto_fetch_from_awarded_tender()
 
 	def apply_tender_rules(self):
@@ -44,7 +49,7 @@ class Tenders(Document):
 
 		if self.tender_type == "Tenders for market data":
 			self._apply_extra_qty_to_items_fmd()
-		elif self.tender_type in ["Awarded Tenders", "Tender Submission", "Accepted Tenders"]:
+		elif self.tender_type in ["Awarded Tenders", "Accepted Tenders"]:
 			self._apply_extra_qty_to_item_tender()
 			self._apply_extra_qty_to_tender_supplier()
 
@@ -206,16 +211,17 @@ class Tenders(Document):
 			self.db_update({"tender_end_date": self.extended_end_date})
 
 	def auto_fetch_from_awarded_tender(self):
-		"""Auto-fetch data from awarded tender to submission/accepted tender"""
+		"""Auto-fetch data from awarded tender with Submission status to accepted tender"""
 		if not self.tender_number or not self.category:
 			return
 
-		# Find awarded tender with same tender number and category
+		# Find awarded tender with same tender number, category, and Submission status
 		awarded_tenders = frappe.db.get_list("Tenders",
 			filters={
 				"tender_type": "Awarded Tenders",
 				"tender_number": self.tender_number,
 				"category": self.category,
+				"workflow_status": "Submission",
 				"docstatus": 1
 			},
 			fields=["name"],
@@ -380,6 +386,67 @@ class Tenders(Document):
 				"quantity_with_loss": item.tender_qty if tender_price < item_cost else 0,
 				"losses_value": losses
 			})
+
+@frappe.whitelist()
+def create_accepted_from_submission(source_name):
+	"""Create Accepted Tender from Awarded Tender with Submission status"""
+	source_doc = frappe.get_doc("Tenders", source_name)
+	
+	if source_doc.tender_type != "Awarded Tenders" or source_doc.workflow_status != "Submission":
+		frappe.throw(_("Can only create Accepted Tender from Awarded Tender with Submission status"))
+	
+	# Create new Accepted Tender
+	target_doc = frappe.new_doc("Tenders")
+	target_doc.tender_type = "Accepted Tenders"
+	target_doc.category = source_doc.category
+	target_doc.tender_number = source_doc.tender_number
+	target_doc.year_of_tender = source_doc.year_of_tender
+	target_doc.hospitalagent_name = source_doc.hospitalagent_name
+	target_doc.date = frappe.utils.today()
+	target_doc.tender_start_date = source_doc.tender_start_date
+	target_doc.tender_end_date = source_doc.tender_end_date
+	target_doc.supplying_by = source_doc.supplying_by
+	
+	# Copy items
+	for row in source_doc.item_tender or []:
+		target_doc.append("item_tender", {
+			"item_code": row.item_code,
+			"item_group": row.item_group,
+			"item_name": row.item_name,
+			"tender_qty": row.tender_qty,
+			"tender_price": row.tender_price if hasattr(row, 'tender_price') else 0,
+			"tender_start_date": row.tender_start_date,
+			"tender_end_date": row.tender_end_date
+		})
+	
+	# Copy suppliers
+	for row in source_doc.tender_supplier or []:
+		target_doc.append("tender_supplier", {
+			"supplying_by": row.supplying_by if hasattr(row, 'supplying_by') else "",
+			"supplier": row.supplier if hasattr(row, 'supplier') else "",
+			"supply_qty": row.supply_qty if hasattr(row, 'supply_qty') else 0
+		})
+	
+	# Copy tender rules
+	target_doc.apply_extra_quantities = source_doc.apply_extra_quantities
+	target_doc.extra_qty_type = source_doc.extra_qty_type
+	target_doc.extra_qty_value = source_doc.extra_qty_value
+	target_doc.apply_extended_time = source_doc.apply_extended_time
+	target_doc.extended_start_date = source_doc.extended_start_date
+	target_doc.extended_end_date = source_doc.extended_end_date
+	
+	# Set naming series
+	if source_doc.category == "UPA Tender":
+		target_doc.naming_series = "TNDR-ACP-UPA-.YYYY.-.{tender_number}."
+	elif source_doc.category == "Private Tender":
+		target_doc.naming_series = "TNDR-ACP-PRV-.YYYY.-.{tender_number}."
+	
+	target_doc.insert()
+	
+	# Mark source as Accepted
+	source_doc.db_set("workflow_status", "Accepted")
+	
+	return target_doc.name
 
 @frappe.whitelist()
 def upload_fmd_items(parent, file_url):

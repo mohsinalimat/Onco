@@ -5,6 +5,21 @@ frappe.ui.form.on("Tenders", {
 	refresh(frm) {
 		// Add custom buttons
 		if (frm.doc.docstatus === 1) {
+			// Workflow transition buttons for Awarded Tenders
+			if (frm.doc.tender_type === "Awarded Tenders") {
+				if (!frm.doc.workflow_status || frm.doc.workflow_status === "Awarded") {
+					frm.add_custom_button(__('Mark as Submission'), function () {
+						mark_as_submission(frm);
+					}, __('Workflow'));
+				}
+				
+				if (frm.doc.workflow_status === "Submission") {
+					frm.add_custom_button(__('Create Accepted Tender'), function () {
+						create_accepted_tender(frm);
+					}, __('Workflow'));
+				}
+			}
+			
 			if (frm.doc.tender_price_deviation && frm.doc.tender_price_deviation.length > 0) {
 				frm.add_custom_button(__('Approve All Price Deviations'), function () {
 					approve_all_deviations(frm);
@@ -163,9 +178,6 @@ function set_naming_series_options(frm) {
 	} else if (type === "Awarded Tenders") {
 		if (category === "UPA Tender") options = ["TNDR-AWR-UPA-.YYYY.-.{tender_number}."];
 		else if (category === "Private Tender") options = ["TNDR-AWR-PRV-.YYYY.-.{tender_number}."];
-	} else if (type === "Tender Submission") {
-		if (category === "UPA Tender") options = ["TNDR-SUB-UPA-.YYYY.-.{tender_number}."];
-		else if (category === "Private Tender") options = ["TNDR-SUB-PRV-.YYYY.-.{tender_number}."];
 	} else if (type === "Accepted Tenders") {
 		if (category === "UPA Tender") options = ["TNDR-ACP-UPA-.YYYY.-.{tender_number}."];
 		else if (category === "Private Tender") options = ["TNDR-ACP-PRV-.YYYY.-.{tender_number}."];
@@ -363,4 +375,45 @@ function upload_fmd_data(frm) {
 			frappe.show_alert({ message: __("Items uploaded successfully"), indicator: "green" });
 		}
 	});
+}
+
+function mark_as_submission(frm) {
+	frappe.confirm(
+		__("Mark this Awarded Tender as Submission? This will allow adding supplier offers."),
+		function () {
+			frappe.call({
+				method: 'frappe.client.set_value',
+				args: {
+					doctype: 'Tenders',
+					name: frm.doc.name,
+					fieldname: 'workflow_status',
+					value: 'Submission'
+				},
+				callback: function () {
+					frappe.show_alert({ message: __("Tender marked as Submission"), indicator: "green" });
+					frm.reload_doc();
+				}
+			});
+		}
+	);
+}
+
+function create_accepted_tender(frm) {
+	frappe.confirm(
+		__("Create Accepted Tender from this Submission?"),
+		function () {
+			frappe.call({
+				method: 'onco.onco.doctype.tenders.tenders.create_accepted_from_submission',
+				args: {
+					source_name: frm.doc.name
+				},
+				callback: function (r) {
+					if (r.message) {
+						frappe.set_route('Form', 'Tenders', r.message);
+						frappe.show_alert({ message: __("Accepted Tender created"), indicator: "green" });
+					}
+				}
+			});
+		}
+	);
 }

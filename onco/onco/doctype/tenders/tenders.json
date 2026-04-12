@@ -9,6 +9,7 @@
     "field_order": [
         "naming_series",
         "tender_type",
+        "workflow_status",
         "category",
         "tender_number",
         "year_of_tender",
@@ -54,15 +55,24 @@
             "fieldname": "naming_series",
             "fieldtype": "Select",
             "label": "Series",
-            "options": "\nTNDR-FMD-.YYYY.-.####\nTNDR-AWR-UPA-.YYYY.-.{tender_number}.\nTNDR-AWR-PRV-.YYYY.-.{tender_number}.\nTNDR-SUB-UPA-.YYYY.-.{tender_number}.\nTNDR-SUB-PRV-.YYYY.-.{tender_number}.\nTNDR-ACP-UPA-.YYYY.-.{tender_number}.\nTNDR-ACP-PRV-.YYYY.-.{tender_number}."
+            "options": "\nTNDR-FMD-.YYYY.-.####\nTNDR-AWR-UPA-.YYYY.-.{tender_number}.\nTNDR-AWR-PRV-.YYYY.-.{tender_number}.\nTNDR-ACP-UPA-.YYYY.-.{tender_number}.\nTNDR-ACP-PRV-.YYYY.-.{tender_number}."
         },
         {
             "fieldname": "tender_type",
             "fieldtype": "Select",
             "in_list_view": 1,
             "label": "Tender Type",
-            "options": "\nTenders for market data\nAwarded Tenders\nTender Submission\nAccepted Tenders",
+            "options": "\nTenders for market data\nAwarded Tenders\nAccepted Tenders",
             "reqd": 1
+        },
+        {
+            "depends_on": "eval:doc.tender_type == \"Awarded Tenders\" && doc.docstatus == 1",
+            "fieldname": "workflow_status",
+            "fieldtype": "Select",
+            "in_list_view": 1,
+            "label": "Workflow Status",
+            "options": "\nAwarded\nSubmission\nAccepted",
+            "read_only": 1
         },
         {
             "depends_on": "eval:doc.tender_type != \"Tenders for market data\"",
@@ -189,14 +199,14 @@
             "options": "Items FMD"
         },
         {
-            "depends_on": "eval:doc.tender_type == \"Awarded Tenders\"",
+            "depends_on": "eval:doc.tender_type == \"Awarded Tenders\" || doc.tender_type == \"Accepted Tenders\"",
             "fieldname": "item_tender",
             "fieldtype": "Table",
             "label": "Item Tender",
             "options": "Item Tender"
         },
         {
-            "depends_on": "eval:doc.tender_type == \"Accepted Tenders\" || doc.tender_type == \"Awarded Tenders\" && doc.supplying_by != 'Oncopharm'",
+            "depends_on": "eval:(doc.tender_type == \"Awarded Tenders\" && doc.workflow_status == \"Submission\") || doc.tender_type == \"Accepted Tenders\"",
             "fieldname": "tender_supplier",
             "fieldtype": "Table",
             "label": "Tender Supplier",
