@@ -22,7 +22,7 @@
    "fieldname": "supplier",
    "fieldtype": "Link",
    "in_list_view": 1,
-   "label": "Supplier",
+   "label": "Distributor Name",
    "options": "Customer",
    "read_only_depends_on": "eval:doc.supplying_by == 'By Oncopharm'"
   },
