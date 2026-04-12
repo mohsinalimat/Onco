@@ -16,7 +16,7 @@
    "fieldtype": "Select",
    "in_list_view": 1,
    "label": "Supplying By",
-   "options": "\nBy Oncopharm\nBy Distributor"
+   "options": "\nBy Oncopharm\nBy Distributor\nBy Oncopharm & Distributor"
   },
   {
    "fieldname": "supplier",

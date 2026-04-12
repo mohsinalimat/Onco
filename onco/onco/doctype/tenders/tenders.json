@@ -152,7 +152,7 @@
             "fieldname": "supplying_by",
             "fieldtype": "Select",
             "label": "Supplying By",
-            "options": "\nOncopharm\nDistributor\nOncopharm & Distributor"
+            "options": "\nBy Oncopharm Only\nBy Distributor Only\nBy Oncopharm & Distributor"
         },
         {
             "fieldname": "tender_rules_section",

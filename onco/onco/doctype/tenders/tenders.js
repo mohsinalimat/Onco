@@ -119,8 +119,8 @@ frappe.ui.form.on("Tenders", {
 	supplying_by(frm) {
 		toggle_offer_sections(frm);
 		
-		// Auto-populate Oncopharm when "By Oncopharm" selected
-		if (frm.doc.supplying_by === "Oncopharm" || frm.doc.supplying_by === "Oncopharm & Distributor") {
+		// Auto-populate Oncopharm when "By Oncopharm Only" selected
+		if (frm.doc.supplying_by === "By Oncopharm Only" || frm.doc.supplying_by === "By Oncopharm & Distributor") {
 			let has_oncopharm = false;
 			(frm.doc.tender_supplier || []).forEach(row => {
 				if (row.supplying_by === "By Oncopharm") {
@@ -292,8 +292,8 @@ function toggle_item_tables(frm) {
 
 function toggle_offer_sections(frm) {
 	const supplying_by = frm.doc.supplying_by;
-	const is_onco = supplying_by === "Oncopharm" || supplying_by === "Oncopharm & Distributor";
-	const is_distributor = supplying_by === "Distributor" || supplying_by === "Oncopharm & Distributor";
+	const is_onco = supplying_by === "By Oncopharm Only" || supplying_by === "By Oncopharm & Distributor";
+	const is_distributor = supplying_by === "By Distributor Only" || supplying_by === "By Oncopharm & Distributor";
 
 	frm.toggle_display("onco_offers_section", is_onco);
 	frm.set_df_property("onco_price_offer", "hidden", !is_onco);
