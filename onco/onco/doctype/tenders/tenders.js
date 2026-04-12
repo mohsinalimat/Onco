@@ -77,6 +77,24 @@ frappe.ui.form.on("Tenders", {
 				}
 			};
 		});
+
+		// Filter price lists in tender_price_list by supplier
+		frm.set_query("price_list", "tender_price_list", function(doc, cdt, cdn) {
+			let row = locals[cdt][cdn];
+			let filters = {
+				"buying": 1,
+				"enabled": 1
+			};
+			
+			// Filter by supplier if selected
+			if (row.supplier_name) {
+				filters["applicable_for"] = row.supplier_name;
+			}
+			
+			return {
+				filters: filters
+			};
+		});
 	},
 
 	before_load(frm) {
@@ -247,6 +265,15 @@ function populate_tender_status_realtime(frm) {
 
 	frm.refresh_field("tender_status");
 }
+
+// Price List for Tender - filter by supplier and tender type
+frappe.ui.form.on("Price List for Tender", {
+	supplier_name(frm, cdt, cdn) {
+		let row = locals[cdt][cdn];
+		// Clear price list when supplier changes
+		frappe.model.set_value(cdt, cdn, "price_list", "");
+	}
+});
 
 function toggle_item_tables(frm) {
 	// Show/hide item tables based on tender type
