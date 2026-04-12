@@ -97,10 +97,31 @@ frappe.ui.form.on("Tenders", {
 			});
 			
 			if (!has_oncopharm) {
-				let row = frm.add_child("tender_supplier");
-				row.supplying_by = "By Oncopharm";
-				row.supplier = "ONCOPHARM EGYPT S.A.E";
-				frm.refresh_field("tender_supplier");
+				// Search for Oncopharm customer
+				frappe.call({
+					method: 'frappe.client.get_list',
+					args: {
+						doctype: 'Customer',
+						filters: {
+							'customer_name': ['like', '%ONCOPHARM%']
+						},
+						fields: ['name'],
+						limit: 1
+					},
+					callback: function(r) {
+						if (r.message && r.message.length > 0) {
+							let row = frm.add_child("tender_supplier");
+							row.supplying_by = "By Oncopharm";
+							row.supplier = r.message[0].name;
+							frm.refresh_field("tender_supplier");
+						} else {
+							// Just add the row without supplier if not found
+							let row = frm.add_child("tender_supplier");
+							row.supplying_by = "By Oncopharm";
+							frm.refresh_field("tender_supplier");
+						}
+					}
+				});
 			}
 		}
 	},
