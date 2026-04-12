@@ -3,12 +3,14 @@
 
 from datetime import datetime, timedelta
 import frappe
+from frappe import _
 from frappe.model.document import Document
 
 
 class Tenders(Document):
 	def validate(self):
 		"""Validate tender rules and calculate price deviations"""
+		self.validate_naming_series()
 		self.apply_tender_rules()
 		self.calculate_price_deviations()
 		self.populate_tender_status()
@@ -17,6 +19,38 @@ class Tenders(Document):
 		
 		if self.tender_type == "Awarded Tenders" and self.is_accepted_tender:
 			self.populate_tender_price_deviation_details()
+
+	def validate_naming_series(self):
+		"""Validate that the naming series matches the tender type and category"""
+		if not self.naming_series:
+			frappe.throw(_("Naming Series is required"))
+		
+		# Check for Tenders for Market Data
+		if self.tender_type == "Tenders for market data":
+			if "FMD" not in self.naming_series:
+				frappe.throw(_("Naming series must be TNDR-FMD-.YYYY.-.#### for Tenders for Market Data"))
+		
+		# Check for Awarded Tenders
+		elif self.tender_type == "Awarded Tenders":
+			if not self.category:
+				frappe.throw(_("Category is required for Awarded Tenders"))
+			
+			if self.is_accepted_tender:
+				# Accepted tender validation
+				if self.category == "UPA Tender" and "ACP-UPA" not in self.naming_series:
+					frappe.throw(_("Naming series must be TNDR-ACP-UPA-.YYYY.-.{{tender_number}}. for Accepted UPA Tender"))
+				elif self.category == "Private Tender" and "ACP-PRV" not in self.naming_series:
+					frappe.throw(_("Naming series must be TNDR-ACP-PRV-.YYYY.-.{{tender_number}}. for Accepted Private Tender"))
+			else:
+				# Awarded tender validation
+				if self.category == "UPA Tender" and "AWR-UPA" not in self.naming_series:
+					frappe.throw(_("Naming series must be TNDR-AWR-UPA-.YYYY.-.{{tender_number}}. for Awarded UPA Tender"))
+				elif self.category == "Private Tender" and "AWR-PRV" not in self.naming_series:
+					frappe.throw(_("Naming series must be TNDR-AWR-PRV-.YYYY.-.{{tender_number}}. for Awarded Private Tender"))
+			
+			# Ensure FMD series is not used for Awarded Tenders
+			if "FMD" in self.naming_series:
+				frappe.throw(_("Cannot use FMD (For Market Data) naming series for Awarded Tenders. Please select the correct category first."))
 
 	def on_submit(self):
 		"""Actions to perform on tender submission"""

@@ -68,6 +68,20 @@ frappe.ui.form.on("Tenders", {
 				}
 			};
 		});
+
+		// Add filter for Tender Customer Name - should be from Tender Customers group
+		frm.set_query("hospitalagent_name", function () {
+			return {
+				filters: {
+					"customer_group": ["in", ["Tender Customers", "Hospitals", "Government Entities"]]
+				}
+			};
+		});
+	},
+
+	before_load(frm) {
+		// Ensure naming series is set correctly on form load
+		set_naming_series_options(frm);
 	},
 
 	tender_type(frm) {
@@ -211,9 +225,17 @@ function set_naming_series_options(frm) {
 
 	if (options.length > 0) {
 		frm.set_df_property("naming_series", "options", options);
-		if (!options.includes(frm.doc.naming_series)) {
+		// Always set the correct series based on current selection
+		if (!options.includes(frm.doc.naming_series) || frm.doc.naming_series.includes("FMD") && type !== "Tenders for market data") {
 			frm.set_value("naming_series", options[0]);
 		}
+	} else if (type === "Awarded Tenders" && !category) {
+		// If Awarded Tender is selected but no category, show message
+		frappe.msgprint({
+			title: __('Category Required'),
+			indicator: 'orange',
+			message: __('Please select a Category (UPA Tender or Private Tender) to set the correct naming series.')
+		});
 	}
 }
 
