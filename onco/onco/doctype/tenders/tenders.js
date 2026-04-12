@@ -3,6 +3,24 @@
 
 frappe.ui.form.on("Tenders", {
 	refresh(frm) {
+		// Control Tender Type options:
+		// Only allow creating physical new documents for the two starting points.
+		if (frm.is_new()) {
+			frm.set_df_property('tender_type', 'options', [
+				"Tenders for market data",
+				"Awarded Tenders"
+			].join('\n'));
+			frm.set_df_property('tender_type', 'read_only', 0);
+		} else {
+			frm.set_df_property('tender_type', 'options', [
+				"Tenders for market data",
+				"Awarded Tenders",
+				"Tender Submission",
+				"Accepted Tenders"
+			].join('\n'));
+			frm.set_df_property('tender_type', 'read_only', 1);
+		}
+
 		// Add custom buttons based on tender_type
 		if (frm.doc.docstatus === 1) {
 
@@ -102,18 +120,12 @@ frappe.ui.form.on("Tenders", {
 			};
 		});
 
-		// Filter price lists in tender_price_list by supplier
+		// Filter price lists in tender_price_list
 		frm.set_query("price_list", "tender_price_list", function (doc, cdt, cdn) {
-			let row = locals[cdt][cdn];
 			let filters = {
 				"buying": 1,
 				"enabled": 1
 			};
-
-			// Filter by supplier if selected
-			if (row.distributor) {
-				filters["applicable_for"] = row.distributor;
-			}
 
 			return {
 				filters: filters
@@ -181,6 +193,22 @@ frappe.ui.form.on("Tenders", {
 		}
 	},
 
+	number_of_distributors(frm) {
+		if (frm.doc.number_of_distributors > 0) {
+			let existing_rows = (frm.doc.tender_supplier || []).filter(row => row.supplying_by === "By Distributor Only").length;
+			let rows_to_add = frm.doc.number_of_distributors - existing_rows;
+
+			if (rows_to_add > 0) {
+				for (let i = 0; i < rows_to_add; i++) {
+					let row = frm.add_child("tender_supplier");
+					row.supplying_by = "By Distributor Only";
+				}
+				frm.refresh_field("tender_supplier");
+				frappe.msgprint(__(`Added ${rows_to_add} distributor placeholder(s) to Tender Supplier table. Please select their names.`));
+			}
+		}
+	},
+
 	apply_extra_quantities(frm) {
 		toggle_tender_rules_fields(frm);
 		frm.refresh_field("extra_quantities_column");
@@ -214,6 +242,32 @@ frappe.ui.form.on("Tenders", {
 });
 
 // Real-time tender status population from item_tender
+frappe.ui.form.on("Tender Supplier", {
+	supplier(frm, cdt, cdn) {
+		let row = locals[cdt][cdn];
+		// When a distributor is selected, copy items to the distributors price offer table for them
+		if (row.supplying_by === "By Distributor Only" && row.supplier && frm.doc.item_tender && frm.doc.item_tender.length > 0) {
+			frm.doc.item_tender.forEach(item => {
+				// check if offer already exists for this distributor AND this item
+				let offer_exists = (frm.doc.distributors_price_offer || []).some(
+					offer => offer.item === item.item_code && offer.distributor === row.supplier
+				);
+				if (!offer_exists) {
+					let new_offer = frm.add_child("distributors_price_offer");
+					new_offer.distributor = row.supplier;
+					new_offer.item = item.item_code;
+					new_offer.item_group = item.item_group;
+					new_offer.quantity = item.tender_qty;
+					new_offer.start_date = item.tender_start_date;
+					new_offer.end_date = item.tender_end_date;
+				}
+			});
+			frm.refresh_field("distributors_price_offer");
+			frappe.show_alert({ message: __(`Auto-populated price offer lines for ${row.supplier}`), indicator: 'green' });
+		}
+	}
+});
+
 frappe.ui.form.on("Item Tender", {
 	item_tender_add(frm, cdt, cdn) {
 		populate_tender_status_realtime(frm);
