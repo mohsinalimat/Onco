@@ -166,12 +166,15 @@ class Tenders(Document):
 		# Get items from appropriate table
 		items_to_track = []
 		if self.tender_type == "Tenders for market data" and self.items_fmd:
-			items_to_track = [(row.item, row.quantity) for row in self.items_fmd if hasattr(row, 'item')]
+			items_to_track = [(row.item, row.quantity) for row in self.items_fmd if hasattr(row, 'item') and row.item]
 		elif self.tender_type in ["Awarded Tenders", "Tender Submission", "Accepted Tenders"] and self.item_tender:
-			items_to_track = [(row.item_code, row.tender_qty) for row in self.item_tender if row.item_code]
+			items_to_track = [(row.item_code, row.tender_qty) for row in self.item_tender if hasattr(row, 'item_code') and row.item_code]
+
+		if not items_to_track:
+			return
 
 		# Map existing status entries by item
-		existing_status = {row.item_name: row for row in self.tender_status or []}
+		existing_status = {row.item_name: row for row in (self.tender_status or [])}
 		
 		seen_items = set()
 
@@ -184,9 +187,13 @@ class Tenders(Document):
 			if item_code in existing_status:
 				# Update existing row if quantities changed
 				status_row = existing_status[item_code]
-				status_row.tender_quantity = tender_qty or 0
-				status_row.remaining_quantity = (tender_qty or 0) - (status_row.supplied_quantity or 0)
-				status_row.fulfillment_percent = (status_row.supplied_quantity / tender_qty * 100) if tender_qty > 0 else 0
+				if status_row.tender_quantity != tender_qty:
+					status_row.tender_quantity = tender_qty or 0
+					status_row.remaining_quantity = (tender_qty or 0) - (status_row.supplied_quantity or 0)
+					if tender_qty and tender_qty > 0:
+						status_row.fulfillment_percent = ((status_row.supplied_quantity or 0) / tender_qty * 100)
+					else:
+						status_row.fulfillment_percent = 0
 			else:
 				# Create new status row
 				self.append("tender_status", {

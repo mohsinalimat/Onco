@@ -172,6 +172,82 @@ frappe.ui.form.on("Tenders", {
 	}
 });
 
+// Real-time tender status population from item_tender
+frappe.ui.form.on("Item Tender", {
+	item_tender_add(frm, cdt, cdn) {
+		populate_tender_status_realtime(frm);
+	},
+	
+	item_tender_remove(frm, cdt, cdn) {
+		let child = locals[cdt][cdn];
+		// Remove corresponding tender_status row
+		if (child.item_code) {
+			let status_rows = frm.doc.tender_status || [];
+			for (let i = status_rows.length - 1; i >= 0; i--) {
+				if (status_rows[i].item_name === child.item_code) {
+					frm.get_field("tender_status").grid.grid_rows[i].remove();
+					break;
+				}
+			}
+		}
+		frm.refresh_field("tender_status");
+	},
+	
+	item_code(frm, cdt, cdn) {
+		populate_tender_status_realtime(frm);
+	},
+	
+	tender_qty(frm, cdt, cdn) {
+		populate_tender_status_realtime(frm);
+	}
+});
+
+function populate_tender_status_realtime(frm) {
+	if (!frm.doc.item_tender || frm.doc.item_tender.length === 0) {
+		return;
+	}
+
+	// Map existing status rows by item_name
+	let existing_status = {};
+	(frm.doc.tender_status || []).forEach(row => {
+		if (row.item_name) {
+			existing_status[row.item_name] = row;
+		}
+	});
+
+	// Track items we've seen
+	let seen_items = new Set();
+
+	// Process each item_tender row
+	frm.doc.item_tender.forEach(item_row => {
+		if (!item_row.item_code || seen_items.has(item_row.item_code)) {
+			return;
+		}
+		
+		seen_items.add(item_row.item_code);
+		
+		let tender_qty = item_row.tender_qty || 0;
+
+		if (existing_status[item_row.item_code]) {
+			// Update existing row
+			let status_row = existing_status[item_row.item_code];
+			status_row.tender_quantity = tender_qty;
+			status_row.remaining_quantity = tender_qty - (status_row.supplied_quantity || 0);
+			status_row.fulfillment_percent = tender_qty > 0 ? ((status_row.supplied_quantity || 0) / tender_qty * 100) : 0;
+		} else {
+			// Create new row
+			let new_row = frm.add_child("tender_status");
+			new_row.item_name = item_row.item_code;
+			new_row.tender_quantity = tender_qty;
+			new_row.supplied_quantity = 0;
+			new_row.remaining_quantity = tender_qty;
+			new_row.fulfillment_percent = 0;
+		}
+	});
+
+	frm.refresh_field("tender_status");
+}
+
 function toggle_item_tables(frm) {
 	// Show/hide item tables based on tender type
 	let show_items_fmd = frm.doc.tender_type === "Tenders for market data";
