@@ -424,9 +424,9 @@ def create_submission_from_awarded(source_name):
 	
 	# Set naming series for Submission
 	if source_doc.category == "UPA Tender":
-		target_doc.naming_series = "TNDR-SUB-UPA-.YYYY.-.{tender_number}."
+		target_doc.naming_series = "TNDR-SUB-UPA-.YYYY.-.{tender_number}.-"
 	elif source_doc.category == "Private Tender":
-		target_doc.naming_series = "TNDR-SUB-PRV-.YYYY.-.{tender_number}."
+		target_doc.naming_series = "TNDR-SUB-PRV-.YYYY.-.{tender_number}.-"
 	
 	target_doc.insert()
 	
@@ -505,9 +505,9 @@ def create_accepted_from_submission(source_name):
 	
 	# Set naming series
 	if source_doc.category == "UPA Tender":
-		target_doc.naming_series = "TNDR-ACP-UPA-.YYYY.-.{tender_number}."
+		target_doc.naming_series = "TNDR-ACP-UPA-.YYYY.-.{tender_number}.-"
 	elif source_doc.category == "Private Tender":
-		target_doc.naming_series = "TNDR-ACP-PRV-.YYYY.-.{tender_number}."
+		target_doc.naming_series = "TNDR-ACP-PRV-.YYYY.-.{tender_number}.-"
 	
 	target_doc.insert()
 	

@@ -356,7 +356,7 @@ function toggle_item_tables(frm) {
 	// Show/hide item tables based on tender type
 	let show_items_fmd = frm.doc.tender_type === "Tenders for market data";
 	let show_item_tender = ["Awarded Tenders", "Tender Submission", "Accepted Tenders"].includes(frm.doc.tender_type);
-	let show_tender_supplier = ["Tender Submission", "Accepted Tenders"].includes(frm.doc.tender_type);
+	let show_tender_supplier = ["Awarded Tenders", "Tender Submission", "Accepted Tenders"].includes(frm.doc.tender_type);
 
 	frm.set_df_property("items_fmd", "hidden", !show_items_fmd);
 	frm.set_df_property("item_tender", "hidden", !show_item_tender);
@@ -391,14 +391,14 @@ function set_naming_series_options(frm) {
 	if (type === "Tenders for market data") {
 		options = ["TNDR-FMD-.YYYY.-.####"];
 	} else if (type === "Awarded Tenders") {
-		if (category === "UPA Tender") options = ["TNDR-AWR-UPA-.YYYY.-.{tender_number}."];
-		else if (category === "Private Tender") options = ["TNDR-AWR-PRV-.YYYY.-.{tender_number}."];
+		if (category === "UPA Tender") options = ["TNDR-AWR-UPA-.YYYY.-.{tender_number}.-"];
+		else if (category === "Private Tender") options = ["TNDR-AWR-PRV-.YYYY.-.{tender_number}.-"];
 	} else if (type === "Tender Submission") {
-		if (category === "UPA Tender") options = ["TNDR-SUB-UPA-.YYYY.-.{tender_number}."];
-		else if (category === "Private Tender") options = ["TNDR-SUB-PRV-.YYYY.-.{tender_number}."];
+		if (category === "UPA Tender") options = ["TNDR-SUB-UPA-.YYYY.-.{tender_number}.-"];
+		else if (category === "Private Tender") options = ["TNDR-SUB-PRV-.YYYY.-.{tender_number}.-"];
 	} else if (type === "Accepted Tenders") {
-		if (category === "UPA Tender") options = ["TNDR-ACP-UPA-.YYYY.-.{tender_number}."];
-		else if (category === "Private Tender") options = ["TNDR-ACP-PRV-.YYYY.-.{tender_number}."];
+		if (category === "UPA Tender") options = ["TNDR-ACP-UPA-.YYYY.-.{tender_number}.-"];
+		else if (category === "Private Tender") options = ["TNDR-ACP-PRV-.YYYY.-.{tender_number}.-"];
 	}
 
 	if (options.length > 0) {
