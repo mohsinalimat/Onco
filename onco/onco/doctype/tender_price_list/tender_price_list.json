@@ -5,10 +5,18 @@
     "editable_grid": 1,
     "engine": "InnoDB",
     "field_order": [
+        "supplier",
         "price_list",
         "price_list_name"
     ],
     "fields": [
+        {
+            "fieldname": "supplier",
+            "fieldtype": "Link",
+            "in_list_view": 1,
+            "label": "Supplier",
+            "options": "Customer"
+        },
         {
             "fieldname": "price_list",
             "fieldtype": "Link",

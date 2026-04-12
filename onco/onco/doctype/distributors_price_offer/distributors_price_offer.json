@@ -26,6 +26,7 @@
    "options": "Item"
   },
   {
+   "default": "Finished Pharmaceutical Products Item",
    "fieldname": "item_group",
    "fieldtype": "Link",
    "label": "Item Group",

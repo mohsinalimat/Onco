@@ -7,7 +7,8 @@
  "engine": "InnoDB",
  "field_order": [
   "supplying_by",
-  "supplier"
+  "supplier",
+  "supply_qty"
  ],
  "fields": [
   {
@@ -24,6 +25,12 @@
    "label": "Supplier",
    "options": "Customer",
    "read_only_depends_on": "eval:doc.supplying_by == 'By Oncopharm'"
+  },
+  {
+   "fieldname": "supply_qty",
+   "fieldtype": "Float",
+   "in_list_view": 1,
+   "label": "Supply Quantity"
   }
  ],
  "grid_page_length": 50,

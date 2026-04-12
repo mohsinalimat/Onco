@@ -39,14 +39,13 @@ class Tenders(Document):
 
 	def apply_extra_quantity_logic(self):
 		"""Apply extra quantity rules to all child tables based on tender type"""
-		if not self.tender_type or not self.extra_qty_type or self.extra_qty_value is None:
+		if not self.extra_qty_type or self.extra_qty_value is None:
 			return
 
 		if self.tender_type == "Tenders for market data":
 			self._apply_extra_qty_to_items_fmd()
-		elif self.tender_type == "Awarded Tenders":
+		elif self.tender_type in ["Awarded Tenders", "Tender Submission", "Accepted Tenders"]:
 			self._apply_extra_qty_to_item_tender()
-		elif self.tender_type == "Accepted Tenders":
 			self._apply_extra_qty_to_tender_supplier()
 
 	def _apply_extra_qty_to_items_fmd(self):
@@ -77,12 +76,12 @@ class Tenders(Document):
 		"""Apply extra quantities to Tender Supplier table"""
 		for row in self.tender_supplier or []:
 			if not hasattr(row, 'original_supply_qty'):
-				row.original_supply_qty = row.supply_qty or 0 if hasattr(row, 'supply_qty') else 0
+				row.original_supply_qty = row.supply_qty or 0
 
-			if self.extra_qty_type == "Percent" and hasattr(row, 'supply_qty'):
+			if self.extra_qty_type == "Percent":
 				extra = row.original_supply_qty * (self.extra_qty_value / 100)
 				row.supply_qty = row.original_supply_qty + extra
-			elif self.extra_qty_type == "Quantity" and hasattr(row, 'supply_qty'):
+			elif self.extra_qty_type == "Quantity":
 				row.supply_qty = row.original_supply_qty + self.extra_qty_value
 
 	def calculate_price_deviations(self):
@@ -92,10 +91,8 @@ class Tenders(Document):
 
 		# Determine which item table to check based on tender type
 		items_to_check = []
-		if self.tender_type == "Awarded Tenders" and self.item_tender:
+		if self.tender_type in ["Awarded Tenders", "Tender Submission", "Accepted Tenders"] and self.item_tender:
 			items_to_check = self.item_tender
-		elif self.tender_type in ["Tender Submission", "Accepted Tenders"] and self.tender_supplier:
-			items_to_check = self.tender_supplier
 
 		# Calculate deviations for each item
 		for row in items_to_check:
@@ -106,7 +103,7 @@ class Tenders(Document):
 			# Get item cost from Item doctype
 			try:
 				item_doc = frappe.get_doc("Item", item_code)
-				item_cost = item_doc.standard_rate or 0
+				item_cost = item_doc.valuation_rate or item_doc.standard_rate or 0
 			except frappe.DoesNotExistError:
 				item_cost = 0
 
@@ -114,12 +111,12 @@ class Tenders(Document):
 			tender_price = row.tender_price if hasattr(row, 'tender_price') else 0
 
 			# Calculate deviation only if tender price is less than cost
-			if tender_price and tender_price < item_cost:
+			if tender_price and item_cost and tender_price < item_cost:
 				deviation_amount = item_cost - tender_price
 				deviation_percent = (deviation_amount / item_cost * 100) if item_cost > 0 else 0
 
 				# Add to price deviation table
-				deviation_row = self.append("tender_price_deviation", {
+				self.append("tender_price_deviation", {
 					"item": item_code,
 					"item_name": row.item_name if hasattr(row, 'item_name') else "",
 					"tender_price": tender_price,
@@ -134,37 +131,34 @@ class Tenders(Document):
 		# Get items from appropriate table
 		items_to_track = []
 		if self.tender_type == "Tenders for market data" and self.items_fmd:
-			items_to_track = self.items_fmd
+			items_to_track = [(row.item, row.quantity) for row in self.items_fmd if hasattr(row, 'item')]
 		elif self.tender_type in ["Awarded Tenders", "Tender Submission", "Accepted Tenders"] and self.item_tender:
-			items_to_track = self.item_tender
+			items_to_track = [(row.item_code, row.tender_qty) for row in self.item_tender if row.item_code]
 
 		# Map existing status entries by item
 		existing_status = {row.item_name: row for row in self.tender_status or []}
 		
-		new_status_rows = []
 		seen_items = set()
 
-		for row in items_to_track:
-			item_code = row.item_code if hasattr(row, 'item_code') else (row.item if hasattr(row, 'item') else None)
+		for item_code, tender_qty in items_to_track:
 			if not item_code or item_code in seen_items:
 				continue
 			
 			seen_items.add(item_code)
-			tender_qty = row.tender_qty if hasattr(row, 'tender_qty') else (row.quantity if hasattr(row, 'quantity') else 0)
 
 			if item_code in existing_status:
 				# Update existing row if quantities changed
 				status_row = existing_status[item_code]
-				status_row.tender_quantity = tender_qty
-				status_row.remaining_quantity = tender_qty - (status_row.supplied_quantity or 0)
+				status_row.tender_quantity = tender_qty or 0
+				status_row.remaining_quantity = (tender_qty or 0) - (status_row.supplied_quantity or 0)
 				status_row.fulfillment_percent = (status_row.supplied_quantity / tender_qty * 100) if tender_qty > 0 else 0
 			else:
 				# Create new status row
 				self.append("tender_status", {
 					"item_name": item_code,
-					"tender_quantity": tender_qty,
+					"tender_quantity": tender_qty or 0,
 					"supplied_quantity": 0,
-					"remaining_quantity": tender_qty,
+					"remaining_quantity": tender_qty or 0,
 					"fulfillment_percent": 0
 				})
 
@@ -212,41 +206,63 @@ class Tenders(Document):
 			self.db_update({"tender_end_date": self.extended_end_date})
 
 	def auto_fetch_from_awarded_tender(self):
-		"""Auto-fetch data from awarded tender to accepted tender"""
-		if not self.tender_number:
+		"""Auto-fetch data from awarded tender to submission/accepted tender"""
+		if not self.tender_number or not self.category:
 			return
 
-		# Find awarded tender with same tender number
+		# Find awarded tender with same tender number and category
 		awarded_tenders = frappe.db.get_list("Tenders",
 			filters={
 				"tender_type": "Awarded Tenders",
 				"tender_number": self.tender_number,
+				"category": self.category,
 				"docstatus": 1
 			},
-			fields=["name"])
+			fields=["name"],
+			limit=1)
 
-		if awarded_tenders:
-			awarded_tender = frappe.get_doc("Tenders", awarded_tenders[0].name)
+		if not awarded_tenders:
+			return
 			
-			# Copy item tenders
-			self.item_tender = []
-			for row in awarded_tender.item_tender or []:
-				self.append("item_tender", {
-					"item_code": row.item_code,
-					"item_name": row.item_name,
-					"tender_qty": row.tender_qty,
-					"tender_start_date": row.tender_start_date,
-					"tender_end_date": row.tender_end_date
-				})
+		awarded_tender = frappe.get_doc("Tenders", awarded_tenders[0].name)
+		
+		# Copy basic details
+		self.hospitalagent_name = awarded_tender.hospitalagent_name
+		self.year_of_tender = awarded_tender.year_of_tender
+		self.tender_start_date = awarded_tender.tender_start_date
+		self.tender_end_date = awarded_tender.tender_end_date
+		self.supplying_by = awarded_tender.supplying_by
+		
+		# Copy item tenders
+		self.item_tender = []
+		for row in awarded_tender.item_tender or []:
+			self.append("item_tender", {
+				"item_code": row.item_code,
+				"item_group": row.item_group,
+				"item_name": row.item_name,
+				"tender_qty": row.tender_qty,
+				"tender_price": row.tender_price if hasattr(row, 'tender_price') else 0,
+				"tender_start_date": row.tender_start_date,
+				"tender_end_date": row.tender_end_date
+			})
 
-			# Copy suppliers if applicable
-			if awarded_tender.supplying_by and awarded_tender.supplying_by != "Oncopharm":
-				self.tender_supplier = []
-				for row in awarded_tender.tender_supplier or []:
-					self.append("tender_supplier", {
-						"supplier": row.supplier if hasattr(row, 'supplier') else "",
-						"supplier_name": row.supplier_name if hasattr(row, 'supplier_name') else ""
-					})
+		# Copy suppliers if applicable
+		if awarded_tender.supplying_by and awarded_tender.supplying_by != "Oncopharm":
+			self.tender_supplier = []
+			for row in awarded_tender.tender_supplier or []:
+				self.append("tender_supplier", {
+					"supplying_by": row.supplying_by if hasattr(row, 'supplying_by') else "",
+					"supplier": row.supplier if hasattr(row, 'supplier') else "",
+					"supply_qty": row.supply_qty if hasattr(row, 'supply_qty') else 0
+				})
+		
+		# Copy tender rules
+		self.apply_extra_quantities = awarded_tender.apply_extra_quantities
+		self.extra_qty_type = awarded_tender.extra_qty_type
+		self.extra_qty_value = awarded_tender.extra_qty_value
+		self.apply_extended_time = awarded_tender.apply_extended_time
+		self.extended_start_date = awarded_tender.extended_start_date
+		self.extended_end_date = awarded_tender.extended_end_date
 
 	def get_deviation_summary(self):
 		"""Get summary of price deviations"""

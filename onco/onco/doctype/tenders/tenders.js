@@ -71,6 +71,23 @@ frappe.ui.form.on("Tenders", {
 
 	supplying_by(frm) {
 		toggle_offer_sections(frm);
+		
+		// Auto-populate Oncopharm when "By Oncopharm" selected
+		if (frm.doc.supplying_by === "Oncopharm" || frm.doc.supplying_by === "Oncopharm & Distributor") {
+			let has_oncopharm = false;
+			(frm.doc.tender_supplier || []).forEach(row => {
+				if (row.supplying_by === "By Oncopharm") {
+					has_oncopharm = true;
+				}
+			});
+			
+			if (!has_oncopharm) {
+				let row = frm.add_child("tender_supplier");
+				row.supplying_by = "By Oncopharm";
+				row.supplier = "ONCOPHARM EGYPT S.A.E";
+				frm.refresh_field("tender_supplier");
+			}
+		}
 	},
 
 	apply_extra_quantities(frm) {
@@ -126,12 +143,12 @@ function toggle_offer_sections(frm) {
 	const is_distributor = supplying_by === "Distributor" || supplying_by === "Oncopharm & Distributor";
 
 	frm.toggle_display("onco_offers_section", is_onco);
-	frm.toggle_display("onco_price_offer", is_onco);
-	frm.toggle_display("onco_technical_offer", is_onco);
+	frm.set_df_property("onco_price_offer", "hidden", !is_onco);
+	frm.set_df_property("onco_technical_offer", "hidden", !is_onco);
 
 	frm.toggle_display("distributors_offers_section", is_distributor);
-	frm.toggle_display("distributors_price_offer", is_distributor);
-	frm.toggle_display("distributors_technical_offer", is_distributor);
+	frm.set_df_property("distributors_price_offer", "hidden", !is_distributor);
+	frm.set_df_property("distributors_technical_offer", "hidden", !is_distributor);
 }
 
 function set_naming_series_options(frm) {
@@ -212,7 +229,7 @@ function update_status_from_invoices(frm) {
 		method: 'frappe.client.get_list',
 		args: {
 			doctype: 'Sales Invoice',
-			filters: { 'tender_reference': frm.doc.name, 'docstatus': 1 },
+			filters: { 'custom_tender_ref': frm.doc.name, 'docstatus': 1 },
 			fields: ['name', 'posting_date', 'items']
 		},
 		callback: function (r) {

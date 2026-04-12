@@ -264,7 +264,6 @@
             "allow_on_submit": 1,
             "fieldname": "onco_price_offer",
             "fieldtype": "Table",
-            "hidden": 1,
             "label": "Onco Price Offer",
             "options": "Onco Price Offer"
         },
@@ -272,7 +271,6 @@
             "allow_on_submit": 1,
             "fieldname": "onco_technical_offer",
             "fieldtype": "Table",
-            "hidden": 1,
             "label": "Onco Technical Offer",
             "options": "Onco Technical Offer"
         },
@@ -285,7 +283,6 @@
             "allow_on_submit": 1,
             "fieldname": "distributors_price_offer",
             "fieldtype": "Table",
-            "hidden": 1,
             "label": "Distributors Price Offer",
             "options": "Distributors Price Offer"
         },
@@ -293,7 +290,6 @@
             "allow_on_submit": 1,
             "fieldname": "distributors_technical_offer",
             "fieldtype": "Table",
-            "hidden": 1,
             "label": "Distributors Technical Offer",
             "options": "Distributors Technical Offer"
         },

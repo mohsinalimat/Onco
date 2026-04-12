@@ -40,6 +40,15 @@
             "fieldtype": "Date",
             "insert_after": "custom_approved_by",
             "label": "Approval Date"
+        },
+        {
+            "dt": "Sales Invoice",
+            "depends_on": "eval:doc.custom_price_deviation_approved==1",
+            "fieldname": "custom_approved_quantities",
+            "fieldtype": "Table",
+            "insert_after": "custom_approval_date",
+            "label": "Approved Quantities",
+            "options": "Approved Quantities"
         }
     ],
     "property_setters": [],
