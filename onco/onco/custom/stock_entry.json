@@ -19,7 +19,7 @@
    "insert_after": "custom_purchase_receipt",
    "read_only": 1,
    "no_copy": 1,
-   "fetch_from": "custom_purchase_receipt.custom_shipment_ref"
+   "fetch_from": "custom_purchase_receipt.shipment"
   },
   {
    "dt": "Stock Entry",
