@@ -1,5 +1,15 @@
 {
-    "custom_fields": [],
+    "custom_fields": [
+        {
+            "fieldname": "custom_shipment_ref",
+            "fieldtype": "Link",
+            "label": "Shipment Ref",
+            "options": "Shipments",
+            "insert_after": "supplier_name",
+            "read_only": 0,
+            "allow_on_submit": 0
+        }
+    ],
     "custom_perms": [],
     "doctype": "Purchase Receipt",
     "links": [],
