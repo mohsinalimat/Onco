@@ -54,7 +54,7 @@ class IncomingCheckReport(Document):
             return
         
         # Get Shipment from Purchase Receipt
-        shipment = frappe.db.get_value("Purchase Receipt", self.purchase_receipt, "custom_shipment_ref")
+        shipment = frappe.db.get_value("Purchase Receipt", self.purchase_receipt, "shipment")
         if shipment:
             self.shipment = shipment
         
@@ -396,7 +396,7 @@ def make_incoming_check_report(source_name, target_doc=None):
             target.purchase_receipt = purchase_receipt
             
             # Get Shipment reference from Purchase Receipt
-            shipment_no = frappe.db.get_value("Purchase Receipt", purchase_receipt, "custom_shipment_ref")
+            shipment_no = frappe.db.get_value("Purchase Receipt", purchase_receipt, "shipment")
             if shipment_no:
                 target.shipment = shipment_no
             
@@ -485,7 +485,7 @@ def make_incoming_check_report(source_name, target_doc=None):
             "field_map": {
                 "name": "stock_entry",
                 "custom_purchase_receipt": "purchase_receipt",
-                "custom_shipment_ref": "shipment"
+                "shipment": "shipment"
             }
         }
     }, target_doc, set_missing_values)
@@ -523,8 +523,8 @@ def make_incoming_check_report_from_pr(source_name, target_doc=None):
         target.rejected_warehouse = "Imported Finished Phr (Damage & Losses) warehouse - Onco"
         
         # Get Shipment reference
-        if source.get("custom_shipment_ref"):
-            target.shipment = source.custom_shipment_ref
+        if source.get("shipment"):
+            target.shipment = source.shipment
         
         # Get Purchase Invoice from items
         if source.items:
@@ -559,7 +559,7 @@ def make_incoming_check_report_from_pr(source_name, target_doc=None):
                     manufacturing_date = batch_details.manufacturing_date
                     expiry_date = batch_details.expiry_date
             
-            shipment_no = source.get("custom_shipment_ref") or ""
+            shipment_no = source.get("shipment") or ""
             
             target.append("items", {
                 "item_code": item_code,
@@ -585,7 +585,7 @@ def make_incoming_check_report_from_pr(source_name, target_doc=None):
             "doctype": "Incoming Check Report",
             "field_map": {
                 "name": "purchase_receipt",
-                "custom_shipment_ref": "shipment"
+                "shipment": "shipment"
             }
         }
     }, target_doc, set_missing_values)
@@ -647,7 +647,7 @@ def make_purchase_receipt_report(source_name, target_doc=None):
             "doctype": "Purchase Receipt Report",
             "field_map": {
                 "purchase_receipt": "purchase_receipt",
-                "shipment": "custom_shipment_ref"
+                "shipment": "shipment"
             }
         },
         "Incoming Check Report Item": {
