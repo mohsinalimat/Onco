@@ -61,8 +61,6 @@ class Tenders(Document):
 
 	def on_submit(self):
 		"""Actions to perform on tender submission"""
-		self.update_tender_end_date_if_extended()
-		
 		# Set initial workflow status only for base Awarded Tenders
 		if self.tender_type == "Awarded Tenders" and not self.workflow_status:
 			self.db_set("workflow_status", "Awarded")
@@ -73,15 +71,17 @@ class Tenders(Document):
 		if not getattr(self, "applying_rules", 0):
 			return
 			
-		# Apply Extra Quantities
+		# Apply Extra Quantities (only to items flagged with extend_qty)
 		if self.apply_extra_quantities and self.extra_qty_type and self.extra_qty_value:
 			self.apply_extra_quantity_logic()
 
-		# Apply Extended Time
+		# Apply Extended Time only to items flagged with extend_time=1
+		# The tender-level header dates are NOT overwritten — only per-item dates are amended.
 		if self.apply_extended_time and self.extended_start_date and self.extended_end_date:
-			# Update tender dates
-			self.tender_start_date = self.extended_start_date
-			self.tender_end_date = self.extended_end_date
+			for row in (self.item_tender or []):
+				if getattr(row, 'extend_time', 0):
+					row.tender_start_date = self.extended_start_date
+					row.tender_end_date = self.extended_end_date
 
 	def apply_extra_quantity_logic(self):
 		"""Apply extra quantity rules to all child tables based on tender type"""
@@ -107,16 +107,20 @@ class Tenders(Document):
 				row.quantity = row.original_quantity + self.extra_qty_value
 
 	def _apply_extra_qty_to_item_tender(self):
-		"""Apply extra quantities to Item Tender table"""
+		"""Apply extra quantities only to Item Tender rows flagged with extend_qty=1"""
 		for row in self.item_tender or []:
-			if not hasattr(row, 'original_qty'):
+			# Skip rows not marked for quantity extension
+			if not getattr(row, 'extend_qty', 0):
+				continue
+
+			if not hasattr(row, 'original_qty') or not row.original_qty:
 				row.original_qty = row.tender_qty or 0
 
 			if self.extra_qty_type == "Percent":
-				extra = row.original_qty * (self.extra_qty_value / 100)
-				row.tender_qty = row.original_qty + extra
+				extra = (row.original_qty or 0) * (self.extra_qty_value / 100)
+				row.tender_qty = (row.original_qty or 0) + extra
 			elif self.extra_qty_type == "Quantity":
-				row.tender_qty = row.original_qty + self.extra_qty_value
+				row.tender_qty = (row.original_qty or 0) + self.extra_qty_value
 
 	def _apply_extra_qty_to_tender_supplier(self):
 		"""Apply extra quantities to Tender Supplier table"""
@@ -564,6 +568,54 @@ def upload_fmd_items(parent, file_url):
     except Exception as e:
         frappe.log_error(frappe.get_traceback(), "FMD Upload Error")
         frappe.throw(f"Error parsing file: {str(e)}")
+
+@frappe.whitelist()
+def save_item_extension_flags(tender_name, selections):
+	"""
+	Save per-item extend_qty / extend_time flags on an Item Tender child table.
+	This method uses db_set on the child DocType directly, which is the correct
+	way to update child table fields on a submitted (docstatus=1) parent document
+	without requiring a cancel/amend cycle.
+
+	Called from the client-side extension dialog on submitted Accepted Tenders
+	and Tender Submissions.
+	"""
+	if isinstance(selections, str):
+		import json
+		selections = json.loads(selections)
+
+	# Validate the parent doc exists and user has write permission
+	parent = frappe.get_doc("Tenders", tender_name)
+	frappe.has_permission("Tenders", "write", parent, throw=True)
+
+	for sel in selections:
+		row_name = sel.get("name")
+		extend_qty = int(sel.get("extend_qty", 0))
+		extend_time = int(sel.get("extend_time", 0))
+
+		if not row_name:
+			continue
+
+		# Write directly to the child table row — safe for submitted docs
+		# because Item Tender fields have allow_on_submit=1
+		frappe.db.set_value(
+			"Item Tender",
+			row_name,
+			{"extend_qty": extend_qty, "extend_time": extend_time},
+			update_modified=False
+		)
+
+	# Trigger re-validation of extension rules on the parent so
+	# quantities/dates are recalculated with the new per-item selections.
+	# We re-load the doc fresh so it picks up the new child values.
+	parent = frappe.get_doc("Tenders", tender_name)
+	if parent.applying_rules:
+		parent.apply_tender_rules()
+		parent.save(ignore_permissions=True)
+
+	frappe.db.commit()
+	return {"status": "ok"}
+
 
 @frappe.whitelist()
 def check_sales_invoice_deviations(sales_invoice_name):

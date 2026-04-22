@@ -12,7 +12,9 @@
         "tender_qty",
         "tender_price",
         "tender_start_date",
-        "tender_end_date"
+        "tender_end_date",
+        "extend_qty",
+        "extend_time"
     ],
     "fields": [
         {
@@ -67,6 +69,22 @@
             "fieldtype": "Date",
             "in_list_view": 1,
             "label": "Tender End Date"
+        },
+        {
+            "allow_on_submit": 1,
+            "default": "0",
+            "fieldname": "extend_qty",
+            "fieldtype": "Check",
+            "in_list_view": 1,
+            "label": "Extend Qty?"
+        },
+        {
+            "allow_on_submit": 1,
+            "default": "0",
+            "fieldname": "extend_time",
+            "fieldtype": "Check",
+            "in_list_view": 1,
+            "label": "Extend Time?"
         }
     ],
     "grid_page_length": 50,

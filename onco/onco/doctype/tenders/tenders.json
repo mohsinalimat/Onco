@@ -310,7 +310,7 @@
             "options": "Tender Price Deviation Details"
         },
         {
-            "depends_on": "eval:['Accepted Tenders'].includes(doc.tender_type)",
+            "depends_on": "eval:['Tender Submission', 'Accepted Tenders'].includes(doc.tender_type)",
             "fieldname": "offers_tab",
             "fieldtype": "Tab Break",
             "label": "Offers"
