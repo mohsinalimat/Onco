@@ -6,6 +6,10 @@ def validate(doc, method):
     Validate Purchase Invoice before save
     Ensure batch numbers are provided for items that require them
     """
+    # Bypass strict stock and batch validation during historical Data Imports
+    if frappe.flags.in_import:
+        return
+
     # Set use_serial_batch_fields for all items when update_stock is enabled
     if doc.update_stock:
         for item in doc.items:
@@ -39,6 +43,10 @@ def before_insert(doc, method):
     """
     Actions to perform before inserting a new Purchase Invoice
     """
+    # Bypass forcing stock updates during historical Data Imports
+    if frappe.flags.in_import:
+        return
+
     # Set update_stock to 1 by default for new invoices
     if not doc.update_stock:
         doc.update_stock = 1
