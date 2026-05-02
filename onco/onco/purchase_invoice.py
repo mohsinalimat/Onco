@@ -47,9 +47,9 @@ def before_insert(doc, method):
     if frappe.flags.in_import:
         return
 
-    # Set update_stock to 1 by default for new invoices
-    if not doc.update_stock:
-        doc.update_stock = 1
+    # Removed automatic update_stock enforcement as per user request
+    # if not doc.update_stock:
+    #     doc.update_stock = 1
     
     # Set use_serial_batch_fields for all items when update_stock is enabled
     if doc.update_stock:
