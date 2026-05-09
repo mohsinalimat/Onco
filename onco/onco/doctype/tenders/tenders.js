@@ -602,6 +602,7 @@ function open_item_extension_dialog(frm) {
 	dialog.show();
 }
 
+
 function approve_all_deviations(frm) {
 
 	frappe.confirm(

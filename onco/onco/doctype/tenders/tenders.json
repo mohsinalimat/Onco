@@ -151,6 +151,7 @@
             "reqd": 1
         },
         {
+            "allow_on_submit": 1,
             "depends_on": "eval:doc.tender_type != \"Tenders for market data\"",
             "fieldname": "supplying_by",
             "fieldtype": "Select",
@@ -158,6 +159,7 @@
             "options": "\nBy Oncopharm Only\nBy Distributor Only\nBy Oncopharm & Distributor"
         },
         {
+            "allow_on_submit": 1,
             "depends_on": "eval:['By Distributor Only','By Oncopharm & Distributor'].includes(doc.supplying_by)",
             "fieldname": "number_of_distributors",
             "fieldtype": "Int",
@@ -249,12 +251,14 @@
         },
         {
             "depends_on": "eval:['Awarded Tenders','Tender Submission','Accepted Tenders'].includes(doc.tender_type)",
+            "read_only_depends_on": "eval:doc.tender_type == 'Accepted Tenders'",
             "fieldname": "item_tender",
             "fieldtype": "Table",
             "label": "Item Tender",
             "options": "Item Tender"
         },
         {
+            "allow_on_submit": 1,
             "depends_on": "eval:['Awarded Tenders','Tender Submission','Accepted Tenders'].includes(doc.tender_type)",
             "fieldname": "tender_supplier",
             "fieldtype": "Table",
@@ -293,24 +297,29 @@
             "options": "Price List for Tender"
         },
         {
+            "depends_on": "eval:['Tender Submission','Accepted Tenders'].includes(doc.tender_type) || (doc.tender_type == 'Awarded Tenders' && doc.docstatus == 1)",
             "fieldname": "price_deviation_section",
             "fieldtype": "Section Break",
             "label": "Price Deviation Tracking"
         },
         {
+            "allow_on_submit": 1,
+            "depends_on": "eval:['Tender Submission','Accepted Tenders'].includes(doc.tender_type) || (doc.tender_type == 'Awarded Tenders' && doc.docstatus == 1)",
             "fieldname": "tender_price_deviation",
             "fieldtype": "Table",
             "label": "Tender Price Deviation",
             "options": "Tender Price Deviation"
         },
         {
+            "allow_on_submit": 1,
+            "depends_on": "eval:['Tender Submission','Accepted Tenders'].includes(doc.tender_type) || (doc.tender_type == 'Awarded Tenders' && doc.docstatus == 1)",
             "fieldname": "tender_price_deviation_details",
             "fieldtype": "Table",
             "label": "Tender Price Deviation Details",
             "options": "Tender Price Deviation Details"
         },
         {
-            "depends_on": "eval:['Tender Submission', 'Accepted Tenders'].includes(doc.tender_type)",
+            "depends_on": "eval:['Awarded Tenders','Tender Submission', 'Accepted Tenders'].includes(doc.tender_type)",
             "fieldname": "offers_tab",
             "fieldtype": "Tab Break",
             "label": "Offers"

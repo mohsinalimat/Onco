@@ -339,7 +339,7 @@ class Tenders(Document):
 					"quantity_with_loss": qty,
 					"losses_value": losses,
 					"approved_status": "Pending",
-					"approved_by": item.get("custom_approved_by") # Optional: fetch from invoice
+					"approved_by": frappe.session.user
 				})
 
 	def populate_tender_price_deviation_details(self):
