@@ -1,4 +1,17 @@
 frappe.ui.form.on('Landed Cost Voucher', {
+    setup: function(frm) {
+        frm.set_query('receipt_document', 'purchase_receipts', function(doc, cdt, cdn) {
+            let child = locals[cdt][cdn];
+            if (child.receipt_document_type === 'Purchase Invoice') {
+                return {
+                    filters: {
+                        docstatus: 1,
+                        company: doc.company
+                    }
+                };
+            }
+        });
+    },
     custom_shipment_id: function(frm) {
         if (frm.doc.custom_shipment_id) {
             frappe.show_alert({message: `Fetching vendor invoices for Shipment ID ${frm.doc.custom_shipment_id}...`, indicator: 'green'});
