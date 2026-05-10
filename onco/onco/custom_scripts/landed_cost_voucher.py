@@ -141,24 +141,24 @@ def validate_landed_cost_voucher(doc, method):
         doc: Landed Cost Voucher document
         method: Hook method name
     """
-    # If Shipment ID is set, validate that all Purchase Receipts belong to that shipment
-    if doc.custom_shipment_id and doc.purchase_receipts:
-        for pr_row in doc.purchase_receipts:
-            if pr_row.purchase_receipt:
-                pr_shipment = frappe.db.get_value(
-                    'Purchase Receipt',
-                    pr_row.purchase_receipt,
-                    ['custom_shipment_ref', 'shipment'],
+    # If Shipment ID is set, validate that all Purchase Invoices belong to that shipment
+    if doc.custom_shipment_id and doc.vouchers:
+        for voucher_row in doc.vouchers:
+            if voucher_row.receipt_document and voucher_row.receipt_document_type == 'Purchase Invoice':
+                pi_shipment = frappe.db.get_value(
+                    'Purchase Invoice',
+                    voucher_row.receipt_document,
+                    ['custom_shipments', 'custom_shipment_id_dimension'],
                     as_dict=True
                 )
                 
-                if pr_shipment:
-                    pr_shipment_id = pr_shipment.get('custom_shipment_ref') or pr_shipment.get('shipment')
+                if pi_shipment:
+                    pi_shipment_id = pi_shipment.get('custom_shipments') or pi_shipment.get('custom_shipment_id_dimension')
                     
-                    if pr_shipment_id and pr_shipment_id != doc.custom_shipment_id:
+                    if pi_shipment_id and pi_shipment_id != doc.custom_shipment_id:
                         frappe.throw(_(
-                            "Purchase Receipt {0} belongs to Shipment {1}, but this Landed Cost Voucher is for Shipment {2}"
-                        ).format(pr_row.purchase_receipt, pr_shipment_id, doc.custom_shipment_id))
+                            "Purchase Invoice {0} belongs to Shipment {1}, but this Landed Cost Voucher is for Shipment {2}"
+                        ).format(voucher_row.receipt_document, pi_shipment_id, doc.custom_shipment_id))
 
 
 def before_submit_landed_cost_voucher(doc, method):
@@ -183,27 +183,27 @@ def before_submit_landed_cost_voucher(doc, method):
 
 
 @frappe.whitelist()
-def get_shipment_from_purchase_receipt(purchase_receipt):
+def get_shipment_from_purchase_invoice(purchase_invoice):
     """
-    Get Shipment ID from a Purchase Receipt
+    Get Shipment ID from a Purchase Invoice
     
     Args:
-        purchase_receipt: Purchase Receipt name
+        purchase_invoice: Purchase Invoice name
         
     Returns:
         Shipment ID or None
     """
-    if not purchase_receipt:
+    if not purchase_invoice:
         return None
     
     shipment_data = frappe.db.get_value(
-        'Purchase Receipt',
-        purchase_receipt,
-        ['custom_shipment_ref', 'shipment'],
+        'Purchase Invoice',
+        purchase_invoice,
+        ['custom_shipments', 'custom_shipment_id_dimension'],
         as_dict=True
     )
     
     if shipment_data:
-        return shipment_data.get('custom_shipment_ref') or shipment_data.get('shipment')
+        return shipment_data.get('custom_shipments') or shipment_data.get('custom_shipment_id_dimension')
     
     return None
