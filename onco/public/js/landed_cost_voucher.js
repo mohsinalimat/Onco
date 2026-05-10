@@ -72,7 +72,7 @@ function fetch_vendor_invoices(frm, shipment_id) {
                 }
 
                 // Auto-fetch receipt items properly
-                if (frm.doc.vouchers && frm.doc.vouchers.length > 0) {
+                if (frm.doc.purchase_receipts && frm.doc.purchase_receipts.length > 0) {
                     setTimeout(() => {
                         frappe.call({
                             method: "get_items_from_purchase_receipts",
