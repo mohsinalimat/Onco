@@ -49,8 +49,7 @@ doctype_js = {
     "Purchase Order": "public/js/purchase_order.js",
     "Stock Entry": "public/js/stock_entry_incoming_check.js",
     "Purchase Receipt": "public/js/purchase_receipt_incoming_check.js",
-    "Sales Invoice": "public/js/sales_invoice.js",
-    "Landed Cost Voucher": "onco/onco/onco/client_scripts/landed_cost_voucher_auto_fetch.js"
+    "Sales Invoice": "public/js/sales_invoice.js"
 }
 # doctype_js = {"doctype" : "public/js/doctype.js"}
 # doctype_list_js = {"doctype" : "public/js/doctype_list.js"}
@@ -271,8 +270,7 @@ fixtures = [
 				"in",
 				[
 					"Purchase Invoice-custom_shipment_id_dimension",
-					"Landed Cost Voucher-custom_shipment_id",
-					"Landed Cost Voucher-custom_auto_fetch_vendor_invoices"
+					"Landed Cost Voucher-custom_shipment_id"
 				]
 			]
 		]
