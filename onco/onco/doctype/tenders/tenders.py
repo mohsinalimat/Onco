@@ -179,13 +179,14 @@ class Tenders(Document):
 
 	def populate_tender_status(self):
 		"""Populate or update tender status from item tables without resetting supplied quantities"""
-		# Get items from appropriate table
+		# Only populate tender status for actual tenders, not market data
+		if self.tender_type == "Tenders for market data":
+			return
+			
+		# Get items from item_tender table only
 		items_to_track = []
-		if self.tender_type == "Tenders for market data" and self.items_fmd:
-			items_to_track = [(row.item_description, row.quantity) for row in self.items_fmd if hasattr(row, 'item_description') and row.item_description]
-		elif self.tender_type in ["Awarded Tenders", "Tender Submission", "Accepted Tenders"] and self.item_tender:
+		if self.item_tender:
 			items_to_track = [(row.item_code, row.tender_qty) for row in self.item_tender if hasattr(row, 'item_code') and row.item_code]
-
 
 		if not items_to_track:
 			return
