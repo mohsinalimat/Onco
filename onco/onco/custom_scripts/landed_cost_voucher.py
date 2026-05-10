@@ -142,8 +142,8 @@ def validate_landed_cost_voucher(doc, method):
         method: Hook method name
     """
     # If Shipment ID is set, validate that all Purchase Invoices belong to that shipment
-    if doc.custom_shipment_id and doc.vouchers:
-        for voucher_row in doc.vouchers:
+    if doc.custom_shipment_id and doc.purchase_receipts:
+        for voucher_row in doc.purchase_receipts:
             if voucher_row.receipt_document and voucher_row.receipt_document_type == 'Purchase Invoice':
                 pi_shipment = frappe.db.get_value(
                     'Purchase Invoice',
