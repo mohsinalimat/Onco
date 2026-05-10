@@ -1,5 +1,5 @@
 frappe.ui.form.on('Landed Cost Voucher', {
-    setup: function(frm) {
+    onload: function(frm) {
         frm.set_query('receipt_document', 'purchase_receipts', function(doc, cdt, cdn) {
             let child = locals[cdt][cdn];
             if (child.receipt_document_type === 'Purchase Invoice') {
