@@ -41,9 +41,16 @@ function fetch_vendor_invoices(frm, shipment_id) {
         },
         callback: function(r) {
             if (r && r.message && r.message.length > 0) {
-                // Clean up default empty rows
+                // Clean up default empty rows safely using Frappe API
                 if (frm.doc.taxes) {
-                    frm.doc.taxes = frm.doc.taxes.filter(t => t.expense_account || t.description || t.amount);
+                    let rows = frm.doc.taxes;
+                    for (let i = rows.length - 1; i >= 0; i--) {
+                        if (!rows[i].expense_account && !rows[i].description && (!rows[i].amount || rows[i].amount === 0)) {
+                            if (rows[i].name) {
+                                frappe.model.delete_doc(rows[i].doctype, rows[i].name);
+                            }
+                        }
+                    }
                 }
 
                 let current_taxes = frm.doc.taxes || [];
@@ -68,14 +75,13 @@ function fetch_vendor_invoices(frm, shipment_id) {
                     frappe.show_alert({message: `Vendor invoices for Shipment ID ${shipment_id} are already in the table.`, indicator: 'orange'});
                 }
 
-                // Auto-fetch receipt items and clean up the empty item row
+                // Auto-fetch receipt items properly
                 if (frm.doc.vouchers && frm.doc.vouchers.length > 0) {
                     frappe.call({
                         method: "get_items_from_purchase_receipts",
                         doc: frm.doc,
                         callback: function(r) {
-                            if (!r.exc && frm.doc.items) {
-                                frm.doc.items = frm.doc.items.filter(i => i.item_code);
+                            if (!r.exc) {
                                 frm.refresh_field("items");
                             }
                         }
