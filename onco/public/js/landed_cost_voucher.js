@@ -41,15 +41,11 @@ function fetch_vendor_invoices(frm, shipment_id) {
         },
         callback: function(r) {
             if (r && r.message && r.message.length > 0) {
-                // Clean up default empty rows safely using Frappe API
-                if (frm.doc.taxes) {
-                    let rows = frm.doc.taxes;
-                    for (let i = rows.length - 1; i >= 0; i--) {
-                        if (!rows[i].expense_account && !rows[i].description && (!rows[i].amount || rows[i].amount === 0)) {
-                            if (rows[i].name) {
-                                frappe.model.delete_doc(rows[i].doctype, rows[i].name);
-                            }
-                        }
+                // Clean up default empty rows safely using Frappe UI API
+                if (frm.doc.taxes && frm.doc.taxes.length > 0) {
+                    let first_row = frm.doc.taxes[0];
+                    if (!first_row.expense_account && !first_row.description && !first_row.amount) {
+                        frm.clear_table('taxes');
                     }
                 }
 
@@ -77,15 +73,21 @@ function fetch_vendor_invoices(frm, shipment_id) {
 
                 // Auto-fetch receipt items properly
                 if (frm.doc.vouchers && frm.doc.vouchers.length > 0) {
-                    frappe.call({
-                        method: "get_items_from_purchase_receipts",
-                        doc: frm.doc,
-                        callback: function(r) {
-                            if (!r.exc) {
-                                frm.refresh_field("items");
+                    setTimeout(() => {
+                        frappe.call({
+                            method: "get_items_from_purchase_receipts",
+                            doc: frm.doc,
+                            callback: function(r2) {
+                                if (!r2.exc) {
+                                    // Remove the blank default item row if the backend didn't
+                                    if (frm.doc.items && frm.doc.items.length > 0 && !frm.doc.items[0].item_code) {
+                                        frm.doc.items.shift();
+                                    }
+                                    frm.refresh_field("items");
+                                }
                             }
-                        }
-                    });
+                        });
+                    }, 500); // Slight delay ensures Frappe's model is synced before backend call
                 }
 
             } else {
