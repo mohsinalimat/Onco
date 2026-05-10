@@ -275,22 +275,26 @@
             "read_only": 1
         },
         {
+            "depends_on": "eval:['Awarded Tenders','Tender Submission','Accepted Tenders'].includes(doc.tender_type)",
             "fieldname": "tender_status_section",
             "fieldtype": "Section Break",
             "label": "Tender Status & Fulfillment"
         },
         {
+            "depends_on": "eval:['Awarded Tenders','Tender Submission','Accepted Tenders'].includes(doc.tender_type)",
             "fieldname": "tender_status",
             "fieldtype": "Table",
             "label": "Tender Status",
             "options": "Tender Status"
         },
         {
+            "depends_on": "eval:doc.tender_type == 'Accepted Tenders'",
             "fieldname": "price_list_section",
             "fieldtype": "Section Break",
             "label": "Price List for Tender"
         },
         {
+            "depends_on": "eval:doc.tender_type == 'Accepted Tenders'",
             "fieldname": "tender_price_list",
             "fieldtype": "Table",
             "label": "Tender Price List",

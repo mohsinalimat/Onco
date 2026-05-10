@@ -49,7 +49,8 @@ doctype_js = {
     "Purchase Order": "public/js/purchase_order.js",
     "Stock Entry": "public/js/stock_entry_incoming_check.js",
     "Purchase Receipt": "public/js/purchase_receipt_incoming_check.js",
-    "Sales Invoice": "public/js/sales_invoice.js"
+    "Sales Invoice": "public/js/sales_invoice.js",
+    "Landed Cost Voucher": "onco/onco/client_scripts/landed_cost_voucher_auto_fetch.js"
 }
 # doctype_js = {"doctype" : "public/js/doctype.js"}
 # doctype_list_js = {"doctype" : "public/js/doctype_list.js"}
@@ -166,6 +167,10 @@ doc_events = {
 		"before_insert": "onco.onco.purchase_invoice.before_insert",
 		"validate": "onco.onco.purchase_invoice.validate",
 		"on_submit": "onco.onco.purchase_invoice.on_submit"
+	},
+	"Landed Cost Voucher": {
+		"validate": "onco.onco.custom_scripts.landed_cost_voucher.validate_landed_cost_voucher",
+		"before_submit": "onco.onco.custom_scripts.landed_cost_voucher.before_submit_landed_cost_voucher"
 	}
 }
 
@@ -254,3 +259,22 @@ scheduler_events = {
 # 	"Logging DocType Name": 30  # days to retain logs
 # }
 
+# Fixtures
+# --------
+# Export fixtures for custom fields and configurations
+fixtures = [
+	{
+		"dt": "Custom Field",
+		"filters": [
+			[
+				"name",
+				"in",
+				[
+					"Purchase Invoice-custom_shipment_id_dimension",
+					"Landed Cost Voucher-custom_shipment_id",
+					"Landed Cost Voucher-custom_auto_fetch_vendor_invoices"
+				]
+			]
+		]
+	}
+]
