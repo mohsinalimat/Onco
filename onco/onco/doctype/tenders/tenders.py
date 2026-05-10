@@ -182,7 +182,7 @@ class Tenders(Document):
 		# Get items from appropriate table
 		items_to_track = []
 		if self.tender_type == "Tenders for market data" and self.items_fmd:
-			items_to_track = [(row.item, row.quantity) for row in self.items_fmd if hasattr(row, 'item') and row.item]
+			items_to_track = [(row.item_description, row.quantity) for row in self.items_fmd if hasattr(row, 'item_description') and row.item_description]
 		elif self.tender_type in ["Awarded Tenders", "Tender Submission", "Accepted Tenders"] and self.item_tender:
 			items_to_track = [(row.item_code, row.tender_qty) for row in self.item_tender if hasattr(row, 'item_code') and row.item_code]
 
@@ -543,9 +543,9 @@ def upload_fmd_items(parent, file_url):
         
         # Simple mapping heuristic
         col_map = {
-            "Item Name": "item",
-            "item name": "item",
-            "Item": "item",
+            "Item Name": "item_description",
+            "item name": "item_description",
+            "Item": "item_description",
             "Quantity": "quantity",
             "qty": "quantity",
             "Qty": "quantity",
@@ -559,7 +559,7 @@ def upload_fmd_items(parent, file_url):
                 if col in df.columns:
                     item_data[field] = row[col]
             
-            if item_data.get("item"):
+            if item_data.get("item_description"):
                 doc.append("items_fmd", item_data)
                 
         doc.save()

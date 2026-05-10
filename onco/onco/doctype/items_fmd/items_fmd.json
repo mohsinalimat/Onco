@@ -6,13 +6,13 @@
  "editable_grid": 1,
  "engine": "InnoDB",
  "field_order": [
-  "item",
+  "item_description",
   "quantity",
   "existing_supplier"
  ],
  "fields": [
   {
-   "fieldname": "item",
+   "fieldname": "item_description",
    "fieldtype": "Data",
    "in_list_view": 1,
    "label": "Item Name"
@@ -34,7 +34,7 @@
  "index_web_pages_for_search": 1,
  "istable": 1,
  "links": [],
- "modified": "2025-12-29 22:47:56.113412",
+ "modified": "2026-05-10 12:00:00.000000",
  "modified_by": "Administrator",
  "module": "Onco",
  "name": "Items FMD",
