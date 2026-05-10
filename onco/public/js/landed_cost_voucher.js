@@ -67,6 +67,21 @@ function fetch_vendor_invoices(frm, shipment_id) {
                 } else {
                     frappe.show_alert({message: `Vendor invoices for Shipment ID ${shipment_id} are already in the table.`, indicator: 'orange'});
                 }
+
+                // Auto-fetch receipt items and clean up the empty item row
+                if (frm.doc.vouchers && frm.doc.vouchers.length > 0) {
+                    frappe.call({
+                        method: "get_items_from_purchase_receipts",
+                        doc: frm.doc,
+                        callback: function(r) {
+                            if (!r.exc && frm.doc.items) {
+                                frm.doc.items = frm.doc.items.filter(i => i.item_code);
+                                frm.refresh_field("items");
+                            }
+                        }
+                    });
+                }
+
             } else {
                 frappe.msgprint(`No submitted vendor service invoices found for Shipment ID: ${shipment_id}`);
             }
