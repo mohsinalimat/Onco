@@ -1,34 +1,4 @@
 frappe.ui.form.on('Landed Cost Voucher', {
-    refresh: function(frm) {
-        // Add a manual button as a fallback
-        frm.add_custom_button(__('Fetch Vendor Invoices'), function() {
-            if (frm.doc.custom_shipment_id) {
-                fetch_vendor_invoices(frm, frm.doc.custom_shipment_id);
-            } else if (frm.doc.vouchers && frm.doc.vouchers.length > 0) {
-                // Try to find the first Purchase Invoice in the table and fetch its shipment
-                let pi_row = frm.doc.vouchers.find(v => v.receipt_document_type === 'Purchase Invoice' && v.receipt_document);
-                if (pi_row) {
-                    frappe.call({
-                        method: 'onco.onco.custom_scripts.landed_cost_voucher.get_shipment_from_purchase_invoice',
-                        args: { purchase_invoice: pi_row.receipt_document },
-                        callback: function(r) {
-                            if (r && r.message) {
-                                frm.set_value('custom_shipment_id', r.message);
-                                fetch_vendor_invoices(frm, r.message);
-                            } else {
-                                frappe.msgprint('No Shipment ID found on the selected Purchase Invoice.');
-                            }
-                        }
-                    });
-                } else {
-                    frappe.msgprint('Please select a Purchase Invoice in the Receipts table or set the Shipment ID first.');
-                }
-            } else {
-                frappe.msgprint('Please add a Purchase Invoice to the Receipts table first.');
-            }
-        }, __('Actions'));
-    },
-    
     custom_shipment_id: function(frm) {
         if (frm.doc.custom_shipment_id) {
             frappe.show_alert({message: `Fetching vendor invoices for Shipment ID ${frm.doc.custom_shipment_id}...`, indicator: 'green'});
@@ -71,6 +41,11 @@ function fetch_vendor_invoices(frm, shipment_id) {
         },
         callback: function(r) {
             if (r && r.message && r.message.length > 0) {
+                // Clean up default empty rows
+                if (frm.doc.taxes) {
+                    frm.doc.taxes = frm.doc.taxes.filter(t => t.expense_account || t.description || t.amount);
+                }
+
                 let current_taxes = frm.doc.taxes || [];
                 let existing_descriptions = current_taxes.map(t => t.description);
                 let added_count = 0;
