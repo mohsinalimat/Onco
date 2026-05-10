@@ -50,7 +50,7 @@ doctype_js = {
     "Stock Entry": "public/js/stock_entry_incoming_check.js",
     "Purchase Receipt": "public/js/purchase_receipt_incoming_check.js",
     "Sales Invoice": "public/js/sales_invoice.js",
-    "Landed Cost Voucher": "onco/onco/client_scripts/landed_cost_voucher_auto_fetch.js"
+    "Landed Cost Voucher": "onco/onco/onco/client_scripts/landed_cost_voucher_auto_fetch.js"
 }
 # doctype_js = {"doctype" : "public/js/doctype.js"}
 # doctype_list_js = {"doctype" : "public/js/doctype_list.js"}
