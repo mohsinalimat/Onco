@@ -15,7 +15,7 @@
    "fieldname": "item",
    "fieldtype": "Data",
    "in_list_view": 1,
-   "label": "Item"
+   "label": "Item Name"
   },
   {
    "fieldname": "quantity",
