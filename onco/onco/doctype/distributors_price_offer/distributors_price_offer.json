@@ -16,7 +16,9 @@
   "start_date",
   "end_date",
   "discount_percent",
-  "credit_limit"
+  "credit_limit",
+  "attachment",
+  "status"
  ],
  "fields": [
   {
@@ -98,6 +100,22 @@
    "fieldname": "credit_limit",
    "fieldtype": "Data",
    "label": "Credit Limit "
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "attachment",
+   "fieldtype": "Attach",
+   "label": "Attachment"
+  },
+  {
+   "allow_on_submit": 1,
+   "default": "Active",
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Status",
+   "options": "Active\nArchived",
+   "read_only": 1
   }
  ],
  "grid_page_length": 50,

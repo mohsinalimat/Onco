@@ -8,7 +8,7 @@
  "field_order": [
   "supplying_by",
   "supplier",
-  "supply_qty"
+  "allocate_items"
  ],
  "fields": [
   {
@@ -27,10 +27,11 @@
    "read_only_depends_on": "eval:doc.supplying_by == 'By Oncopharm Only'"
   },
   {
-   "fieldname": "supply_qty",
-   "fieldtype": "Float",
+   "fieldname": "allocate_items",
+   "fieldtype": "Button",
    "in_list_view": 1,
-   "label": "Supply Quantity"
+   "label": "Allocate Items",
+   "depends_on": "eval:doc.supplier"
   }
  ],
  "grid_page_length": 50,

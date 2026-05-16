@@ -333,6 +333,19 @@ frappe.ui.form.on("Tenders", {
 
 // Real-time tender status population from item_tender
 frappe.ui.form.on("Tender Supplier", {
+	allocate_items(frm, cdt, cdn) {
+		let row = locals[cdt][cdn];
+		if (!row.supplier) {
+			frappe.msgprint(__('Please select a Distributor first.'));
+			return;
+		}
+		if (!frm.doc.item_tender || frm.doc.item_tender.length === 0) {
+			frappe.msgprint(__('Please add items to the Tender first.'));
+			return;
+		}
+		open_supplier_allocation_dialog(frm, row);
+	},
+
 	supplier(frm, cdt, cdn) {
 		let row = locals[cdt][cdn];
 		// When a distributor is selected, copy items to the distributors price offer table for them
@@ -386,6 +399,27 @@ frappe.ui.form.on("Item Tender", {
 		populate_tender_status_realtime(frm);
 	}
 });
+
+frappe.ui.form.on('Distributors Price Offer', {
+	item: function(frm, cdt, cdn) {
+		archive_previous_offers(frm, locals[cdt][cdn]);
+	},
+	distributor: function(frm, cdt, cdn) {
+		archive_previous_offers(frm, locals[cdt][cdn]);
+	}
+});
+
+function archive_previous_offers(frm, new_row) {
+	if (!new_row.item || !new_row.distributor) return;
+	
+	let changed = false;
+	(frm.doc.distributors_price_offer || []).forEach(r => {
+		if (r.name !== new_row.name && r.item === new_row.item && r.distributor === new_row.distributor && r.status !== 'Archived') {
+			frappe.model.set_value(r.doctype, r.name, 'status', 'Archived');
+			changed = true;
+		}
+	});
+}
 
 function populate_tender_status_realtime(frm) {
 	if (!frm.doc.item_tender || frm.doc.item_tender.length === 0) {
@@ -691,6 +725,7 @@ function open_add_price_offer_dialog(frm) {
 		{ fieldtype: 'Column Break' },
 		{ fieldname: 'discount_percent', fieldtype: 'Percent', label: __('Discount Percent'), depends_on: 'eval:doc.offer_for == "Distributor"' },
 		{ fieldname: 'credit_limit', fieldtype: 'Currency', label: __('Credit Limit'), depends_on: 'eval:doc.offer_for == "Distributor"' },
+		{ fieldname: 'attachment', fieldtype: 'Attach', label: __('Attachment') },
 	];
 
 	let dialog = new frappe.ui.Dialog({
@@ -704,8 +739,14 @@ function open_add_price_offer_dialog(frm) {
 				let row = frm.add_child('onco_price_offer');
 				Object.assign(row, values);
 			} else {
+				(frm.doc.distributors_price_offer || []).forEach(r => {
+					if (r.item === values.item && r.distributor === values.distributor && r.status !== 'Archived') {
+						r.status = 'Archived';
+					}
+				});
 				let row = frm.add_child('distributors_price_offer');
 				Object.assign(row, values);
+				row.status = 'Active';
 			}
 			frm.refresh_fields();
 			dialog.hide();
@@ -1058,3 +1099,123 @@ frappe.ui.form.on("Distributors Price Offer", {
 		frappe.model.set_value(cdt, cdn, "amount", (row.quantity || 0) * (row.price || 0));
 	}
 });
+
+function open_supplier_allocation_dialog(frm, supplier_row) {
+	let allocations = frm.doc.tender_supplier_allocations || [];
+	let distributor = supplier_row.supplier;
+
+	let dialog_fields = [
+		{
+			fieldname: "allocations_info",
+			fieldtype: "HTML",
+			options: `<div><b>Allocating Items for Distributor:</b> ${distributor}</div>`
+		},
+		{
+			fieldname: "items",
+			fieldtype: "Table",
+			label: "Items",
+			fields: [
+				{ fieldname: "item", fieldtype: "Data", label: "Item Code", in_list_view: 1, read_only: 1 },
+				{ fieldname: "item_name", fieldtype: "Data", label: "Item Name", in_list_view: 1, read_only: 1 },
+				{ fieldname: "tender_qty", fieldtype: "Float", label: "Tender Qty", in_list_view: 1, read_only: 1 },
+				{ fieldname: "supply_qty", fieldtype: "Float", label: "Supply Qty", in_list_view: 1 },
+				{ fieldname: "price", fieldtype: "Currency", label: "Price", in_list_view: 1 },
+				{ fieldname: "amount", fieldtype: "Currency", label: "Amount", in_list_view: 1, read_only: 1 }
+			],
+			data: [],
+			get_data: function() {
+				return this.data;
+			}
+		}
+	];
+
+	let dialog = new frappe.ui.Dialog({
+		title: __('Allocate Items'),
+		fields: dialog_fields,
+		size: 'large',
+		primary_action_label: __('Save Allocations'),
+		primary_action: function(values) {
+			let grid_data = dialog.fields_dict.items.grid.get_data();
+
+			// Validate quantities
+			let item_totals = {};
+			// Sum up existing allocations from OTHER distributors
+			(frm.doc.tender_supplier_allocations || []).forEach(r => {
+				if (r.distributor !== distributor) {
+					item_totals[r.item] = (item_totals[r.item] || 0) + (r.supply_qty || 0);
+				}
+			});
+
+			// Add the new allocations
+			let has_error = false;
+			grid_data.forEach(d => {
+				if (d.supply_qty > 0) {
+					let new_total = (item_totals[d.item] || 0) + d.supply_qty;
+					if (new_total > d.tender_qty) {
+						frappe.msgprint(__('Total supply quantity for {0} exceeds the Tender Quantity ({1}). You are trying to allocate a total of {2} across all distributors.', [d.item, d.tender_qty, new_total]));
+						has_error = true;
+					}
+				}
+			});
+
+			if (has_error) return;
+
+			// Clear old allocations for this distributor
+			let new_allocs = (frm.doc.tender_supplier_allocations || []).filter(r => r.distributor !== distributor);
+			frm.doc.tender_supplier_allocations = new_allocs;
+
+			// Save new allocations
+			grid_data.forEach(d => {
+				if (d.supply_qty > 0) {
+					let row = frm.add_child('tender_supplier_allocations');
+					row.distributor = distributor;
+					row.item = d.item;
+					row.item_name = d.item_name;
+					row.supply_qty = d.supply_qty;
+					row.price = d.price;
+					row.amount = d.supply_qty * (d.price || 0);
+				}
+			});
+
+			frm.refresh_field("tender_supplier_allocations");
+			dialog.hide();
+			frappe.show_alert({ message: __('Allocations saved'), indicator: 'green' });
+			frm.save('Update');
+		}
+	});
+
+	// Populate data
+	let existing_data = {};
+	allocations.forEach(r => {
+		if (r.distributor === distributor) {
+			existing_data[r.item] = r;
+		}
+	});
+
+	let items_data = [];
+	frm.doc.item_tender.forEach(item_row => {
+		let ex = existing_data[item_row.item_code] || {};
+		items_data.push({
+			item: item_row.item_code,
+			item_name: item_row.item_name,
+			tender_qty: item_row.tender_qty,
+			supply_qty: ex.supply_qty || 0,
+			price: ex.price || 0,
+			amount: (ex.supply_qty || 0) * (ex.price || 0)
+		});
+	});
+
+	dialog.fields_dict.items.df.data = items_data;
+	dialog.fields_dict.items.grid.refresh();
+
+	// Auto-calculate amount inside dialog
+	dialog.fields_dict.items.grid.df.onchange = function(e) {
+		let grid_data = dialog.fields_dict.items.grid.get_data();
+		grid_data.forEach(d => {
+			d.amount = (d.supply_qty || 0) * (d.price || 0);
+		});
+		dialog.fields_dict.items.grid.refresh();
+	};
+
+	dialog.show();
+}

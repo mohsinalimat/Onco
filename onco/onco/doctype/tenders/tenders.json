@@ -37,6 +37,7 @@
         "items_fmd",
         "item_tender",
         "tender_supplier",
+        "tender_supplier_allocations",
         "amended_from",
         "tender_status_section",
         "tender_status",
@@ -264,6 +265,14 @@
             "fieldtype": "Table",
             "label": "Tender Supplier",
             "options": "Tender Supplier"
+        },
+        {
+            "allow_on_submit": 1,
+            "fieldname": "tender_supplier_allocations",
+            "fieldtype": "Table",
+            "hidden": 1,
+            "label": "Tender Supplier Allocations",
+            "options": "Tender Supplier Allocation"
         },
         {
             "fieldname": "amended_from",
