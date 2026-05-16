@@ -17,6 +17,7 @@
  ],
  "fields": [
   {
+   "allow_on_submit": 1,
    "fieldname": "item_name",
    "fieldtype": "Link",
    "in_list_view": 1,
@@ -24,6 +25,7 @@
    "options": "Item"
   },
   {
+   "allow_on_submit": 1,
    "fieldname": "sales_order_no",
    "fieldtype": "Link",
    "in_list_view": 1,
@@ -31,24 +33,28 @@
    "options": "Sales Order"
   },
   {
+   "allow_on_submit": 1,
    "fieldname": "tender_price",
    "fieldtype": "Currency",
    "in_list_view": 1,
    "label": "Tender Price"
   },
   {
+   "allow_on_submit": 1,
    "fieldname": "item_cost",
    "fieldtype": "Currency",
    "in_list_view": 1,
    "label": "Item Cost"
   },
   {
+   "allow_on_submit": 1,
    "fieldname": "quantity_with_loss",
    "fieldtype": "Float",
    "in_list_view": 1,
    "label": "Quantities with price less than cost"
   },
   {
+   "allow_on_submit": 1,
    "fieldname": "losses_value",
    "fieldtype": "Currency",
    "in_list_view": 1,
@@ -56,6 +62,7 @@
    "read_only": 1
   },
   {
+   "allow_on_submit": 1,
    "fieldname": "approved_status",
    "fieldtype": "Select",
    "in_list_view": 1,
@@ -64,6 +71,7 @@
    "default": "Pending"
   },
   {
+   "allow_on_submit": 1,
    "fieldname": "approved_by",
    "fieldtype": "Data",
    "label": "Approved by",

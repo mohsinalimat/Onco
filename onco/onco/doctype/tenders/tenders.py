@@ -356,6 +356,10 @@ def create_accepted_from_submission(source_name):
 			"supply_qty": row.supply_qty if hasattr(row, 'supply_qty') else 0
 		})
 	
+	# Copy supplier allocations
+	for row in source_doc.tender_supplier_allocations or []:
+		target_doc.append("tender_supplier_allocations", row.as_dict())
+	
 	# Copy offers from submission
 	for row in source_doc.onco_price_offer or []:
 		target_doc.append("onco_price_offer", row.as_dict())

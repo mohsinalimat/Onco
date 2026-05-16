@@ -21,6 +21,7 @@
  ],
  "fields": [
   {
+   "allow_on_submit": 1,
    "fieldname": "item",
    "fieldtype": "Link",
    "in_list_view": 1,
@@ -29,6 +30,7 @@
    "reqd": 1
   },
   {
+   "allow_on_submit": 1,
    "fetch_from": "item.item_name",
    "fieldname": "item_name",
    "fieldtype": "Data",
@@ -36,6 +38,7 @@
    "label": "Item Name"
   },
   {
+   "allow_on_submit": 1,
    "fieldname": "sales_order_no",
    "fieldtype": "Link",
    "in_list_view": 1,
@@ -44,6 +47,7 @@
    "reqd": 1
   },
   {
+   "allow_on_submit": 1,
    "fieldname": "order_qty",
    "fieldtype": "Float",
    "in_list_view": 1,
@@ -52,6 +56,7 @@
    "description": "Fetched from Sales Order"
   },
   {
+   "allow_on_submit": 1,
    "fieldname": "approved_qty",
    "fieldtype": "Float",
    "in_list_view": 1,
@@ -59,18 +64,21 @@
    "description": "Manager enters approved quantity"
   },
   {
+   "allow_on_submit": 1,
    "fieldname": "tender_price",
    "fieldtype": "Currency",
    "label": "Tender Price",
    "read_only": 1
   },
   {
+   "allow_on_submit": 1,
    "fieldname": "item_cost",
    "fieldtype": "Currency",
    "label": "Item Cost Price",
    "read_only": 1
   },
   {
+   "allow_on_submit": 1,
    "fieldname": "deviation_amount",
    "fieldtype": "Currency",
    "in_list_view": 1,
@@ -78,6 +86,7 @@
    "read_only": 1
   },
   {
+   "allow_on_submit": 1,
    "fieldname": "deviation_status",
    "fieldtype": "Select",
    "in_list_view": 1,
@@ -86,17 +95,20 @@
    "default": "Pending Approval"
   },
   {
+   "allow_on_submit": 1,
    "fieldname": "approved_by",
    "fieldtype": "Link",
    "label": "Approved By",
    "options": "User"
   },
   {
+   "allow_on_submit": 1,
    "fieldname": "approved_date",
    "fieldtype": "Date",
    "label": "Approved Date"
   },
   {
+   "allow_on_submit": 1,
    "fieldname": "cause_of_deviation",
    "fieldtype": "Small Text",
    "label": "Cause of Deviation"
