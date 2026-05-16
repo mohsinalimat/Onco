@@ -8,11 +8,16 @@
  "field_order": [
   "item",
   "item_name",
+  "sales_order_no",
+  "order_qty",
+  "approved_qty",
   "tender_price",
   "item_cost",
   "deviation_amount",
-  "deviation_percent",
-  "deviation_status"
+  "deviation_status",
+  "approved_by",
+  "approved_date",
+  "cause_of_deviation"
  ],
  "fields": [
   {
@@ -31,30 +36,45 @@
    "label": "Item Name"
   },
   {
+   "fieldname": "sales_order_no",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Sales Order No",
+   "options": "Sales Order",
+   "reqd": 1
+  },
+  {
+   "fieldname": "order_qty",
+   "fieldtype": "Float",
+   "in_list_view": 1,
+   "label": "Order Quantities",
+   "read_only": 1,
+   "description": "Fetched from Sales Order"
+  },
+  {
+   "fieldname": "approved_qty",
+   "fieldtype": "Float",
+   "in_list_view": 1,
+   "label": "Approved Quantities",
+   "description": "Manager enters approved quantity"
+  },
+  {
    "fieldname": "tender_price",
    "fieldtype": "Currency",
-   "in_list_view": 1,
    "label": "Tender Price",
-   "reqd": 1
+   "read_only": 1
   },
   {
    "fieldname": "item_cost",
    "fieldtype": "Currency",
-   "in_list_view": 1,
-   "label": "Item Cost Price"
+   "label": "Item Cost Price",
+   "read_only": 1
   },
   {
    "fieldname": "deviation_amount",
    "fieldtype": "Currency",
    "in_list_view": 1,
-   "label": "Deviation Amount (Loss)",
-   "read_only": 1
-  },
-  {
-   "fieldname": "deviation_percent",
-   "fieldtype": "Float",
-   "in_list_view": 1,
-   "label": "Deviation Percent (%)",
+   "label": "Deviation Amount (Loss per unit)",
    "read_only": 1
   },
   {
@@ -62,13 +82,29 @@
    "fieldtype": "Select",
    "in_list_view": 1,
    "label": "Status",
-   "options": "\nPending Approval\nApproved\nRejected",
+   "options": "\nPending Approval\nApproved",
    "default": "Pending Approval"
+  },
+  {
+   "fieldname": "approved_by",
+   "fieldtype": "Link",
+   "label": "Approved By",
+   "options": "User"
+  },
+  {
+   "fieldname": "approved_date",
+   "fieldtype": "Date",
+   "label": "Approved Date"
+  },
+  {
+   "fieldname": "cause_of_deviation",
+   "fieldtype": "Small Text",
+   "label": "Cause of Deviation"
   }
  ],
  "istable": 1,
  "links": [],
- "modified": "2026-01-17 12:00:00.000000",
+ "modified": "2026-05-16 12:00:00.000000",
  "modified_by": "Administrator",
  "module": "Onco",
  "name": "Tender Price Deviation",

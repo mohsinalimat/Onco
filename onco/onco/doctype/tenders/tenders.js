@@ -61,9 +61,9 @@ frappe.ui.form.on("Tenders", {
 					create_sales_order_from_tender(frm);
 				}, __('Actions'));
 
-				// Update fulfillment status from invoices
-				frm.add_custom_button(__('Update Status from Invoices'), function () {
-					update_status_from_invoices(frm);
+				// Update fulfillment status from Sales Orders
+				frm.add_custom_button(__('Update Status from Sales Orders'), function () {
+					update_status_from_orders(frm);
 				}, __('Actions'));
 
 				// Approve price deviations if any
@@ -852,28 +852,37 @@ function open_add_technical_offer_dialog(frm) {
 	dialog.show();
 }
 
-function update_status_from_invoices(frm) {
+function update_status_from_orders(frm) {
 	frappe.call({
 		method: 'frappe.client.get_list',
 		args: {
-			doctype: 'Sales Invoice',
+			doctype: 'Sales Order',
 			filters: { 'custom_tender_ref': frm.doc.name, 'docstatus': 1 },
-			fields: ['name', 'posting_date', 'items']
+			fields: ['name']
 		},
 		callback: function (r) {
 			if (r.message && r.message.length > 0) {
-				// Update supplied quantities from invoices
+				// Reset all supplied quantities to 0 before recalculating
+				frm.doc.tender_status.forEach(status_row => {
+					status_row.supplied_quantity = 0;
+					status_row.remaining_quantity = status_row.tender_quantity;
+					status_row.fulfillment_percent = 0;
+				});
+
+				let processed = 0;
+				let total = r.message.length;
 				let updated = false;
-				r.message.forEach(invoice => {
-					// Get invoice items
+
+				r.message.forEach(order => {
+					// Get order items
 					frappe.call({
 						method: 'frappe.client.get',
 						args: {
-							doctype: 'Sales Invoice',
-							name: invoice.name
+							doctype: 'Sales Order',
+							name: order.name
 						},
-						callback: function (inv_response) {
-							inv_response.message.items.forEach(item => {
+						callback: function (ord_response) {
+							ord_response.message.items.forEach(item => {
 								frm.doc.tender_status.forEach(status_row => {
 									if (status_row.item_name === item.item_code) {
 										status_row.supplied_quantity = (status_row.supplied_quantity || 0) + item.qty;
@@ -883,15 +892,18 @@ function update_status_from_invoices(frm) {
 									}
 								});
 							});
-							if (updated) {
+
+							processed++;
+							if (processed === total && updated) {
 								frm.refresh_field("tender_status");
-								frappe.show_alert({ message: __("Tender status updated"), indicator: "green" });
+								frm.dirty();
+								frappe.show_alert({ message: __("Tender status updated from Sales Orders"), indicator: "green" });
 							}
 						}
 					});
 				});
 			} else {
-				frappe.msgprint(__("No sales invoices found for this tender"));
+				frappe.msgprint(__("No submitted Sales Orders found for this tender"));
 			}
 		}
 	});
@@ -1007,7 +1019,6 @@ function create_sales_order_from_tender(frm) {
 			item_code: row.item_code,
 			item_name: row.item_name,
 			qty: row.tender_qty,
-			rate: row.tender_price,
 			delivery_date: values.delivery_date
 		})).filter(i => i.item_code);
 

@@ -155,8 +155,12 @@ doc_events = {
 	"Stock Entry": {
 		"before_save": "onco.onco.stock_entry_hooks.before_save"
 	},
-	"Sales Invoice": {
-		"validate": "onco.onco.tender_validation.validate_sales_invoice_tender_price"
+	"Sales Order": {
+		"validate": "onco.onco.tender_validation.validate_sales_order_tender_price",
+		"on_submit": [
+			"onco.onco.tender_validation.validate_sales_order_tender_price",
+			"onco.onco.tender_validation.log_deviation_history"
+		]
 	},
 	"Purchase Order": {
 		"validate": "onco.onco.custom_scripts.purchase_order.validate",

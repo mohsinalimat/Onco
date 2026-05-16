@@ -9,16 +9,12 @@ from frappe.model.document import Document
 
 class Tenders(Document):
 	def validate(self):
-		"""Validate tender rules and calculate price deviations"""
+		"""Validate tender rules"""
 		self.validate_naming_series()
 		self.apply_tender_rules()
-		self.calculate_price_deviations()
 		self.populate_tender_status()
 		self.validate_tender_dates()
 		self.check_tender_rule_change_permission()
-		
-		if self.tender_type == "Accepted Tenders":
-			self.populate_tender_price_deviation_details()
 
 	def validate_naming_series(self):
 		"""Validate that the naming series matches the tender type and category"""
@@ -134,48 +130,7 @@ class Tenders(Document):
 			elif self.extra_qty_type == "Quantity":
 				row.supply_qty = row.original_supply_qty + self.extra_qty_value
 
-	def calculate_price_deviations(self):
-		"""Calculate price deviations for items in the tender"""
-		# Clear existing price deviations
-		self.tender_price_deviation = []
 
-		# Determine which item table to check based on tender type
-		items_to_check = []
-		if self.tender_type in ["Awarded Tenders", "Tender Submission", "Accepted Tenders"] and self.item_tender:
-			items_to_check = self.item_tender
-
-
-		# Calculate deviations for each item
-		for row in items_to_check:
-			item_code = row.item_code if hasattr(row, 'item_code') else None
-			if not item_code:
-				continue
-
-			# Get item cost from Item doctype
-			try:
-				item_doc = frappe.get_doc("Item", item_code)
-				item_cost = item_doc.valuation_rate or item_doc.standard_rate or 0
-			except frappe.DoesNotExistError:
-				item_cost = 0
-
-			# Get tender price from the row
-			tender_price = row.tender_price if hasattr(row, 'tender_price') else 0
-
-			# Calculate deviation only if tender price is less than cost
-			if tender_price and item_cost and tender_price < item_cost:
-				deviation_amount = item_cost - tender_price
-				deviation_percent = (deviation_amount / item_cost * 100) if item_cost > 0 else 0
-
-				# Add to price deviation table
-				self.append("tender_price_deviation", {
-					"item": item_code,
-					"item_name": row.item_name if hasattr(row, 'item_name') else "",
-					"tender_price": tender_price,
-					"item_cost": item_cost,
-					"deviation_amount": deviation_amount,
-					"deviation_percent": round(deviation_percent, 2),
-					"deviation_status": "Pending Approval"
-				})
 
 	def populate_tender_status(self):
 		"""Populate or update tender status from item tables without resetting supplied quantities"""
@@ -267,22 +222,7 @@ class Tenders(Document):
 		if self.apply_extended_time and self.extended_end_date:
 			self.db_update({"tender_end_date": self.extended_end_date})
 
-	def get_deviation_summary(self):
-		"""Get summary of price deviations"""
-		if not self.tender_price_deviation:
-			return None
 
-		total_deviation = sum(row.deviation_amount for row in self.tender_price_deviation)
-		total_items_with_deviation = len(self.tender_price_deviation)
-		pending_approval = sum(1 for row in self.tender_price_deviation if row.deviation_status == "Pending Approval")
-		approved_deviations = sum(1 for row in self.tender_price_deviation if row.deviation_status == "Approved")
-
-		return {
-			"total_deviation": total_deviation,
-			"total_items_with_deviation": total_items_with_deviation,
-			"pending_approval": pending_approval,
-			"approved_deviations": approved_deviations
-		}
 
 	def get_fulfillment_status(self):
 		"""Calculate overall tender fulfillment status"""
@@ -296,93 +236,25 @@ class Tenders(Document):
 			return round((total_supplied_qty / total_tender_qty) * 100, 2)
 		return 0
 
-	def can_create_sales_invoice(self):
-		"""Check if sales invoice can be created (all deviations must be approved)"""
-		if not self.tender_price_deviation:
-			return True
 
-		for row in self.tender_price_deviation:
-			if row.deviation_status != "Approved":
-				return False
 
-		return True
 
-	def update_deviation_details(self, invoice_no, items_list):
-		"""Update tender price deviation details from sales invoice"""
-		self.tender_price_deviation_details = []
 
-		for item in items_list:
-			item_code = item.get("item_code")
-			qty = item.get("qty")
-			rate = item.get("rate")
-
-			# Find matching tender item
-			tender_price = None
-			for dev_row in self.tender_price_deviation:
-				if dev_row.item == item_code:
-					tender_price = dev_row.tender_price
-					break
-
-			if tender_price and rate < tender_price:
-				# Use valuation rate as cost if available
-				item_cost = frappe.db.get_value("Item", item_code, "valuation_rate") or 0
+	def get_tender_price_for_item(self, item_code):
+		"""Helper to find the best tender price across allocations and offers"""
+		for alloc in getattr(self, "tender_supplier_allocations", []):
+			if alloc.item == item_code and alloc.price:
+				return alloc.price
+		
+		for offer in getattr(self, "distributors_price_offer", []):
+			if offer.item == item_code and getattr(offer, "status", "") == "Active" and offer.price:
+				return offer.price
 				
-				# Losses = (Cost - Rate) * Qty if rate < cost
-				losses = 0
-				if rate < item_cost:
-					losses = (item_cost - rate) * qty
-
-				detail_row = self.append("tender_price_deviation_details", {
-					"item_name": item_code,
-					"invoice_no": invoice_no,
-					"tender_price": tender_price,
-					"item_cost": item_cost,
-					"quantity_with_loss": qty,
-					"losses_value": losses,
-					"approved_status": "Pending",
-					"approved_by": frappe.session.user
-				})
-
-	def populate_tender_price_deviation_details(self):
-		"""Fetch historical sales and cost data for Accepted Tenders"""
-		if not self.item_tender:
-			return
-
-		self.tender_price_deviation_details = []
-		for item in self.item_tender:
-			item_code = item.item_code
-			if not item_code: continue
-
-			# 1. Get average purchase price (cost) from valuation rate
-			item_cost = frappe.db.get_value("Item", item_code, "valuation_rate") or 0
-			
-			# 2. Get latest sales price for this item to show recent market price
-			last_sale = frappe.get_all("Sales Invoice Item", 
-				filters={"item_code": item_code, "docstatus": 1},
-				fields=["parent", "rate"],
-				order_by="creation desc",
-				limit=1
-			)
-			
-			invoice_no = last_sale[0].parent if last_sale else None
-			
-			# 3. Tender Price is the awarded price
-			tender_price = getattr(item, 'tender_price', 0)
-			
-			# 4. Calculate Losses: if tender price < cost, we are losing money
-			losses = 0
-			if tender_price < item_cost:
-				# Using tender quantity for potential loss calculation
-				losses = (item_cost - tender_price) * (item.tender_qty or 0)
-			
-			self.append("tender_price_deviation_details", {
-				"item_name": item_code,
-				"invoice_no": invoice_no,
-				"tender_price": tender_price,
-				"item_cost": item_cost,
-				"quantity_with_loss": item.tender_qty if tender_price < item_cost else 0,
-				"losses_value": losses
-			})
+		for offer in getattr(self, "onco_price_offer", []):
+			if offer.item == item_code and offer.price:
+				return offer.price
+				
+		return 0
 
 @frappe.whitelist()
 def create_submission_from_awarded(source_name):
@@ -618,40 +490,6 @@ def save_item_extension_flags(tender_name, selections):
 	return {"status": "ok"}
 
 
-@frappe.whitelist()
-def check_sales_invoice_deviations(sales_invoice_name):
-	"""
-	Whitelisted method for client-side to check for deviations without throwing an error.
-	Used to prompt the user for approval.
-	"""
-	doc = frappe.get_doc("Sales Invoice", sales_invoice_name)
-	if not doc.get("custom_tender_ref"):
-		return {"deviations": []}
 
-	tender = frappe.get_doc("Tenders", doc.custom_tender_ref)
-	
-	# Build map of tender prices
-	tender_prices = {}
-	for row in tender.item_tender or []:
-		if row.item_code:
-			tender_prices[row.item_code] = getattr(row, 'tender_price', 0)
-	
-	# Detect deviations
-	deviations = []
-	for item in doc.items:
-		if item.item_code in tender_prices:
-			t_price = tender_prices[item.item_code]
-			if item.rate < t_price:
-				deviations.append({
-					"item_code": item.item_code,
-					"invoice_rate": item.rate,
-					"tender_price": t_price,
-					"qty": item.qty
-				})
-	
-	return {
-		"deviations": deviations,
-		"already_approved": doc.get("custom_price_deviation_approved") or 0
-	}
 
 
