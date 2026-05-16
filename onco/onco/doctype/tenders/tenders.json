@@ -260,7 +260,7 @@
         },
         {
             "allow_on_submit": 1,
-            "depends_on": "eval:['Awarded Tenders','Tender Submission','Accepted Tenders'].includes(doc.tender_type)",
+            "depends_on": "eval:['Tender Submission','Accepted Tenders'].includes(doc.tender_type)",
             "fieldname": "tender_supplier",
             "fieldtype": "Table",
             "label": "Tender Supplier",
