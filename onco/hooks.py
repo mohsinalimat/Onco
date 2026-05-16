@@ -159,8 +159,10 @@ doc_events = {
 		"validate": "onco.onco.tender_validation.validate_sales_order_tender_price",
 		"on_submit": [
 			"onco.onco.tender_validation.validate_sales_order_tender_price",
-			"onco.onco.tender_validation.log_deviation_history"
-		]
+			"onco.onco.tender_validation.log_deviation_history",
+			"onco.onco.tender_validation.update_tender_status"
+		],
+		"on_cancel": "onco.onco.tender_validation.revert_tender_status"
 	},
 	"Purchase Order": {
 		"validate": "onco.onco.custom_scripts.purchase_order.validate",

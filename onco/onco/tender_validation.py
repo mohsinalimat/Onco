@@ -56,45 +56,55 @@ def create_approval_requests(sales_order_doc, tender_doc, loss_making_items):
     Create or update approval request rows in Tender Price Deviation table.
     Called when Sales Order is saved.
     """
+    tender_name = tender_doc.name
+    
     # Check if approval requests already exist for this Sales Order
-    existing_approvals = {
-        row.item: row 
-        for row in tender_doc.tender_price_deviation 
-        if row.sales_order_no == sales_order_doc.name
-    }
+    existing_approvals = frappe.db.sql("""
+        SELECT name, item
+        FROM `tabTender Price Deviation`
+        WHERE parent = %s AND sales_order_no = %s
+    """, (tender_name, sales_order_doc.name), as_dict=True)
+    
+    existing_map = {row.item: row.name for row in existing_approvals}
     
     for item_data in loss_making_items:
         item_code = item_data["item_code"]
         
-        if item_code in existing_approvals:
+        if item_code in existing_map:
             # Update existing approval request
-            row = existing_approvals[item_code]
-            row.order_qty = item_data["qty"]
-            row.tender_price = item_data["tender_price"]
-            row.item_cost = item_data["item_cost"]
-            row.deviation_amount = item_data["deviation_amount"]
+            frappe.db.set_value("Tender Price Deviation", existing_map[item_code], {
+                "order_qty": item_data["qty"],
+                "tender_price": item_data["tender_price"],
+                "item_cost": item_data["item_cost"],
+                "deviation_amount": item_data["deviation_amount"]
+            }, update_modified=False)
         else:
             # Create new approval request
-            tender_doc.append("tender_price_deviation", {
+            row = frappe.get_doc({
+                "doctype": "Tender Price Deviation",
+                "parent": tender_name,
+                "parenttype": "Tenders",
+                "parentfield": "tender_price_deviation",
                 "item": item_code,
                 "item_name": item_data["item_name"],
                 "sales_order_no": sales_order_doc.name,
                 "order_qty": item_data["qty"],
-                "approved_qty": 0,  # Manager must fill this
+                "approved_qty": 0,
                 "tender_price": item_data["tender_price"],
                 "item_cost": item_data["item_cost"],
                 "deviation_amount": item_data["deviation_amount"],
                 "deviation_status": "Pending Approval"
             })
+            row.insert(ignore_permissions=True)
     
-    tender_doc.save(ignore_permissions=True)
+    frappe.db.commit()
     
     # Show message to user
     frappe.msgprint(_(
         "This Sales Order contains items with prices below cost. "
         "An approval request has been created in Tender {0}. "
         "You cannot submit this Sales Order until a manager approves it."
-    ).format(tender_doc.name), alert=True, indicator="orange")
+    ).format(tender_name), alert=True, indicator="orange")
 
 
 def validate_approvals(sales_order_doc, tender_doc, loss_making_items):
@@ -175,7 +185,8 @@ def log_deviation_history(doc, method):
     if not doc.get("custom_tender"):
         return
     
-    tender = frappe.get_doc("Tenders", doc.custom_tender)
+    tender_name = doc.custom_tender
+    tender = frappe.get_doc("Tenders", tender_name)
     
     # Build map of tender prices and item costs
     tender_prices = {}
@@ -199,14 +210,18 @@ def log_deviation_history(doc, method):
                 total_loss = loss_per_unit * item.qty
                 
                 # Find who approved this
-                approved_by_user = None
-                for approval in tender.tender_price_deviation:
-                    if approval.sales_order_no == doc.name and approval.item == item.item_code:
-                        approved_by_user = approval.approved_by
-                        break
+                approved_by_user = frappe.db.get_value(
+                    "Tender Price Deviation",
+                    {"parent": tender_name, "sales_order_no": doc.name, "item": item.item_code},
+                    "approved_by"
+                ) or frappe.session.user
                 
                 # Create permanent history record
-                tender.append("tender_price_deviation_details", {
+                history_row = frappe.get_doc({
+                    "doctype": "Tender Price Deviation Details",
+                    "parent": tender_name,
+                    "parenttype": "Tenders",
+                    "parentfield": "tender_price_deviation_details",
                     "item_name": item.item_code,
                     "sales_order_no": doc.name,
                     "tender_price": t_price,
@@ -214,7 +229,84 @@ def log_deviation_history(doc, method):
                     "quantity_with_loss": item.qty,
                     "losses_value": total_loss,
                     "approved_status": "Approved",
-                    "approved_by": approved_by_user or frappe.session.user
+                    "approved_by": approved_by_user
                 })
+                history_row.insert(ignore_permissions=True)
     
-    tender.save(ignore_permissions=True)
+    frappe.db.commit()
+
+
+def update_tender_status(doc, method):
+    """
+    Update Tender Status table when Sales Order is submitted.
+    Tracks supplied quantities against tender quantities.
+    """
+    if not doc.get("custom_tender"):
+        return
+    
+    tender_name = doc.custom_tender
+    
+    # Update supplied quantities for each item in the Sales Order
+    for item in doc.items:
+        # Find matching row in tender_status using SQL
+        status_rows = frappe.db.sql("""
+            SELECT name, supplied_quantity, tender_quantity
+            FROM `tabTender Status`
+            WHERE parent = %s AND item_name = %s
+        """, (tender_name, item.item_code), as_dict=True)
+        
+        if status_rows:
+            status_row = status_rows[0]
+            
+            # Calculate new values
+            new_supplied_qty = (status_row.supplied_quantity or 0) + item.qty
+            tender_qty = status_row.tender_quantity or 0
+            new_remaining_qty = tender_qty - new_supplied_qty
+            new_fulfillment_percent = (new_supplied_qty / tender_qty * 100) if tender_qty > 0 else 0
+            
+            # Update directly in database
+            frappe.db.set_value("Tender Status", status_row.name, {
+                "supplied_quantity": new_supplied_qty,
+                "remaining_quantity": new_remaining_qty,
+                "fulfillment_percent": new_fulfillment_percent
+            }, update_modified=False)
+    
+    frappe.db.commit()
+
+
+def revert_tender_status(doc, method):
+    """
+    Revert Tender Status table when Sales Order is cancelled.
+    Reduces supplied quantities.
+    """
+    if not doc.get("custom_tender"):
+        return
+    
+    tender_name = doc.custom_tender
+    
+    # Revert supplied quantities for each item in the Sales Order
+    for item in doc.items:
+        # Find matching row in tender_status using SQL
+        status_rows = frappe.db.sql("""
+            SELECT name, supplied_quantity, tender_quantity
+            FROM `tabTender Status`
+            WHERE parent = %s AND item_name = %s
+        """, (tender_name, item.item_code), as_dict=True)
+        
+        if status_rows:
+            status_row = status_rows[0]
+            
+            # Calculate new values
+            new_supplied_qty = max(0, (status_row.supplied_quantity or 0) - item.qty)
+            tender_qty = status_row.tender_quantity or 0
+            new_remaining_qty = tender_qty - new_supplied_qty
+            new_fulfillment_percent = (new_supplied_qty / tender_qty * 100) if tender_qty > 0 else 0
+            
+            # Update directly in database
+            frappe.db.set_value("Tender Status", status_row.name, {
+                "supplied_quantity": new_supplied_qty,
+                "remaining_quantity": new_remaining_qty,
+                "fulfillment_percent": new_fulfillment_percent
+            }, update_modified=False)
+    
+    frappe.db.commit()
