@@ -1022,6 +1022,12 @@ function create_sales_order_from_tender(frm) {
 			delivery_date: values.delivery_date
 		})).filter(i => i.item_code);
 
+		// Determine order type based on tender category
+		let order_type = 'UPA Tender Order';
+		if (frm.doc.category === 'Private Tender') {
+			order_type = 'Private Tenders Order';
+		}
+
 		frappe.call({
 			method: 'frappe.client.insert',
 			args: {
@@ -1029,6 +1035,7 @@ function create_sales_order_from_tender(frm) {
 					doctype: 'Sales Order',
 					customer: values.customer,
 					delivery_date: values.delivery_date,
+					custom_order_type_1: order_type,
 					custom_tender: frm.doc.name,
 					items: items
 				}
