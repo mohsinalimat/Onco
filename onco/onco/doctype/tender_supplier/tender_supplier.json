@@ -25,8 +25,7 @@
    "in_list_view": 1,
    "label": "Distributor Name",
    "options": "Customer",
-   "read_only_depends_on": "eval:doc.supplying_by == 'By Oncopharm Only'",
-   "get_query": "onco.onco.onco.doctype.tender_supplier.tender_supplier.get_local_pharmaceutical_customers"
+   "read_only_depends_on": "eval:doc.supplying_by == 'By Oncopharm Only'"
   },
   {
    "fieldname": "allocate_items",
