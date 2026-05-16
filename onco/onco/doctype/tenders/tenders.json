@@ -360,7 +360,7 @@
         },
         {
             "allow_on_submit": 1,
-            "depends_on": "eval:doc.tender_type == 'Accepted Tenders'",
+            "depends_on": "eval:['Tender Submission','Accepted Tenders'].includes(doc.tender_type)",
             "fieldname": "onco_technical_offer",
             "fieldtype": "Table",
             "label": "Onco Technical Offer",

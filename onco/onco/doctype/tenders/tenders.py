@@ -15,6 +15,14 @@ class Tenders(Document):
 		self.populate_tender_status()
 		self.validate_tender_dates()
 		self.check_tender_rule_change_permission()
+		self.set_financial_offer_submitted_date()
+
+	def set_financial_offer_submitted_date(self):
+		"""Set submitted_date for Financial Offer rows when tender is submitted"""
+		if self.docstatus == 1:  # Only for submitted tenders
+			for row in self.onco_price_offer or []:
+				if not row.submitted_date:
+					row.submitted_date = frappe.utils.today()
 
 	def validate_naming_series(self):
 		"""Validate that the naming series matches the tender type and category"""
