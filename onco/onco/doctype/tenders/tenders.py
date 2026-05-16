@@ -23,6 +23,13 @@ class Tenders(Document):
 			for row in self.onco_price_offer or []:
 				if not row.submitted_date:
 					row.submitted_date = frappe.utils.today()
+	
+	def before_save(self):
+		"""Set submitted_date for new Financial Offer rows on submitted tenders"""
+		if self.docstatus == 1:  # Only for submitted tenders
+			for row in self.onco_price_offer or []:
+				if not row.submitted_date:
+					row.submitted_date = frappe.utils.today()
 
 	def validate_naming_series(self):
 		"""Validate that the naming series matches the tender type and category"""
