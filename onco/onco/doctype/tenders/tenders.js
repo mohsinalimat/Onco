@@ -1215,11 +1215,11 @@ function open_supplier_allocation_dialog(frm, supplier_row) {
 					row.supply_qty = d.supply_qty;
 					row.price = d.price;
 					row.amount = d.supply_qty * (d.price || 0);
-					summary_texts.push(`${d.item}: ${d.supply_qty}`);
+					summary_texts.push(`${d.item_name}: Qty ${d.supply_qty} @ ${(d.price || 0).toFixed(2)} = ${row.amount.toFixed(2)}`);
 				}
 			});
 
-			frappe.model.set_value(supplier_row.doctype, supplier_row.name, 'allocations_summary', summary_texts.join(', '));
+			frappe.model.set_value(supplier_row.doctype, supplier_row.name, 'allocations_summary', summary_texts.join(' | '));
 
 			frm.refresh_field("tender_supplier_allocations");
 			dialog.hide();
@@ -1339,13 +1339,13 @@ function open_onco_financial_allocation_dialog(frm, offer_row) {
 					row.price = d.price || 0;
 					row.amount = d.supply_qty * (d.price || 0);
 					total_amount += row.amount;
-					summary_texts.push(`${d.item}: ${d.supply_qty} @ ${d.price || 0}`);
+					summary_texts.push(`${d.item_name}: Qty ${d.supply_qty} @ ${(d.price || 0).toFixed(2)} = ${row.amount.toFixed(2)}`);
 				}
 			});
 
 			// Update the offer row summary
 			let summary = summary_texts.length > 0 
-				? `${summary_texts.length} items allocated | Total: ${total_amount.toFixed(2)}`
+				? summary_texts.join(' | ')
 				: 'No allocations';
 			
 			frappe.model.set_value(offer_row.doctype, offer_row.name, 'allocations_summary', summary);
