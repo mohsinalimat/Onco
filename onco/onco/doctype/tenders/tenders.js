@@ -1029,7 +1029,7 @@ function create_sales_order_from_tender(frm) {
 					doctype: 'Sales Order',
 					customer: values.customer,
 					delivery_date: values.delivery_date,
-					custom_tender_ref: frm.doc.name,
+					custom_tender: frm.doc.name,
 					items: items
 				}
 			},
