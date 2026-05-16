@@ -32,7 +32,7 @@
    "fieldtype": "Button",
    "in_list_view": 1,
    "label": "Allocate Items",
-   "depends_on": "eval:doc.supplier"
+   "depends_on": "eval:doc.supplying_by"
   },
   {
    "fieldname": "allocations_summary",

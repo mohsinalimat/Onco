@@ -10,7 +10,6 @@
         "item_code",
         "item_name",
         "tender_qty",
-        "tender_price",
         "tender_start_date",
         "tender_end_date",
         "extend_qty",
@@ -49,14 +48,6 @@
             "fieldtype": "Float",
             "in_list_view": 1,
             "label": "Tender Qty"
-        },
-        {
-            "columns": 1,
-            "depends_on": "eval:parent.tender_type == 'Accepted Tenders'",
-            "fieldname": "tender_price",
-            "fieldtype": "Currency",
-            "in_list_view": 1,
-            "label": "Tender Price"
         },
         {
             "columns": 1,

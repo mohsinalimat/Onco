@@ -335,7 +335,9 @@ frappe.ui.form.on("Tenders", {
 frappe.ui.form.on("Tender Supplier", {
 	allocate_items(frm, cdt, cdn) {
 		let row = locals[cdt][cdn];
-		if (!row.supplier) {
+		let distributor_name = row.supplying_by === 'By Oncopharm Only' ? 'Oncopharm' : row.supplier;
+
+		if (!distributor_name) {
 			frappe.msgprint(__('Please select a Distributor first.'));
 			return;
 		}
@@ -343,7 +345,10 @@ frappe.ui.form.on("Tender Supplier", {
 			frappe.msgprint(__('Please add items to the Tender first.'));
 			return;
 		}
-		open_supplier_allocation_dialog(frm, row);
+
+		let mock_row = Object.assign({}, row);
+		mock_row.supplier = distributor_name;
+		open_supplier_allocation_dialog(frm, mock_row);
 	},
 
 	supplier(frm, cdt, cdn) {
@@ -750,7 +755,7 @@ function open_add_price_offer_dialog(frm) {
 			} else {
 				(frm.doc.distributors_price_offer || []).forEach(r => {
 					if (r.item === values.item && r.distributor === values.distributor && r.status !== 'Archived') {
-						r.status = 'Archived';
+						frappe.model.set_value(r.doctype, r.name, 'status', 'Archived');
 					}
 				});
 				let row = frm.add_child('distributors_price_offer');

@@ -16,10 +16,9 @@
  "fields": [
   {
    "fieldname": "distributor",
-   "fieldtype": "Link",
+   "fieldtype": "Data",
    "in_list_view": 1,
    "label": "Distributor Name",
-   "options": "Customer",
    "reqd": 1,
    "allow_on_submit": 1
   },
