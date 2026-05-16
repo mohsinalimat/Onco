@@ -155,7 +155,7 @@ frappe.ui.form.on("Tenders", {
 		frm.set_query("price_list", "tender_price_list", function (doc, cdt, cdn) {
 			return {
 				filters: {
-					"custom_price_list_type": "Tender Price List ",
+					"custom_price_list_type": "Tender Price List",
 					"buying": 1,
 					"enabled": 1
 				}
@@ -166,7 +166,7 @@ frappe.ui.form.on("Tenders", {
 		frm.set_query("price_list", "tender_price_list", function (doc, cdt, cdn) {
 			return {
 				filters: {
-					"custom_price_list_type": "Tender Price List ",
+					"custom_price_list_type": "Tender Price List",
 					"buying": 1,
 					"enabled": 1
 				}
@@ -1006,14 +1006,30 @@ function show_fulfillment_status(frm) {
 
 
 function create_sales_order_from_tender(frm) {
+	// Get list of distributors from tender_supplier
+	let distributors = (frm.doc.tender_supplier || [])
+		.filter(row => row.supplier)
+		.map(row => row.supplier);
+	
+	if (distributors.length === 0) {
+		frappe.msgprint(__('No distributors found in Tender Supplier table.'));
+		return;
+	}
+
 	frappe.prompt([
 		{
 			fieldtype: 'Link',
-			fieldname: 'customer',
-			label: 'Customer',
+			fieldname: 'distributor',
+			label: 'Distributor',
 			options: 'Customer',
 			reqd: 1,
-			default: frm.doc.hospitalagent_name
+			get_query: function() {
+				return {
+					filters: [
+						['name', 'in', distributors]
+					]
+				};
+			}
 		},
 		{
 			fieldtype: 'Date',
@@ -1023,17 +1039,28 @@ function create_sales_order_from_tender(frm) {
 			default: frm.doc.tender_end_date
 		}
 	], function (values) {
-		if (!frm.doc.item_tender || frm.doc.item_tender.length === 0) {
-			frappe.msgprint(__('No items found to create a Sales Order.'));
+		// Get allocations for selected distributor
+		let allocations = (frm.doc.tender_supplier_allocations || [])
+			.filter(row => row.distributor === values.distributor);
+		
+		if (allocations.length === 0) {
+			frappe.msgprint(__('No item allocations found for distributor {0}. Please allocate items first.', [values.distributor]));
 			return;
 		}
 
-		let items = frm.doc.item_tender.map(row => ({
-			item_code: row.item_code,
+		// Get price list for this distributor
+		let price_list_row = (frm.doc.tender_price_list || [])
+			.find(row => row.distributor === values.distributor);
+		
+		let price_list = price_list_row ? price_list_row.price_list : null;
+
+		// Build items from allocations
+		let items = allocations.map(row => ({
+			item_code: row.item,
 			item_name: row.item_name,
-			qty: row.tender_qty,
+			qty: row.supply_qty,
 			delivery_date: values.delivery_date
-		})).filter(i => i.item_code);
+		}));
 
 		// Determine order type based on tender category
 		let order_type = 'UPA Tender Order';
@@ -1041,22 +1068,35 @@ function create_sales_order_from_tender(frm) {
 			order_type = 'Private Tenders Order';
 		}
 
+		let sales_order_doc = {
+			doctype: 'Sales Order',
+			customer: values.distributor,
+			delivery_date: values.delivery_date,
+			custom_order_type_1: order_type,
+			custom_tender: frm.doc.name,
+			items: items
+		};
+
+		// Add price list if found
+		if (price_list) {
+			sales_order_doc.selling_price_list = price_list;
+		}
+
 		frappe.call({
 			method: 'frappe.client.insert',
 			args: {
-				doc: {
-					doctype: 'Sales Order',
-					customer: values.customer,
-					delivery_date: values.delivery_date,
-					custom_order_type_1: order_type,
-					custom_tender: frm.doc.name,
-					items: items
-				}
+				doc: sales_order_doc
 			},
 			callback: function (r) {
 				if (r.message) {
 					frappe.set_route('Form', 'Sales Order', r.message.name);
-					frappe.show_alert({ message: __('Sales Order created: ') + r.message.name, indicator: 'green' });
+					let msg = __('Sales Order created: {0}', [r.message.name]);
+					if (price_list) {
+						msg += __(' with price list: {0}', [price_list]);
+					} else {
+						frappe.msgprint(__('Warning: No price list found for distributor {0} in Tender Price List table. Please set prices manually.', [values.distributor]), __('Price List Missing'));
+					}
+					frappe.show_alert({ message: msg, indicator: 'green' });
 				}
 			}
 		});
