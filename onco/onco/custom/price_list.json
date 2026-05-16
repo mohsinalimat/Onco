@@ -45,7 +45,7 @@
    "name": "Price List-custom_price_list_type",
    "no_copy": 0,
    "non_negative": 0,
-   "options": "Direct Order Price List\nTender Price List ",
+   "options": "Direct Order Price List\nTender Price List",
    "owner": "Administrator",
    "parent": null,
    "parentfield": null,
