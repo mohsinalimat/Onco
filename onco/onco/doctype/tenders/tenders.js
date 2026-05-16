@@ -119,12 +119,20 @@ frappe.ui.form.on("Tenders", {
 
 		// Display deviation summary if deviations exist
 		if (frm.doc.tender_price_deviation && frm.doc.tender_price_deviation.length > 0) {
-			show_deviation_summary(frm);
+			try {
+				show_deviation_summary(frm);
+			} catch (e) {
+				console.log("Could not display deviation summary:", e);
+			}
 		}
 
 		// Display fulfillment status
 		if (frm.doc.tender_status && frm.doc.tender_status.length > 0) {
-			show_fulfillment_status(frm);
+			try {
+				show_fulfillment_status(frm);
+			} catch (e) {
+				console.log("Could not display fulfillment status:", e);
+			}
 		}
 
 		// Add filter for Tender Supplier - only show Pharmaceuticals Local Distributors Companies
@@ -942,7 +950,7 @@ function show_deviation_summary(frm) {
 
 	// Create summary HTML
 	let summary_html = `
-		<div class="alert alert-warning" style="margin-top: 10px;">
+		<div class="alert alert-warning tender-deviation-summary" style="margin-top: 10px;">
 			<h5><b>Price Deviation Summary</b></h5>
 			<p><b>Total Items with Deviation:</b> ${summary.total_items}</p>
 			<p><b>Total Deviation Amount:</b> ${frappe.format(summary.total_deviation, { fieldtype: "Currency" })}</p>
@@ -951,9 +959,12 @@ function show_deviation_summary(frm) {
 		</div>
 	`;
 
-	// Append to form
-	if ($('.tender-deviation-summary').length === 0) {
-		$(frm.form_layout.form_section[0]).after(summary_html).addClass('tender-deviation-summary');
+	// Remove existing summary if present
+	$('.tender-deviation-summary').remove();
+	
+	// Add summary to the form
+	if (frm.fields_dict.tender_price_deviation && frm.fields_dict.tender_price_deviation.wrapper) {
+		$(frm.fields_dict.tender_price_deviation.wrapper).before(summary_html);
 	}
 }
 
@@ -969,7 +980,7 @@ function show_fulfillment_status(frm) {
 	let fulfillment_percent = total_tender_qty > 0 ? ((total_supplied_qty / total_tender_qty) * 100).toFixed(2) : 0;
 
 	let status_html = `
-		<div class="alert alert-info" style="margin-top: 10px;">
+		<div class="alert alert-info tender-fulfillment-status" style="margin-top: 10px;">
 			<h5><b>Tender Fulfillment Status</b></h5>
 			<p><b>Total Tender Quantity:</b> ${total_tender_qty}</p>
 			<p><b>Total Supplied Quantity:</b> ${total_supplied_qty}</p>
@@ -984,8 +995,12 @@ function show_fulfillment_status(frm) {
 		</div>
 	`;
 
-	if ($('.tender-fulfillment-status').length === 0) {
-		$(frm.form_layout.form_section[0]).after(status_html).addClass('tender-fulfillment-status');
+	// Remove existing status if present
+	$('.tender-fulfillment-status').remove();
+	
+	// Add status to the form
+	if (frm.fields_dict.tender_status && frm.fields_dict.tender_status.wrapper) {
+		$(frm.fields_dict.tender_status.wrapper).before(status_html);
 	}
 }
 
