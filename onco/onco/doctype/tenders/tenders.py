@@ -367,7 +367,7 @@ class Tenders(Document):
 			invoice_no = last_sale[0].parent if last_sale else None
 			
 			# 3. Tender Price is the awarded price
-			tender_price = item.tender_price or 0
+			tender_price = getattr(item, 'tender_price', 0)
 			
 			# 4. Calculate Losses: if tender price < cost, we are losing money
 			losses = 0
@@ -634,7 +634,7 @@ def check_sales_invoice_deviations(sales_invoice_name):
 	tender_prices = {}
 	for row in tender.item_tender or []:
 		if row.item_code:
-			tender_prices[row.item_code] = row.tender_price
+			tender_prices[row.item_code] = getattr(row, 'tender_price', 0)
 	
 	# Detect deviations
 	deviations = []
