@@ -392,6 +392,15 @@ frappe.ui.form.on("Item Tender", {
 	},
 
 	item_code(frm, cdt, cdn) {
+		let row = locals[cdt][cdn];
+		if (row.item_code) {
+			if (!row.tender_start_date && frm.doc.tender_start_date) {
+				frappe.model.set_value(cdt, cdn, "tender_start_date", frm.doc.tender_start_date);
+			}
+			if (!row.tender_end_date && frm.doc.tender_end_date) {
+				frappe.model.set_value(cdt, cdn, "tender_end_date", frm.doc.tender_end_date);
+			}
+		}
 		populate_tender_status_realtime(frm);
 	},
 
@@ -1164,6 +1173,8 @@ function open_supplier_allocation_dialog(frm, supplier_row) {
 			let new_allocs = (frm.doc.tender_supplier_allocations || []).filter(r => r.distributor !== distributor);
 			frm.doc.tender_supplier_allocations = new_allocs;
 
+			let summary_texts = [];
+			
 			// Save new allocations
 			grid_data.forEach(d => {
 				if (d.supply_qty > 0) {
@@ -1174,13 +1185,16 @@ function open_supplier_allocation_dialog(frm, supplier_row) {
 					row.supply_qty = d.supply_qty;
 					row.price = d.price;
 					row.amount = d.supply_qty * (d.price || 0);
+					summary_texts.push(`${d.item}: ${d.supply_qty}`);
 				}
 			});
 
+			frappe.model.set_value(supplier_row.doctype, supplier_row.name, 'allocations_summary', summary_texts.join(', '));
+
 			frm.refresh_field("tender_supplier_allocations");
 			dialog.hide();
-			frappe.show_alert({ message: __('Allocations saved'), indicator: 'green' });
-			frm.save('Update');
+			frappe.show_alert({ message: __('Allocations saved in draft. Click Save or Update when ready.'), indicator: 'green' });
+			frm.dirty();
 		}
 	});
 

@@ -39,7 +39,9 @@
             "fieldname": "item_name",
             "fieldtype": "Data",
             "in_list_view": 1,
-            "label": "Item Name"
+            "label": "Item Name",
+            "fetch_from": "item_code.item_name",
+            "read_only": 1
         },
         {
             "columns": 1,

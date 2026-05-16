@@ -8,7 +8,8 @@
  "field_order": [
   "supplying_by",
   "supplier",
-  "allocate_items"
+  "allocate_items",
+  "allocations_summary"
  ],
  "fields": [
   {
@@ -32,6 +33,14 @@
    "in_list_view": 1,
    "label": "Allocate Items",
    "depends_on": "eval:doc.supplier"
+  },
+  {
+   "fieldname": "allocations_summary",
+   "fieldtype": "Small Text",
+   "in_list_view": 1,
+   "label": "Allocations Summary",
+   "read_only": 1,
+   "allow_on_submit": 1
   }
  ],
  "grid_page_length": 50,
