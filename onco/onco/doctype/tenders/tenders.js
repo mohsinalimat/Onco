@@ -1160,7 +1160,7 @@ function open_supplier_allocation_dialog(frm, supplier_row) {
 		{
 			fieldname: "allocations_info",
 			fieldtype: "HTML",
-			options: `<div><b>Allocating Items for Distributor:</b> ${distributor}</div>`
+			options: `<div><b>Allocating Items for Distributor:</b> ${distributor}</div><div style="color: #888; font-size: 12px; margin-top: 5px;">Note: Prices will be set via Tender Price List in Accepted Tenders</div>`
 		},
 		{
 			fieldname: "items",
@@ -1170,9 +1170,7 @@ function open_supplier_allocation_dialog(frm, supplier_row) {
 				{ fieldname: "item", fieldtype: "Data", label: "Item Code", in_list_view: 1, read_only: 1 },
 				{ fieldname: "item_name", fieldtype: "Data", label: "Item Name", in_list_view: 1, read_only: 1 },
 				{ fieldname: "tender_qty", fieldtype: "Float", label: "Tender Qty", in_list_view: 1, read_only: 1 },
-				{ fieldname: "supply_qty", fieldtype: "Float", label: "Supply Qty", in_list_view: 1 },
-				{ fieldname: "price", fieldtype: "Currency", label: "Price", in_list_view: 1 },
-				{ fieldname: "amount", fieldtype: "Currency", label: "Amount", in_list_view: 1, read_only: 1 }
+				{ fieldname: "supply_qty", fieldtype: "Float", label: "Supply Qty", in_list_view: 1 }
 			],
 			data: [],
 			get_data: function() {
@@ -1226,9 +1224,7 @@ function open_supplier_allocation_dialog(frm, supplier_row) {
 					row.item = d.item;
 					row.item_name = d.item_name;
 					row.supply_qty = d.supply_qty;
-					row.price = d.price;
-					row.amount = d.supply_qty * (d.price || 0);
-					summary_texts.push(`${d.item_name}: Qty ${d.supply_qty} @ ${(d.price || 0).toFixed(2)} = ${row.amount.toFixed(2)}`);
+					summary_texts.push(`${d.item_name}: Qty ${d.supply_qty}`);
 				}
 			});
 
@@ -1256,27 +1252,15 @@ function open_supplier_allocation_dialog(frm, supplier_row) {
 			item: item_row.item_code,
 			item_name: item_row.item_name,
 			tender_qty: item_row.tender_qty,
-			supply_qty: ex.supply_qty || 0,
-			price: ex.price || 0,
-			amount: (ex.supply_qty || 0) * (ex.price || 0)
+			supply_qty: ex.supply_qty || 0
 		});
 	});
 
 	dialog.fields_dict.items.df.data = items_data;
 	dialog.fields_dict.items.grid.refresh();
 
-	// Auto-calculate amount inside dialog
-	dialog.fields_dict.items.grid.df.onchange = function(e) {
-		let grid_data = dialog.fields_dict.items.grid.get_data();
-		grid_data.forEach(d => {
-			d.amount = (d.supply_qty || 0) * (d.price || 0);
-		});
-		dialog.fields_dict.items.grid.refresh();
-	};
-
 	dialog.show();
 }
-
 
 function archive_all_previous_onco_offers(frm, new_row) {
 	// When parent is submitted and a new offer row is added, archive ALL previous offers
