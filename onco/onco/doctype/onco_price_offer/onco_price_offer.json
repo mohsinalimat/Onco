@@ -13,7 +13,10 @@
   "price",
   "amount",
   "start_date",
-  "end_date"
+  "end_date",
+  "allocate_items",
+  "allocations_summary",
+  "status"
  ],
  "fields": [
   {
@@ -75,6 +78,30 @@
    "in_list_view": 1,
    "label": "End Date",
    "allow_on_submit": 1
+  },
+  {
+   "fieldname": "allocate_items",
+   "fieldtype": "Button",
+   "in_list_view": 1,
+   "label": "Allocate Items"
+  },
+  {
+   "fieldname": "allocations_summary",
+   "fieldtype": "Small Text",
+   "in_list_view": 1,
+   "label": "Allocations Summary",
+   "read_only": 1,
+   "allow_on_submit": 1
+  },
+  {
+   "allow_on_submit": 1,
+   "default": "Active",
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Status",
+   "options": "Active\nArchived",
+   "read_only": 1
   }
  ],
  "grid_page_length": 50,

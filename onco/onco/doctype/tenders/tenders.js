@@ -1105,6 +1105,21 @@ function create_accepted_tender(frm) {
 }
 
 frappe.ui.form.on("Onco Price Offer", {
+	allocate_items(frm, cdt, cdn) {
+		let row = locals[cdt][cdn];
+
+		if (!frm.doc.item_tender || frm.doc.item_tender.length === 0) {
+			frappe.msgprint(__('Please add items to the Tender first.'));
+			return;
+		}
+
+		open_onco_financial_allocation_dialog(frm, row);
+	},
+
+	item(frm, cdt, cdn) {
+		archive_previous_onco_offers(frm, locals[cdt][cdn]);
+	},
+
 	item_group(frm, cdt, cdn) {
 		frappe.model.set_value(cdt, cdn, "item", "");
 	},
@@ -1241,6 +1256,167 @@ function open_supplier_allocation_dialog(frm, supplier_row) {
 			amount: (ex.supply_qty || 0) * (ex.price || 0)
 		});
 	});
+
+	dialog.fields_dict.items.df.data = items_data;
+	dialog.fields_dict.items.grid.refresh();
+
+	// Auto-calculate amount inside dialog
+	dialog.fields_dict.items.grid.df.onchange = function(e) {
+		let grid_data = dialog.fields_dict.items.grid.get_data();
+		grid_data.forEach(d => {
+			d.amount = (d.supply_qty || 0) * (d.price || 0);
+		});
+		dialog.fields_dict.items.grid.refresh();
+	};
+
+	dialog.show();
+}
+
+
+function archive_previous_onco_offers(frm, new_row) {
+	if (!new_row.item) return;
+	
+	// When parent is submitted, archive previous offers for the same item
+	if (frm.doc.docstatus === 1) {
+		let changed = false;
+		(frm.doc.onco_price_offer || []).forEach(r => {
+			if (r.name !== new_row.name && r.item === new_row.item && r.status !== 'Archived') {
+				frappe.model.set_value(r.doctype, r.name, 'status', 'Archived');
+				changed = true;
+			}
+		});
+		
+		if (changed) {
+			frappe.show_alert({ 
+				message: __('Previous offers for {0} have been archived', [new_row.item]), 
+				indicator: 'blue' 
+			});
+		}
+	}
+}
+
+function open_onco_financial_allocation_dialog(frm, offer_row) {
+	let allocations = frm.doc.onco_financial_offer_allocations || [];
+	let offer_item = offer_row.item;
+
+	if (!offer_item) {
+		frappe.msgprint(__('Please select an Item first.'));
+		return;
+	}
+
+	let dialog_fields = [
+		{
+			fieldname: "allocations_info",
+			fieldtype: "HTML",
+			options: `<div><b>Allocating Quantities for Item:</b> ${offer_item}</div>`
+		},
+		{
+			fieldname: "items",
+			fieldtype: "Table",
+			label: "Items",
+			fields: [
+				{ fieldname: "item", fieldtype: "Data", label: "Item Code", in_list_view: 1, read_only: 1 },
+				{ fieldname: "item_name", fieldtype: "Data", label: "Item Name", in_list_view: 1, read_only: 1 },
+				{ fieldname: "tender_qty", fieldtype: "Float", label: "Tender Qty", in_list_view: 1, read_only: 1 },
+				{ fieldname: "supply_qty", fieldtype: "Float", label: "Supply Qty", in_list_view: 1 },
+				{ fieldname: "price", fieldtype: "Currency", label: "Price", in_list_view: 1 },
+				{ fieldname: "amount", fieldtype: "Currency", label: "Amount", in_list_view: 1, read_only: 1 }
+			],
+			data: [],
+			get_data: function() {
+				return this.data;
+			}
+		}
+	];
+
+	let dialog = new frappe.ui.Dialog({
+		title: __('Allocate Financial Offer Items'),
+		fields: dialog_fields,
+		size: 'large',
+		primary_action_label: __('Save Allocations'),
+		primary_action: function(values) {
+			let grid_data = dialog.fields_dict.items.grid.get_data();
+
+			// Validate quantities
+			let item_totals = {};
+			// Sum up existing allocations from OTHER offers
+			(frm.doc.onco_financial_offer_allocations || []).forEach(r => {
+				if (r.parent_row !== offer_row.name) {
+					item_totals[r.item] = (item_totals[r.item] || 0) + (r.supply_qty || 0);
+				}
+			});
+
+			// Add the new allocations
+			let has_error = false;
+			grid_data.forEach(d => {
+				if (d.supply_qty > 0) {
+					let new_total = (item_totals[d.item] || 0) + d.supply_qty;
+					if (new_total > d.tender_qty) {
+						frappe.msgprint(__('Total supply quantity for {0} exceeds the Tender Quantity ({1}). You are trying to allocate a total of {2} across all offers.', [d.item, d.tender_qty, new_total]));
+						has_error = true;
+					}
+				}
+			});
+
+			if (has_error) return;
+
+			// Clear old allocations for this offer row
+			let new_allocs = (frm.doc.onco_financial_offer_allocations || []).filter(r => r.parent_row !== offer_row.name);
+			frm.doc.onco_financial_offer_allocations = new_allocs;
+
+			let summary_texts = [];
+			
+			// Save new allocations
+			grid_data.forEach(d => {
+				if (d.supply_qty > 0) {
+					let row = frm.add_child('onco_financial_offer_allocations');
+					row.parent_row = offer_row.name;
+					row.item = d.item;
+					row.item_name = d.item_name;
+					row.supply_qty = d.supply_qty;
+					row.price = d.price;
+					row.amount = d.supply_qty * (d.price || 0);
+					summary_texts.push(`${d.item}: ${d.supply_qty}`);
+				}
+			});
+
+			frappe.model.set_value(offer_row.doctype, offer_row.name, 'allocations_summary', summary_texts.join(', '));
+
+			frm.refresh_field("onco_financial_offer_allocations");
+			dialog.hide();
+			frappe.show_alert({ message: __('Allocations saved in draft. Click Save or Update when ready.'), indicator: 'green' });
+			frm.dirty();
+		}
+	});
+
+	// Populate data - filter by the selected item in the offer
+	let existing_data = {};
+	allocations.forEach(r => {
+		if (r.parent_row === offer_row.name) {
+			existing_data[r.item] = r;
+		}
+	});
+
+	let items_data = [];
+	// Only show the item that matches the offer
+	frm.doc.item_tender.forEach(item_row => {
+		if (item_row.item_code === offer_item) {
+			let ex = existing_data[item_row.item_code] || {};
+			items_data.push({
+				item: item_row.item_code,
+				item_name: item_row.item_name,
+				tender_qty: item_row.tender_qty,
+				supply_qty: ex.supply_qty || 0,
+				price: ex.price || offer_row.price || 0,
+				amount: (ex.supply_qty || 0) * (ex.price || offer_row.price || 0)
+			});
+		}
+	});
+
+	if (items_data.length === 0) {
+		frappe.msgprint(__('Item {0} not found in Item Tender table.', [offer_item]));
+		return;
+	}
 
 	dialog.fields_dict.items.df.data = items_data;
 	dialog.fields_dict.items.grid.refresh();
