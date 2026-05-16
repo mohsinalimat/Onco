@@ -127,12 +127,10 @@ frappe.ui.form.on("Tenders", {
 			show_fulfillment_status(frm);
 		}
 
-		// Add filter for Tender Supplier
-		frm.set_query("supplier", "tender_supplier", function () {
+		// Add filter for Tender Supplier - only show Pharmaceuticals Local Distributors Companies
+		frm.set_query("supplier", "tender_supplier", function (doc, cdt, cdn) {
 			return {
-				filters: {
-					"customer_group": "Pharmaceuticals Local Distributors Companies"
-				}
+				query: "onco.onco.onco.doctype.tender_supplier.tender_supplier.get_local_pharmaceutical_customers"
 			};
 		});
 

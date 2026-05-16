@@ -367,6 +367,7 @@
             "options": "Onco Technical Offer"
         },
         {
+            "depends_on": "eval:doc.tender_type == 'Accepted Tenders'",
             "fieldname": "distributors_offers_section",
             "fieldtype": "Section Break",
             "label": "Distributors Offers"
@@ -393,6 +394,7 @@
             "label": "Onco Offers View"
         },
         {
+            "depends_on": "eval:doc.tender_type == 'Accepted Tenders'",
             "fieldname": "distributors_offers_view",
             "fieldtype": "HTML",
             "label": "Distributors Offers View"
