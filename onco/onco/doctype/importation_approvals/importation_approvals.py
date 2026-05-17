@@ -34,20 +34,23 @@ class ImportationApprovals(Document):
         else:
             prefix = base_prefix
         
-        # Format: {PREFIX}-{YYYY}-{IMP_NO}
+        # Get the next counter for this prefix and year
+        counter = self.get_next_counter(prefix, year)
+        
+        # Format: {PREFIX}-{YYYY}-{#####}-{IMP_NO}
         # Examples: 
-        # - EDA-SPIMA-2026-IMP123 (normal with authority approval number)
-        # - EDA-SPIMA-MD-2026-IMP123 (modification)
-        # - EDA-APIMA-EX-2026-IMP456 (extension)
-        # - EDA-SPIMA-2026-00001 (fallback if no authority number)
+        # - EDA-SPIMA-2026-00001-IMP123 (with authority approval number)
+        # - EDA-SPIMA-MD-2026-00001-IMP123 (modification)
+        # - EDA-APIMA-EX-2026-00001-IMP456 (extension)
+        # - EDA-SPIMA-2026-00001 (without authority number)
+        
+        base_name = f"{prefix}-{year}-{counter:05d}"
         
         if self.authority_approval_number:
-            # Use authority approval number as IMP_NO
-            self.name = f"{prefix}-{year}-{self.authority_approval_number}"
+            # Append authority approval number
+            self.name = f"{base_name}-{self.authority_approval_number}"
         else:
-            # Fallback to auto-counter if no authority approval number provided
-            counter = self.get_next_counter(prefix, year)
-            self.name = f"{prefix}-{year}-{counter:05d}"
+            self.name = base_name
     
     def get_next_counter(self, prefix, year):
         """Get auto-incremented counter for naming series specific to year"""
@@ -58,22 +61,36 @@ class ImportationApprovals(Document):
                 "name": ["like", f"{prefix}-{year}-%"]
             },
             fields=["name"],
-            order_by="name desc",
-            limit=1
+            order_by="creation desc",
+            limit=100
         )
         
         if existing:
-            # Extract counter from name (format: PREFIX-YYYY-XXXXX)
-            # Counter is the last component after splitting by "-"
-            parts = existing[0].name.split("-")
-            if len(parts) >= 3:
+            # Extract counter from all matching names and find the maximum
+            max_counter = 0
+            
+            for doc in existing:
+                # Extract counter from name
+                # Format: EDA-SPIMA-YYYY-#####-{IMP_NO}
+                # or: EDA-SPIMA-YYYY-#####
+                # Counter is always after the year, so we need to extract it carefully
+                
+                # Remove the prefix and year first
+                name_without_prefix = doc.name.replace(f"{prefix}-{year}-", "", 1)
+                
+                # The counter is the first part before any hyphen (or the whole string if no hyphen)
+                counter_str = name_without_prefix.split("-")[0]
+                
                 try:
-                    # Get the last part which should be the counter
-                    last_counter = int(parts[-1])
-                    return last_counter + 1
-                except ValueError:
-                    # If counter is not a valid integer, start from 1
-                    pass
+                    counter = int(counter_str)
+                    if counter > max_counter:
+                        max_counter = counter
+                except (ValueError, IndexError):
+                    # Skip if counter is not a valid integer
+                    continue
+            
+            if max_counter > 0:
+                return max_counter + 1
         
         # Return 1 if no existing documents or extraction failed
         return 1
