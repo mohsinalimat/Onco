@@ -138,23 +138,36 @@ class CustomPurchaseInvoice(PurchaseInvoice):
 				"name": ["like", f"{prefix}-{year}-%"]
 			},
 			fields=["name"],
-			order_by="name desc",
-			limit=1
+			order_by="creation desc",
+			limit=100
 		)
 		
 		if existing:
-			# Extract counter from name
-			# Format: PHR-LOC-PINV-YYYY-#####-{supplier_invoice_no}
-			# Counter is the 5th component (index 4) after splitting by "-"
-			parts = existing[0].name.split("-")
-			if len(parts) >= 5:
+			# Extract counter from all matching names and find the maximum
+			max_counter = 0
+			
+			for doc in existing:
+				# Extract counter from name
+				# Format: PHR-LOC-PINV-YYYY-#####-{supplier_invoice_no}
+				# or: PHR-LOC-PINV-YYYY-#####
+				# Counter is always after the year, so we need to extract it carefully
+				
+				# Remove the prefix and year first
+				name_without_prefix = doc.name.replace(f"{prefix}-{year}-", "", 1)
+				
+				# The counter is the first part before any hyphen (or the whole string if no hyphen)
+				counter_str = name_without_prefix.split("-")[0]
+				
 				try:
-					# Get the counter part (should be at index 4)
-					last_counter = int(parts[4])
-					return last_counter + 1
+					counter = int(counter_str)
+					if counter > max_counter:
+						max_counter = counter
 				except (ValueError, IndexError):
-					# If counter is not a valid integer, start from 1
-					pass
+					# Skip if counter is not a valid integer
+					continue
+			
+			if max_counter > 0:
+				return max_counter + 1
 		
 		# Return 1 if no existing documents or extraction failed
 		return 1
