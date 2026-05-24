@@ -71,7 +71,7 @@ class CustomPurchaseOrder(PurchaseOrder):
 			FROM `tabPurchase Order`
 			WHERE name LIKE %s
 			AND docstatus < 2
-		""", (f"{prefix}-%-%-%-%",))
+		""", (f"{prefix}-%-%-%",))
 		
 		return result[0][0] if result else 1
 	
