@@ -65,16 +65,15 @@ class CustomPurchaseOrder(PurchaseOrder):
 		self.name = f"{prefix}-{year}-{year_counter:04d}-{item_counter:03d}"
 	
 	def get_next_counter(self, prefix, year):
-		"""Get auto-incremented counter for naming series across all years (year-independent)"""
+		"""Get auto-incremented global counter counting all POs with this prefix (year-independent)"""
 		result = frappe.db.sql("""
-			SELECT MAX(CAST(SUBSTRING_INDEX(SUBSTRING_INDEX(name, '-', 4), '-', -1) AS UNSIGNED))
+			SELECT COUNT(*) + 1
 			FROM `tabPurchase Order`
 			WHERE name LIKE %s
 			AND docstatus < 2
 		""", (f"{prefix}-%-%-%-%",))
 		
-		max_counter = result[0][0] if result and result[0][0] else 0
-		return max_counter + 1
+		return result[0][0] if result else 1
 	
 	def get_item_counter(self, item_code):
 		"""Get auto-incremented counter for how many times this item has appeared in any PO"""
