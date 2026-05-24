@@ -67,9 +67,15 @@ def install_custom_fields():
     # They will be automatically installed when the app is installed
     
     fields_to_check = [
-        ("Purchase Invoice", "custom_shipment_id_dimension"),
+        ("Purchase Invoice", "custom_shipment_allocation"),
+        ("Purchase Invoice", "custom_shipments"),
         ("Landed Cost Voucher", "custom_shipment_id"),
-        ("Landed Cost Voucher", "custom_auto_fetch_vendor_invoices")
+        ("Landed Cost Taxes and Charges", "custom_vendor_invoice"),
+        ("Landed Cost Taxes and Charges", "custom_supplier_invoice_no"),
+        ("Landed Cost Taxes and Charges", "custom_posting_date"),
+        ("Landed Cost Taxes and Charges", "custom_allocated_to_shipment"),
+        ("Landed Cost Taxes and Charges", "custom_already_used"),
+        ("Landed Cost Taxes and Charges", "custom_remaining")
     ]
     
     for doctype, fieldname in fields_to_check:

@@ -1,0 +1,41 @@
+{
+    "actions": [],
+    "allow_rename": 1,
+    "creation": "2026-05-24 12:00:00.000000",
+    "doctype": "DocType",
+    "editable_grid": 1,
+    "engine": "InnoDB",
+    "field_order": [
+        "shipment_id",
+        "amount"
+    ],
+    "fields": [
+        {
+            "fieldname": "shipment_id",
+            "fieldtype": "Link",
+            "in_list_view": 1,
+            "label": "Shipment ID",
+            "options": "Shipments",
+            "reqd": 1
+        },
+        {
+            "fieldname": "amount",
+            "fieldtype": "Currency",
+            "in_list_view": 1,
+            "label": "Allocated Amount",
+            "reqd": 1,
+            "description": "Portion of this invoice amount allocated to the shipment"
+        }
+    ],
+    "index_web_pages_for_search": 1,
+    "istable": 1,
+    "modified": "2026-05-24 12:00:00.000000",
+    "modified_by": "Administrator",
+    "module": "Onco",
+    "name": "Shipment Allocation Reference",
+    "owner": "Administrator",
+    "permissions": [],
+    "sort_field": "modified",
+    "sort_order": "DESC",
+    "states": []
+}

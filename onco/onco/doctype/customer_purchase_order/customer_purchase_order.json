@@ -6,8 +6,9 @@
  "doctype": "DocType",
  "engine": "InnoDB",
  "field_order": [
-  "section_break_n8u4",
-  "amended_from",
+   "naming_series",
+   "section_break_n8u4",
+   "amended_from",
   "customer_purchase_order_number",
   "sales_type",
   "order_type",
@@ -33,8 +34,16 @@
   "total_qty"
  ],
  "fields": [
-  {
-   "fieldname": "section_break_n8u4",
+   {
+    "fieldname": "naming_series",
+    "fieldtype": "Select",
+    "hidden": 1,
+    "label": "Series",
+    "options": "CPO-PRV-DIR-.YYYY.-.#####\nCPO-PRV-TEN-.YYYY.-.#####\nCPO-UPA-TEN-.YYYY.-.#####\nCPO-UPA-DIR-.YYYY.-.#####\nCPO-UPA-DIS-.YYYY.-.#####",
+    "set_only_once": 1
+   },
+   {
+    "fieldname": "section_break_n8u4",
    "fieldtype": "Section Break",
    "label": "Main Details"
   },

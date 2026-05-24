@@ -276,8 +276,14 @@ fixtures = [
 				"name",
 				"in",
 				[
-					"Purchase Invoice-custom_shipment_id_dimension",
-					"Landed Cost Voucher-custom_shipment_id"
+					"Purchase Invoice-custom_shipment_allocation",
+					"Landed Cost Voucher-custom_shipment_id",
+					"Landed Cost Taxes and Charges-custom_vendor_invoice",
+					"Landed Cost Taxes and Charges-custom_supplier_invoice_no",
+					"Landed Cost Taxes and Charges-custom_posting_date",
+					"Landed Cost Taxes and Charges-custom_allocated_to_shipment",
+					"Landed Cost Taxes and Charges-custom_already_used",
+					"Landed Cost Taxes and Charges-custom_remaining"
 				]
 			]
 		]

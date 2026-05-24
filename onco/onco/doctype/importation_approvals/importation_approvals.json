@@ -6,8 +6,9 @@
  "doctype": "DocType",
  "engine": "InnoDB",
  "field_order": [
-  "approval_type",
-  "date",
+   "naming_series",
+   "approval_type",
+   "date",
   "column_break_basic",
   "importation_approval_request",
   "reference_no",
@@ -34,8 +35,16 @@
   "amended_from"
  ],
  "fields": [
-  {
-   "fieldname": "approval_type",
+   {
+    "fieldname": "naming_series",
+    "fieldtype": "Select",
+    "hidden": 1,
+    "label": "Series",
+    "options": "EDA-SPIMA-.YYYY.-.#####\nEDA-APIMA-.YYYY.-.#####\nEDA-SPIMA-MD-.YYYY.-.#####\nEDA-APIMA-MD-.YYYY.-.#####\nEDA-SPIMA-EX-.YYYY.-.#####\nEDA-APIMA-EX-.YYYY.-.#####",
+    "set_only_once": 1
+   },
+   {
+    "fieldname": "approval_type",
    "fieldtype": "Select",
    "in_list_view": 1,
    "label": "Approval Type",

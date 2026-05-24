@@ -56,9 +56,14 @@ def test_custom_fields_exist():
     
     fields_to_check = [
         ("Purchase Invoice", "custom_shipments", "Shipment ID"),
-        ("Purchase Invoice", "custom_shipment_id_dimension", "Shipment ID (Vendor Services)"),
+        ("Purchase Invoice", "custom_shipment_allocation", "Shipment Allocation"),
         ("Landed Cost Voucher", "custom_shipment_id", "Shipment ID"),
-        ("Landed Cost Voucher", "custom_auto_fetch_vendor_invoices", "Auto-fetch Vendor Invoices")
+        ("Landed Cost Taxes and Charges", "custom_vendor_invoice", "Vendor Invoice"),
+        ("Landed Cost Taxes and Charges", "custom_supplier_invoice_no", "Supplier Invoice No"),
+        ("Landed Cost Taxes and Charges", "custom_posting_date", "Invoice Date"),
+        ("Landed Cost Taxes and Charges", "custom_allocated_to_shipment", "Allocated to Shipment"),
+        ("Landed Cost Taxes and Charges", "custom_already_used", "Already Used"),
+        ("Landed Cost Taxes and Charges", "custom_remaining", "Remaining")
     ]
     
     all_exist = True
@@ -92,16 +97,22 @@ def test_vendor_invoice_query():
     
     # Try to find vendor invoices
     vendor_invoices = frappe.db.sql("""
-        SELECT 
-            name,
-            supplier_name,
-            grand_total,
-            custom_shipment_id_dimension
-        FROM 
-            `tabPurchase Invoice`
-        WHERE 
-            custom_shipment_id_dimension = %(shipment_id)s
-            AND docstatus = 1
+        SELECT
+            pi.name,
+            pi.supplier_name,
+            pi.grand_total,
+            sar.shipment_id,
+            sar.amount as allocated_amount
+        FROM
+            `tabPurchase Invoice` pi
+        INNER JOIN
+            `tabShipment Allocation Reference` sar
+            ON sar.parent = pi.name
+            AND sar.parenttype = 'Purchase Invoice'
+            AND sar.parentfield = 'custom_shipment_allocation'
+        WHERE
+            sar.shipment_id = %(shipment_id)s
+            AND pi.docstatus = 1
         LIMIT 5
     """, {'shipment_id': shipment_id}, as_dict=True)
     

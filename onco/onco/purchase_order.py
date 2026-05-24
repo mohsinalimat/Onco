@@ -65,32 +65,16 @@ class CustomPurchaseOrder(PurchaseOrder):
 		self.name = f"{prefix}-{year}-{year_counter:04d}-{item_counter:03d}"
 	
 	def get_next_counter(self, prefix, year):
-		"""Get auto-incremented counter for naming series specific to prefix and year"""
-		# Query Purchase Order documents with name like "{prefix}-{year}-%"
-		existing = frappe.get_all(
-			"Purchase Order",
-			filters={
-				"name": ["like", f"{prefix}-{year}-%"]
-			},
-			fields=["name"],
-			order_by="name desc",
-			limit=1
-		)
+		"""Get auto-incremented counter for naming series across all years (year-independent)"""
+		result = frappe.db.sql("""
+			SELECT MAX(CAST(SUBSTRING_INDEX(SUBSTRING_INDEX(name, '-', 4), '-', -1) AS UNSIGNED))
+			FROM `tabPurchase Order`
+			WHERE name LIKE %s
+			AND docstatus < 2
+		""", (f"{prefix}-%-%-%-%",))
 		
-		if existing:
-			# Extract counter from name (format: PO-LOC-YYYY-XXXX-ZZZ or PO-IMP-YYYY-XXXX-ZZZ)
-			# Year counter is the 4th component (index 3) after splitting by "-"
-			parts = existing[0].name.split("-")
-			if len(parts) >= 5:
-				try:
-					# Get the year counter part (should be at index 3)
-					last_counter = int(parts[3])
-					return last_counter + 1
-				except (ValueError, IndexError):
-					pass
-		
-		# Return 1 if no existing documents or extraction failed
-		return 1
+		max_counter = result[0][0] if result and result[0][0] else 0
+		return max_counter + 1
 	
 	def get_item_counter(self, item_code):
 		"""Get auto-incremented counter for how many times this item has appeared in any PO"""
