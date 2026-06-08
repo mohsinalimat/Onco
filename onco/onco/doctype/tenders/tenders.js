@@ -1489,3 +1489,18 @@ function open_onco_financial_allocation_dialog(frm, offer_row) {
 
 	dialog.show();
 }
+
+frappe.ui.form.on("Onco Technical Offer", {
+	upload_attachment(frm, cdt, cdn) {
+		let row = locals[cdt][cdn];
+		new frappe.ui.FileUploader({
+			doctype: frm.doc.doctype,
+			docname: frm.doc.name,
+			frm: frm,
+			folder: "Home/Attachments",
+			on_success: (file) => {
+				frappe.model.set_value(cdt, cdn, "attachment", file.file_url);
+			}
+		});
+	}
+});

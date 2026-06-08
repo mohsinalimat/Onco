@@ -8,7 +8,8 @@
  "field_order": [
   "date_of_submission",
   "subject",
-  "attachment"
+  "attachment",
+  "upload_attachment"
  ],
  "fields": [
   {
@@ -27,10 +28,16 @@
   },
   {
    "fieldname": "attachment",
-   "fieldtype": "Attach",
+   "fieldtype": "Data",
    "in_list_view": 1,
    "label": "Attachment",
    "allow_on_submit": 1
+  },
+  {
+   "fieldname": "upload_attachment",
+   "fieldtype": "Button",
+   "in_list_view": 1,
+   "label": "Upload"
   }
  ],
  "grid_page_length": 50,
