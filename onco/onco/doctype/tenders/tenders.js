@@ -247,7 +247,7 @@ frappe.ui.form.on("Tenders", {
 			if (!exists) {
 				let row = frm.add_child("tender_supplier");
 				row.supplying_by = "By Oncopharm Only";
-				// Supplier name will be filled by the user or can default to Oncopharm if exists
+				row.supplier = "Onco";
 				frm.refresh_field("tender_supplier");
 			}
 
