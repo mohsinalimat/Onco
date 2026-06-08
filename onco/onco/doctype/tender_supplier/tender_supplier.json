@@ -19,14 +19,15 @@
    "label": "Supplying By",
    "options": "\nBy Oncopharm Only\nBy Distributor Only\nBy Oncopharm & Distributor"
   },
-  {
-   "fieldname": "supplier",
-   "fieldtype": "Link",
-   "in_list_view": 1,
-   "label": "Distributor Name",
-   "options": "Customer",
-   "read_only_depends_on": "eval:doc.supplying_by == 'By Oncopharm Only'"
-  },
+        {
+            "fieldname": "supplier",
+            "fieldtype": "Link",
+            "in_list_view": 1,
+            "label": "Distributor Name",
+            "options": "Customer",
+            "reqd": 1,
+            "read_only_depends_on": "eval:doc.supplying_by == 'By Oncopharm Only'"
+        },
   {
    "fieldname": "allocate_items",
    "fieldtype": "Button",

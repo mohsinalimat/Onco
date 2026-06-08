@@ -4,6 +4,31 @@ frappe.ui.form.on('Purchase Invoice', {
         if (frm.is_new() && frm.doc.update_stock !== 1) {
             frm.set_value('update_stock', 1);
         }
+
+        // Filter item_code in child table to items matching PI supplier
+        if (frm.fields_dict.items && frm.fields_dict.items.grid) {
+            frm.fields_dict.items.grid.get_field('item_code').get_query = function () {
+                return {
+                    filters: [
+                        ['Item', 'default_supplier', '=', frm.doc.supplier],
+                        ['Item Supplier', 'supplier', '=', frm.doc.supplier]
+                    ]
+                };
+            };
+        }
+    },
+
+    supplier: function (frm) {
+        if (frm.fields_dict.items && frm.fields_dict.items.grid) {
+            frm.fields_dict.items.grid.get_field('item_code').get_query = function () {
+                return {
+                    filters: [
+                        ['Item', 'default_supplier', '=', frm.doc.supplier],
+                        ['Item Supplier', 'supplier', '=', frm.doc.supplier]
+                    ]
+                };
+            };
+        }
     },
     
     update_stock: function(frm) {

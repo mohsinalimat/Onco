@@ -54,6 +54,35 @@ frappe.ui.form.on('Purchase Order', {
                 };
             });
         }
+
+        // Filter item_code in child table to only pharmaceutical items matching PO supplier
+        if (frm.fields_dict.items && frm.fields_dict.items.grid) {
+            frm.fields_dict.items.grid.get_field('item_code').get_query = function () {
+                let filters = {
+                    custom_pharmaceutical_item: 1,
+                    disabled: 0
+                };
+                if (frm.doc.supplier) {
+                    filters['default_supplier'] = frm.doc.supplier;
+                }
+                return { filters: filters };
+            };
+        }
+    },
+
+    supplier: function (frm) {
+        if (frm.fields_dict.items && frm.fields_dict.items.grid) {
+            frm.fields_dict.items.grid.get_field('item_code').get_query = function () {
+                let filters = {
+                    custom_pharmaceutical_item: 1,
+                    disabled: 0
+                };
+                if (frm.doc.supplier) {
+                    filters['default_supplier'] = frm.doc.supplier;
+                }
+                return { filters: filters };
+            };
+        }
     },
 
     custom_importation_approval: function (frm) {

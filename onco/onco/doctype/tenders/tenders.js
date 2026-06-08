@@ -173,8 +173,8 @@ frappe.ui.form.on("Tenders", {
 			};
 		});
 
-		// Add filter for distributor in price_list_for_tender - should be from Pharmaceuticals Local Distributors Companies
-		frm.set_query("distributor", "tender_price_list", function () {
+		// Add filter for supplier in tender_price_list - should be from Pharmaceuticals Local Distributors Companies
+		frm.set_query("supplier", "tender_price_list", function () {
 			return {
 				filters: {
 					"customer_group": "Pharmaceuticals Local Distributors Companies"
@@ -209,6 +209,15 @@ frappe.ui.form.on("Tenders", {
 
 		frm.set_query("distributor", "distributors_price_offer", get_valid_distributors);
 		frm.set_query("distributor", "distributors_technical_offer", get_valid_distributors);
+
+		// Filter item_code in item_tender to Local Finished Pharmaceutical Products only
+		frm.set_query("item_code", "item_tender", function () {
+			return {
+				filters: {
+					"item_group": "Local Finished Pharmaceutical Products Item"
+				}
+			};
+		});
 	},
 
 	before_load(frm) {
@@ -500,7 +509,7 @@ function toggle_item_tables(frm) {
 	// Show/hide item tables based on tender type
 	let show_items_fmd = frm.doc.tender_type === "Tenders for market data";
 	let show_item_tender = ["Awarded Tenders", "Tender Submission", "Accepted Tenders"].includes(frm.doc.tender_type);
-	let show_tender_supplier = ["Awarded Tenders", "Tender Submission", "Accepted Tenders"].includes(frm.doc.tender_type);
+	let show_tender_supplier = ["Tender Submission", "Accepted Tenders"].includes(frm.doc.tender_type);
 
 	frm.set_df_property("items_fmd", "hidden", !show_items_fmd);
 	frm.set_df_property("item_tender", "hidden", !show_item_tender);

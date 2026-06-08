@@ -394,12 +394,13 @@ def create_accepted_from_submission(source_name):
 	target_doc.extended_start_date = source_doc.extended_start_date
 	target_doc.extended_end_date = source_doc.extended_end_date
 	
-	# Copy price lists
-	for row in source_doc.tender_price_list or []:
-		target_doc.append("tender_price_list", {
-			"distributor": row.distributor if hasattr(row, 'distributor') else "",
-			"price_list": row.price_list if hasattr(row, 'price_list') else ""
-		})
+	# Populate tender_price_list from tender_supplier (accepted tenders need distributor price lists)
+	for row in source_doc.tender_supplier or []:
+		if row.supplier:
+			target_doc.append("tender_price_list", {
+				"supplier": row.supplier,
+				"price_list": ""
+			})
 	
 	# Set naming series
 	if source_doc.category == "UPA Tender":
