@@ -508,6 +508,70 @@ def save_item_extension_flags(tender_name, selections):
 	return {"status": "ok"}
 
 
+@frappe.whitelist()
+def apply_mid_tender_extensions(tender_name, selections):
+	"""
+	Apply mid-tender extensions to selected items.
+	Directly updates tender_qty and tender_end_date on Item Tender rows,
+	then recalculates Tender Status accordingly.
+	This is a manual operation separate from the upfront applying_rules mechanism.
+	"""
+	if isinstance(selections, str):
+		import json
+		selections = json.loads(selections)
+
+	parent = frappe.get_doc("Tenders", tender_name)
+	frappe.has_permission("Tenders", "write", parent, throw=True)
+
+	updated_items = {}
+	for sel in selections:
+		row_name = sel.get("name")
+		if not row_name:
+			continue
+
+		update_values = {}
+		new_qty = sel.get("new_qty")
+		new_end_date = sel.get("new_end_date")
+
+		if new_qty is not None:
+			update_values["tender_qty"] = new_qty
+		if new_end_date:
+			update_values["tender_end_date"] = new_end_date
+
+		if update_values:
+			frappe.db.set_value(
+				"Item Tender",
+				row_name,
+				update_values,
+				update_modified=False
+			)
+			if new_qty is not None:
+				updated_items[sel.get("item_code")] = new_qty
+
+	# Update Tender Status rows to reflect new quantities
+	if updated_items:
+		for status_row in frappe.db.get_all(
+			"Tender Status",
+			filters={"parent": tender_name},
+			fields=["name", "item_name", "supplied_quantity"]
+		):
+			if status_row.item_name in updated_items:
+				new_qty = updated_items[status_row.item_name]
+				remaining = new_qty - (status_row.supplied_quantity or 0)
+				fulfillment = ((status_row.supplied_quantity or 0) / new_qty * 100) if new_qty > 0 else 0
+				frappe.db.set_value(
+					"Tender Status",
+					status_row.name,
+					{
+						"tender_quantity": new_qty,
+						"remaining_quantity": remaining,
+						"fulfillment_percent": fulfillment
+					},
+					update_modified=False
+				)
+
+	frappe.db.commit()
+	return {"status": "ok"}
 
 
 

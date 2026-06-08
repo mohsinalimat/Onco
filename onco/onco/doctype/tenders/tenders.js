@@ -82,12 +82,10 @@ frappe.ui.form.on("Tenders", {
 					open_add_technical_offer_dialog(frm);
 				}, __('Offers'));
 
-				// Extension amendment button — visible when rules are configured but not yet applied
-				if ((frm.doc.apply_extra_quantities || frm.doc.apply_extended_time) && !frm.doc.applying_rules) {
-					frm.add_custom_button(__('Amend Item Extensions'), function () {
-						open_item_extension_dialog(frm);
-					}, __('Actions'));
-				}
+				// Mid-Tender Extension — manually extend selected items at any time
+				frm.add_custom_button(__('Mid-Tender Extension'), function () {
+					open_mid_tender_extension_dialog(frm);
+				}, __('Actions'));
 			}
 
 			// === SHARED ACTIONS (Awarded + Submission) ===
@@ -686,6 +684,149 @@ function open_item_extension_dialog(frm) {
 	dialog.show();
 }
 
+function open_mid_tender_extension_dialog(frm) {
+	let has_qty_rule = frm.doc.apply_extra_quantities && frm.doc.extra_qty_type && frm.doc.extra_qty_value;
+	let has_time_rule = frm.doc.apply_extended_time && frm.doc.extended_start_date && frm.doc.extended_end_date;
+
+	if (!has_qty_rule && !has_time_rule) {
+		frappe.msgprint(__("Please configure extension rules (Apply Extra Quantities and/or Apply Extended Time) first."));
+		return;
+	}
+
+	let items = frm.doc.item_tender || [];
+	if (items.length === 0) {
+		frappe.msgprint(__("No items found in the tender."));
+		return;
+	}
+
+	let desc_lines = [];
+	if (has_qty_rule) {
+		desc_lines.push(`Extra Quantity: <b>${frm.doc.extra_qty_type === 'Percent' ? frm.doc.extra_qty_value + '%' : frm.doc.extra_qty_value + ' units'}</b>`);
+	}
+	if (has_time_rule) {
+		desc_lines.push(`Extended Time: <b>${frm.doc.extended_start_date}</b> &rarr; <b>${frm.doc.extended_end_date}</b>`);
+	}
+
+	let table_html = `
+		<div class="alert alert-info" style="margin-bottom:12px;">
+			<b>Current Extension Rules:</b><br>${desc_lines.join(' | ')}
+		</div>
+		<div style="max-height:400px; overflow-y:auto;">
+		<table class="table table-bordered" style="margin-bottom:0;">
+			<thead>
+				<tr>
+					<th style="width:50px;">Apply</th>
+					<th>Item Code</th>
+					<th>Item Name</th>
+					<th style="width:110px;">Current Qty</th>
+					${has_qty_rule ? '<th style="width:110px; background:#d4edda;">New Qty</th>' : ''}
+					<th style="width:120px;">Current End Date</th>
+					${has_time_rule ? '<th style="width:120px; background:#d4edda;">New End Date</th>' : ''}
+				</tr>
+			</thead>
+			<tbody>
+	`;
+
+	let selections = [];
+	items.forEach((item, idx) => {
+		if (!item.item_code) return;
+
+		let new_qty = item.tender_qty || 0;
+		if (has_qty_rule) {
+			if (frm.doc.extra_qty_type === 'Percent') {
+				new_qty = (item.tender_qty || 0) + ((item.tender_qty || 0) * (frm.doc.extra_qty_value / 100));
+			} else {
+				new_qty = (item.tender_qty || 0) + frm.doc.extra_qty_value;
+			}
+		}
+
+		let new_end_date = item.tender_end_date || '';
+		if (has_time_rule) {
+			new_end_date = frm.doc.extended_end_date;
+		}
+
+		selections.push({
+			idx: idx,
+			name: item.name,
+			item_code: item.item_code,
+			item_name: item.item_name,
+			new_qty: has_qty_rule ? new_qty : null,
+			new_end_date: has_time_rule ? new_end_date : null
+		});
+
+		let qty_cell = `<td>${item.tender_qty || 0}</td>`;
+		if (has_qty_rule) {
+			qty_cell += `<td style="background:#d4edda;"><b>${new_qty.toFixed(2)}</b> <span class="text-muted" style="font-size:10px;">(+${(new_qty - (item.tender_qty || 0)).toFixed(2)})</span></td>`;
+		}
+
+		let date_cell = `<td>${item.tender_end_date || ''}</td>`;
+		if (has_time_rule) {
+			date_cell += `<td style="background:#d4edda;"><b>${new_end_date}</b></td>`;
+		}
+
+		table_html += `
+			<tr>
+				<td style="text-align:center;"><input type="checkbox" class="mid-extend-chk" data-idx="${idx}" checked></td>
+				<td>${item.item_code}</td>
+				<td>${item.item_name || ''}</td>
+				${qty_cell}
+				${date_cell}
+			</tr>
+		`;
+	});
+
+	table_html += `
+			</tbody>
+		</table>
+		</div>
+	`;
+
+	let dialog = new frappe.ui.Dialog({
+		title: __('Mid-Tender Extension'),
+		fields: [
+			{
+				fieldtype: 'HTML',
+				fieldname: 'extension_preview',
+				options: table_html
+			}
+		],
+		primary_action_label: __('Apply Extensions'),
+		primary_action(values) {
+			let selected = [];
+			dialog.$wrapper.find('.mid-extend-chk:checked').each(function() {
+				let idx = parseInt($(this).data('idx'));
+				selected.push(selections[idx]);
+			});
+
+			if (selected.length === 0) {
+				frappe.msgprint(__("Please select at least one item to extend."));
+				return;
+			}
+
+			frappe.call({
+				method: 'onco.onco.doctype.tenders.tenders.apply_mid_tender_extensions',
+				args: {
+					tender_name: frm.doc.name,
+					selections: selected
+				},
+				freeze: true,
+				freeze_message: __('Applying mid-tender extensions...'),
+				callback: function(r) {
+					if (!r.exc) {
+						dialog.hide();
+						frm.reload_doc();
+						frappe.show_alert({
+							message: __('Mid-tender extensions applied successfully.'),
+							indicator: 'green'
+						});
+					}
+				}
+			});
+		}
+	});
+
+	dialog.show();
+}
 
 function approve_all_deviations(frm) {
 
