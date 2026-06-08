@@ -56,9 +56,9 @@ frappe.ui.form.on("Tenders", {
 			// === ACCEPTED TENDERS ===
 			// Show actions specific to accepted tenders
 			if (frm.doc.tender_type === "Accepted Tenders") {
-				// Create Sales Order from accepted tender
-				frm.add_custom_button(__('Create Sales Order'), function () {
-					create_sales_order_from_tender(frm);
+				// Create Customer Purchase Order from accepted tender
+				frm.add_custom_button(__('Create Customer Purchase Order'), function () {
+					create_customer_purchase_order_from_tender(frm);
 				}, __('Actions'));
 
 				// Update fulfillment status from Sales Orders
@@ -342,6 +342,7 @@ frappe.ui.form.on("Tenders", {
 			}
 		});
 		frm.refresh_field("tender_status");
+		toggle_tender_rules_fields(frm);
 	}
 });
 
@@ -568,8 +569,32 @@ function set_naming_series_options(frm) {
 }
 
 function toggle_tender_rules_fields(frm) {
-	// Let Frappe's native depends_on handle this. 
-	// Double-toggling fields inside a column break via JS causes them to permanently disappear.
+	// Only show tender rules in Accepted Tenders
+	if (frm.doc.tender_type !== 'Accepted Tenders') return;
+
+	// Check fulfillment percentage - only allow changes when >80% supplied
+	if (frm.doc.tender_status && frm.doc.tender_status.length > 0) {
+		let total_tender_qty = 0;
+		let total_supplied_qty = 0;
+		frm.doc.tender_status.forEach(row => {
+			total_tender_qty += row.tender_quantity || 0;
+			total_supplied_qty += row.supplied_quantity || 0;
+		});
+		let fulfillment_pct = total_tender_qty > 0 ? (total_supplied_qty / total_tender_qty) * 100 : 0;
+		let can_edit = fulfillment_pct >= 80;
+
+		[
+			"apply_extra_quantities",
+			"extra_qty_type",
+			"extra_qty_value",
+			"apply_extended_time",
+			"extended_start_date",
+			"extended_end_date",
+			"applying_rules"
+		].forEach(field => {
+			frm.set_df_property(field, "read_only", !can_edit);
+		});
+	}
 }
 
 function open_item_extension_dialog(frm) {
@@ -864,12 +889,12 @@ function open_add_technical_offer_dialog(frm) {
 
 function update_status_from_orders(frm) {
 	frappe.call({
-		method: 'frappe.client.get_list',
-		args: {
-			doctype: 'Sales Order',
-			filters: { 'custom_tender_ref': frm.doc.name, 'docstatus': 1 },
-			fields: ['name']
-		},
+        method: 'frappe.client.get_list',
+        args: {
+            doctype: 'Sales Order',
+            filters: { 'custom_tender': frm.doc.name, 'docstatus': 1 },
+            fields: ['name']
+        },
 		callback: function (r) {
 			if (r.message && r.message.length > 0) {
 				// Reset all supplied quantities to 0 before recalculating
@@ -1009,12 +1034,11 @@ function show_fulfillment_status(frm) {
 }
 
 
-function create_sales_order_from_tender(frm) {
-	// Get list of distributors from tender_supplier
+function create_customer_purchase_order_from_tender(frm) {
 	let distributors = (frm.doc.tender_supplier || [])
 		.filter(row => row.supplier)
 		.map(row => row.supplier);
-	
+
 	if (distributors.length === 0) {
 		frappe.msgprint(__('No distributors found in Tender Supplier table.'));
 		return;
@@ -1029,11 +1053,15 @@ function create_sales_order_from_tender(frm) {
 			reqd: 1,
 			get_query: function() {
 				return {
-					filters: [
-						['name', 'in', distributors]
-					]
+					filters: [['name', 'in', distributors]]
 				};
 			}
+		},
+		{
+			fieldtype: 'Data',
+			fieldname: 'cpo_number',
+			label: 'Customer Purchase Order Number',
+			reqd: 0
 		},
 		{
 			fieldtype: 'Date',
@@ -1043,68 +1071,104 @@ function create_sales_order_from_tender(frm) {
 			default: frm.doc.tender_end_date
 		}
 	], function (values) {
-		// Get allocations for selected distributor
 		let allocations = (frm.doc.tender_supplier_allocations || [])
 			.filter(row => row.distributor === values.distributor);
-		
+
 		if (allocations.length === 0) {
 			frappe.msgprint(__('No item allocations found for distributor {0}. Please allocate items first.', [values.distributor]));
 			return;
 		}
 
-		// Get price list for this distributor
 		let price_list_row = (frm.doc.tender_price_list || [])
-			.find(row => row.distributor === values.distributor);
-		
+			.find(row => row.supplier === values.distributor);
+
 		let price_list = price_list_row ? price_list_row.price_list : null;
 
-		// Build items from allocations
-		let items = allocations.map(row => ({
-			item_code: row.item,
-			item_name: row.item_name,
-			qty: row.supply_qty,
-			delivery_date: values.delivery_date
-		}));
-
-		// Determine order type based on tender category
 		let order_type = 'UPA Tender Order';
 		if (frm.doc.category === 'Private Tender') {
 			order_type = 'Private Tenders Order';
 		}
 
-		let sales_order_doc = {
-			doctype: 'Sales Order',
-			customer: values.distributor,
-			delivery_date: values.delivery_date,
-			custom_order_type_1: order_type,
-			custom_tender: frm.doc.name,
-			items: items
-		};
+		// Fetch customer details for defaults
+		frappe.db.get_value('Customer', values.distributor, ['customer_group', 'tax_id'], function(cust) {
+			let customer_group = cust ? cust.customer_group : '';
+			let customer_tax_id = cust ? cust.tax_id : '';
+			let customer_main_group = '';
+			if (customer_group) {
+				// Get the parent group (main group) of this customer group
+				frappe.db.get_value('Customer Group', customer_group, 'parent_customer_group', function(parent) {
+					customer_main_group = parent ? parent.parent_customer_group : '';
 
-		// Add price list if found
-		if (price_list) {
-			sales_order_doc.selling_price_list = price_list;
-		}
-
-		frappe.call({
-			method: 'frappe.client.insert',
-			args: {
-				doc: sales_order_doc
-			},
-			callback: function (r) {
-				if (r.message) {
-					frappe.set_route('Form', 'Sales Order', r.message.name);
-					let msg = __('Sales Order created: {0}', [r.message.name]);
+					// Get currency from the selected price list
+					let customer_currency = '';
 					if (price_list) {
-						msg += __(' with price list: {0}', [price_list]);
+						frappe.db.get_value('Price List', price_list, 'currency', function(pl) {
+							customer_currency = pl ? pl.currency : '';
+							build_and_insert_cpo(frm, values, allocations, order_type, price_list, customer_group, customer_main_group, customer_tax_id, customer_currency);
+						});
 					} else {
-						frappe.msgprint(__('Warning: No price list found for distributor {0} in Tender Price List table. Please set prices manually.', [values.distributor]), __('Price List Missing'));
+						build_and_insert_cpo(frm, values, allocations, order_type, price_list, customer_group, customer_main_group, customer_tax_id, customer_currency);
 					}
-					frappe.show_alert({ message: msg, indicator: 'green' });
-				}
+				});
+			} else {
+				frappe.msgprint(__('Customer group not found for distributor {0}.', [values.distributor]));
 			}
 		});
-	}, __('Create Sales Order'), __('Create'));
+	}, __('Create Customer Purchase Order'), __('Create'));
+}
+
+function build_and_insert_cpo(frm, values, allocations, order_type, price_list, customer_group, customer_main_group, customer_tax_id, customer_currency) {
+	let cpo_items = allocations.map(row => ({
+		item: row.item,
+		item_name: row.item_name,
+		quantity: row.supply_qty,
+		price: 0,
+		amount: 0,
+		ordered_qty: 0
+	}));
+
+	let cpo_doc = {
+		doctype: 'Customer Purchase Order',
+		customer_purchase_order_number: values.cpo_number || '',
+		sales_type: 'Sales',
+		order_type: order_type,
+		requested_to: 'ONCO',
+		implemented_by: 'Onco',
+		customer_type: 'Distributor',
+		date: frappe.datetime.nowdate(),
+		delivery_date: values.delivery_date,
+		customer_main_group: customer_main_group,
+		customer_group: customer_group,
+		customer: values.distributor,
+		tax_id: customer_tax_id,
+		customer_currency: customer_currency,
+		tender: frm.doc.name,
+		price_list: price_list || '',
+		customer_po_items: cpo_items
+	};
+
+					frappe.call({
+						method: 'frappe.client.insert',
+						args: { doc: cpo_doc },
+						callback: function (r) {
+							if (r.message) {
+								frappe.set_route('Form', 'Customer Purchase Order', r.message.name);
+								let msg = __('Customer Purchase Order created: {0}', [r.message.name]);
+								if (price_list) {
+									msg += __(' with price list: {0}', [price_list]);
+								} else {
+									frappe.msgprint(__('Warning: No price list found for distributor {0} in Tender Price List table. Please set prices manually.', [values.distributor]), __('Price List Missing'));
+								}
+								frappe.show_alert({ message: msg, indicator: 'green' });
+							}
+						}
+					});
+				});
+			} else {
+				frappe.msgprint(__('Customer group not found for distributor {0}.', [values.distributor]));
+			}
+		});
+	}, __('Create Customer Purchase Order'), __('Create'));
 }
 
 

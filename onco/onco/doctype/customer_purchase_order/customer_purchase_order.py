@@ -1,12 +1,42 @@
 # Copyright (c) 2025, ds and contributors
 # For license information, please see license.txt
 
+import json
 import frappe
 from frappe.model.document import Document
 from frappe import _
+from frappe.utils import flt
 
 
 class CustomerPurchaseOrder(Document):
+	def validate(self):
+		self.calculate_totals()
+		self.fetch_item_prices()
+
+	def calculate_totals(self):
+		total_qty = 0
+		total_amount = 0
+		for row in self.get("customer_po_items") or []:
+			total_qty += flt(row.quantity)
+			row.amount = flt(row.quantity) * flt(row.price)
+			total_amount += flt(row.amount)
+		self.total_qty = total_qty
+		self.total_amount = total_amount
+
+	def fetch_item_prices(self):
+		if not self.price_list:
+			return
+		for row in self.get("customer_po_items") or []:
+			if not row.item:
+				continue
+			price = frappe.get_value(
+				"Item Price",
+				{"item_code": row.item, "price_list": self.price_list},
+				"price_list_rate"
+			)
+			if price and flt(row.price) != flt(price):
+				row.price = flt(price)
+
 	def autoname(self):
 		"""Generate naming series based on order type with year from date field"""
 		if not self.order_type:
@@ -76,3 +106,109 @@ class CustomerPurchaseOrder(Document):
 		
 		# Return 1 if no existing documents or extraction failed
 		return 1
+
+
+@frappe.whitelist()
+def get_applicable_price_lists(customer):
+	"""Return list of price list names applicable to this customer or their group."""
+	if not customer:
+		return []
+
+	customer_group = frappe.get_value("Customer", customer, "customer_group")
+
+	all_price_lists = frappe.get_all(
+		"Price List",
+		filters={"selling": 1, "enabled": 1},
+		pluck="name"
+	)
+
+	applicable = []
+	for pl in all_price_lists:
+		pl_doc = frappe.get_cached_doc("Price List", pl)
+		# Check custom_apply_for_customers
+		if pl_doc.get("custom_apply_for_customers"):
+			for row in pl_doc.custom_apply_for_customers:
+				if row.customer == customer:
+					applicable.append(pl)
+					break
+		else:
+			# Check custom_apply_for_customer_groups
+			if pl_doc.get("custom_apply_for_customer_groups") and customer_group:
+				for row in pl_doc.custom_apply_for_customer_groups:
+					if row.customer_group == customer_group:
+						applicable.append(pl)
+						break
+
+	return applicable
+
+
+@frappe.whitelist()
+def create_sales_order(cpo_name, items_data):
+	"""Create Sales Order from a Customer Purchase Order.
+	items_data: JSON string or list of {item_code, qty}"""
+	cpo = frappe.get_doc("Customer Purchase Order", cpo_name)
+
+	if isinstance(items_data, str):
+		items_data = json.loads(items_data)
+
+	so_items = []
+	for d in items_data:
+		qty = flt(d.get("qty"))
+		if qty <= 0:
+			continue
+
+		cpo_row = next(
+			(r for r in cpo.customer_po_items if r.item == d.get("item_code")),
+			None
+		)
+		if not cpo_row:
+			continue
+
+		remaining = flt(cpo_row.quantity) - flt(cpo_row.ordered_qty)
+		if qty > remaining:
+			frappe.throw(_(
+				"Qty {0} for item {1} exceeds remaining quantity {2}"
+			).format(qty, d["item_code"], remaining))
+
+		so_items.append({
+			"item_code": d["item_code"],
+			"qty": qty,
+			"rate": flt(cpo_row.price),
+			"delivery_date": cpo.delivery_date
+		})
+
+	if not so_items:
+		frappe.throw(_("No items with valid quantities provided"))
+
+	so = frappe.get_doc({
+		"doctype": "Sales Order",
+		"customer": cpo.customer,
+		"transaction_date": cpo.date,
+		"delivery_date": cpo.delivery_date,
+		"po_no": cpo.customer_purchase_order_number,
+		"po_date": cpo.date,
+		"items": so_items,
+		"custom_order_type_1": cpo.order_type,
+		"implemented_by": cpo.implemented_by,
+		"customer_type": cpo.customer_type,
+		"requested_to_": cpo.requested_to,
+		"selling_price_list": cpo.price_list,
+		"custom_customer_po": cpo.name,
+		"custom_tender": cpo.tender if cpo.tender else None
+	})
+	so.insert(ignore_permissions=True)
+	so.submit()
+
+	# Update ordered_qty on CPO items
+	for d in items_data:
+		qty = flt(d.get("qty"))
+		if qty <= 0:
+			continue
+		for cpo_row in cpo.customer_po_items:
+			if cpo_row.item == d.get("item_code"):
+				cpo_row.ordered_qty = flt(cpo_row.ordered_qty) + qty
+				break
+
+	cpo.save(ignore_permissions=True)
+
+	return so.name

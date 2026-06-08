@@ -236,6 +236,41 @@ def log_deviation_history(doc, method):
     frappe.db.commit()
 
 
+@frappe.whitelist()
+def check_sales_invoice_deviations(sales_invoice_name):
+    """Check Sales Invoice items for price deviations against the tender.
+    Returns deviations list with item_code, invoice_rate, tender_price, and item_cost."""
+    si = frappe.get_doc("Sales Invoice", sales_invoice_name)
+    if not si.get("custom_tender_ref"):
+        return {"deviations": []}
+
+    tender = frappe.get_doc("Tenders", si.custom_tender_ref)
+
+    tender_prices = {}
+    item_costs = {}
+    for row in tender.item_tender or []:
+        if row.item_code:
+            tender_prices[row.item_code] = row.tender_price
+            item = frappe.get_cached_value("Item", row.item_code, ["valuation_rate"])
+            item_costs[row.item_code] = (item[0] if item else 0) or 0
+
+    deviations = []
+    for item in si.items:
+        if item.item_code in tender_prices:
+            t_price = tender_prices[item.item_code]
+            i_cost = item_costs.get(item.item_code, 0)
+            if t_price and (item.rate < t_price or (i_cost and t_price < i_cost)):
+                deviations.append({
+                    "item_code": item.item_code,
+                    "item_name": item.item_name,
+                    "invoice_rate": item.rate,
+                    "tender_price": t_price,
+                    "item_cost": i_cost
+                })
+
+    return {"deviations": deviations}
+
+
 def update_tender_status(doc, method):
     """
     Update Tender Status table when Sales Order is submitted.

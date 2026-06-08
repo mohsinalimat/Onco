@@ -22,7 +22,8 @@
             "fieldtype": "Link",
             "in_list_view": 1,
             "label": "Item Code",
-            "options": "Item"
+            "options": "Item",
+            "reqd": 1
         },
         {
             "columns": 2,
