@@ -189,6 +189,91 @@ function populate_from_tender(frm) {
             let tender = r.message;
             if (!tender) return;
 
+            let is_private = tender.category === "Private Tender";
+
+            if (is_private) {
+                let customer_name = tender.hospitalagent_name;
+                if (!customer_name) {
+                    frappe.msgprint(__('Tender has no customer (hospitalagent_name).'));
+                    return;
+                }
+
+                frm.set_value("sales_type", "Sales");
+                frm.set_value("order_type", "Private Tenders Order");
+                frm.set_value("requested_to", "ONCO");
+                frm.set_value("implemented_by", "Onco");
+                frm.set_value("customer_type", "Final Customer");
+                frm.set_value("delivery_date", tender.tender_end_date);
+
+                frm.doc.customer_main_group = "";
+                frm.doc.customer_group = "";
+                frm.doc.customer = "";
+                frm.refresh_field("customer_main_group");
+                frm.refresh_field("customer_group");
+                frm.refresh_field("customer");
+
+                frm.clear_table("customer_po_items");
+                (tender.item_tender || []).forEach(item => {
+                    let row = frm.add_child("customer_po_items");
+                    row.item = item.item_code;
+                    row.item_name = item.item_name;
+                    row.quantity = item.tender_qty;
+                    row.price = 0;
+                    row.amount = 0;
+                    row.ordered_qty = 0;
+                });
+                frm.refresh_field("customer_po_items");
+
+                frappe.call({
+                    method: "frappe.client.get",
+                    args: { doctype: "Customer", name: customer_name },
+                    callback(pr) {
+                        if (!pr || !pr.message) return;
+                        let c = pr.message;
+                        let cg = c.customer_group || "";
+                        let tax = c.tax_id || "";
+
+                        frm.doc.customer_group = cg;
+                        frm.doc.tax_id = tax;
+                        frm.doc.customer = customer_name;
+                        frm.refresh_field("customer_group");
+                        frm.refresh_field("tax_id");
+                        frm.refresh_field("customer");
+
+                        frappe.call({
+                            method: "frappe.client.get_value",
+                            args: {
+                                doctype: "Customer Group",
+                                fieldname: "parent_customer_group",
+                                filters: { name: cg }
+                            },
+                            callback(pp) {
+                                if (!pp || !pp.message) return;
+                                frm.doc.customer_main_group = pp.message.parent_customer_group || "";
+                                frm.refresh_field("customer_main_group");
+                            }
+                        });
+
+                        frappe.call({
+                            method: "onco.onco.doctype.customer_purchase_order.customer_purchase_order.get_applicable_price_lists",
+                            args: { customer: customer_name },
+                            callback(pp) {
+                                let pl = "";
+                                if (pp && pp.message && pp.message.length > 0) {
+                                    pl = pp.message[0];
+                                }
+                                frm.doc.price_list = pl;
+                                frm.refresh_field("price_list");
+                                frm.dirty();
+                                frappe.show_alert({ message: __("Customer Purchase Order populated from tender"), indicator: "green" });
+                            }
+                        });
+                    }
+                });
+                return;
+            }
+
+            // UPA Tender — distributor selection dialog
             let distributors = (tender.tender_supplier || [])
                 .filter(row => row.supplier)
                 .map(row => row.supplier);
@@ -233,7 +318,7 @@ function populate_from_tender(frm) {
                         .find(row => row.distributor === values.distributor);
 
                     frm.set_value("sales_type", "Sales");
-                    frm.set_value("order_type", tender.category === "Private Tender" ? "Private Tenders Order" : "UPA Tender Order");
+                    frm.set_value("order_type", "UPA Tender Order");
                     frm.set_value("requested_to", "ONCO");
                     frm.set_value("implemented_by", "Onco");
                     frm.set_value("customer_type", "Distributor");
@@ -263,9 +348,9 @@ function populate_from_tender(frm) {
                     frappe.call({
                         method: "frappe.client.get",
                         args: { doctype: "Customer", name: values.distributor },
-                        callback(r) {
-                            if (!r || !r.message) return;
-                            let c = r.message;
+                        callback(pr) {
+                            if (!pr || !pr.message) return;
+                            let c = pr.message;
                             let cg = c.customer_group || "";
                             let tax = c.tax_id || "";
 
@@ -283,9 +368,9 @@ function populate_from_tender(frm) {
                                     fieldname: "parent_customer_group",
                                     filters: { name: cg }
                                 },
-                                callback(pr) {
-                                    if (!pr || !pr.message) return;
-                                    frm.doc.customer_main_group = pr.message.parent_customer_group || "";
+                                callback(pp) {
+                                    if (!pp || !pp.message) return;
+                                    frm.doc.customer_main_group = pp.message.parent_customer_group || "";
                                     frm.refresh_field("customer_main_group");
                                 }
                             });
