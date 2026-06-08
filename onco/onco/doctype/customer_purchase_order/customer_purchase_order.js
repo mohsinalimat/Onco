@@ -241,38 +241,56 @@ function populate_from_tender(frm) {
 
                     dialog.hide();
 
-                    frappe.db.get_value('Customer', values.distributor, ['customer_group', 'tax_id'], function(cust) {
-                        let customer_group = cust ? cust.customer_group : '';
-                        let customer_tax_id = cust ? cust.tax_id : '';
+                    frappe.call({
+                        method: "frappe.client.get",
+                        args: {
+                            doctype: "Customer",
+                            name: values.distributor
+                        },
+                        callback(r) {
+                            let customer = r.message;
+                            if (!customer) return;
 
-                        if (!customer_group) {
-                            frappe.msgprint(__('Customer group not found for distributor {0}.', [values.distributor]));
-                            return;
-                        }
+                            let customer_group = customer.customer_group || "";
+                            let customer_tax_id = customer.tax_id || "";
 
-                        frappe.db.get_value('Customer Group', customer_group, 'parent_customer_group', function(parent) {
-                            let customer_main_group = parent ? parent.parent_customer_group : '';
+                            if (!customer_group) {
+                                frappe.msgprint(__('Customer group not found for distributor {0}.', [values.distributor]));
+                                return;
+                            }
 
-                            frm.set_value("customer_main_group", customer_main_group);
-                            frm.set_value("customer_group", customer_group);
-                            frm.set_value("tax_id", customer_tax_id);
-                            frm.set_value("customer", values.distributor);
-                            frm.set_value("price_list", price_list_row ? price_list_row.price_list : "");
+                            frappe.call({
+                                method: "frappe.client.get_value",
+                                args: {
+                                    doctype: "Customer Group",
+                                    fieldname: "parent_customer_group",
+                                    filters: { name: customer_group }
+                                },
+                                callback(pr) {
+                                    let customer_main_group = pr.message ? pr.message.parent_customer_group : "";
 
-                            frm.clear_table("customer_po_items");
-                            allocations.forEach(a => {
-                                let row = frm.add_child("customer_po_items");
-                                row.item = a.item;
-                                row.item_name = a.item_name;
-                                row.quantity = a.supply_qty;
-                                row.price = 0;
-                                row.amount = 0;
-                                row.ordered_qty = 0;
+                                    frm.set_value("customer_main_group", customer_main_group);
+                                    frm.set_value("customer_group", customer_group);
+                                    frm.set_value("tax_id", customer_tax_id);
+                                    frm.set_value("customer", values.distributor);
+                                    frm.set_value("price_list", price_list_row ? price_list_row.price_list : "");
+
+                                    frm.clear_table("customer_po_items");
+                                    allocations.forEach(a => {
+                                        let row = frm.add_child("customer_po_items");
+                                        row.item = a.item;
+                                        row.item_name = a.item_name;
+                                        row.quantity = a.supply_qty;
+                                        row.price = 0;
+                                        row.amount = 0;
+                                        row.ordered_qty = 0;
+                                    });
+                                    frm.refresh_field("customer_po_items");
+                                    frm.dirty();
+                                    frappe.show_alert({ message: __("Customer Purchase Order populated from tender"), indicator: "green" });
+                                }
                             });
-                            frm.refresh_field("customer_po_items");
-                            frm.dirty();
-                            frappe.show_alert({ message: __("Customer Purchase Order populated from tender"), indicator: "green" });
-                        });
+                        }
                     });
                 }
             });
