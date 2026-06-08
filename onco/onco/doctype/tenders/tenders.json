@@ -38,6 +38,8 @@
         "item_tender",
         "tender_supplier",
         "tender_supplier_allocations",
+        "mid_tender_ext_ref_section",
+        "mid_tender_ext_ref",
         "onco_financial_offer_allocations",
         "amended_from",
         "tender_status_section",
@@ -167,78 +169,78 @@
             "label": "Number of Distributors"
         },
         {
-            "depends_on": "eval:doc.tender_type == 'Accepted Tenders'",
             "fieldname": "tender_rules_section",
             "fieldtype": "Section Break",
+            "hidden": 1,
             "label": "Tender Rules"
         },
         {
             "allow_on_submit": 1,
             "default": 0,
-            "depends_on": "eval:doc.tender_type == 'Accepted Tenders'",
             "fieldname": "apply_extra_quantities",
             "fieldtype": "Check",
+            "hidden": 1,
             "label": "Apply Extra Quantities"
         },
         {
-            "depends_on": "eval:doc.apply_extra_quantities == 1",
             "fieldname": "extra_quantities_column",
-            "fieldtype": "Column Break"
+            "fieldtype": "Column Break",
+            "hidden": 1
         },
         {
             "allow_on_submit": 1,
-            "depends_on": "eval:doc.apply_extra_quantities == 1",
             "fieldname": "extra_qty_type",
             "fieldtype": "Select",
+            "hidden": 1,
             "label": "Extra Quantity Type",
             "options": "\nPercent\nQuantity"
         },
         {
             "allow_on_submit": 1,
-            "depends_on": "eval:doc.apply_extra_quantities == 1",
             "fieldname": "extra_qty_value",
             "fieldtype": "Float",
+            "hidden": 1,
             "label": "Extra Quantity Value"
         },
         {
             "allow_on_submit": 1,
             "default": 0,
-            "depends_on": "eval:doc.tender_type == 'Accepted Tenders'",
             "fieldname": "apply_extended_time",
             "fieldtype": "Check",
+            "hidden": 1,
             "label": "Apply Extended Time"
         },
         {
-            "depends_on": "eval:doc.apply_extended_time == 1",
             "fieldname": "extended_time_column",
-            "fieldtype": "Column Break"
+            "fieldtype": "Column Break",
+            "hidden": 1
         },
         {
             "allow_on_submit": 1,
-            "depends_on": "eval:doc.apply_extended_time == 1",
             "fieldname": "extended_start_date",
             "fieldtype": "Date",
+            "hidden": 1,
             "label": "Extended Start Date"
         },
         {
             "allow_on_submit": 1,
-            "depends_on": "eval:doc.apply_extended_time == 1",
             "fieldname": "extended_end_date",
             "fieldtype": "Date",
+            "hidden": 1,
             "label": "Extended End Date"
         },
         {
-            "depends_on": "eval:doc.apply_extra_quantities == 1 || doc.apply_extended_time == 1",
             "fieldname": "applying_rules_column",
-            "fieldtype": "Column Break"
+            "fieldtype": "Column Break",
+            "hidden": 1
         },
         {
             "allow_on_submit": 1,
             "default": 0,
-            "depends_on": "eval:doc.apply_extra_quantities == 1 || doc.apply_extended_time == 1",
             "description": "If checked, the extra quantities and/or extended time rules apply from day one of the tender. If unchecked, only the original quantities and dates apply.",
             "fieldname": "applying_rules",
             "fieldtype": "Check",
+            "hidden": 1,
             "label": "Apply Rules (Activate)"
         },
         {
@@ -277,6 +279,18 @@
             "hidden": 1,
             "label": "Tender Supplier Allocations",
             "options": "Tender Supplier Allocation"
+        },
+        {
+            "depends_on": "eval:doc.tender_type == 'Accepted Tenders'",
+            "fieldname": "mid_tender_ext_ref_section",
+            "fieldtype": "Section Break",
+            "label": "Mid-Tender Extensions"
+        },
+        {
+            "depends_on": "eval:doc.tender_type == 'Accepted Tenders'",
+            "fieldname": "mid_tender_ext_ref",
+            "fieldtype": "HTML",
+            "label": "Mid-Tender Extensions Reference"
         },
         {
             "allow_on_submit": 1,

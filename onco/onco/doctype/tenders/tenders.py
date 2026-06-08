@@ -535,8 +535,10 @@ def apply_mid_tender_extensions(tender_name, selections):
 
 		if new_qty is not None:
 			update_values["tender_qty"] = new_qty
+			update_values["extend_qty"] = 1
 		if new_end_date:
 			update_values["tender_end_date"] = new_end_date
+			update_values["extend_time"] = 1
 
 		if update_values:
 			frappe.db.set_value(
