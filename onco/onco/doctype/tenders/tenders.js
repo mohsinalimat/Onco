@@ -1147,29 +1147,23 @@ function build_and_insert_cpo(frm, values, allocations, order_type, price_list, 
 		customer_po_items: cpo_items
 	};
 
-					frappe.call({
-						method: 'frappe.client.insert',
-						args: { doc: cpo_doc },
-						callback: function (r) {
-							if (r.message) {
-								frappe.set_route('Form', 'Customer Purchase Order', r.message.name);
-								let msg = __('Customer Purchase Order created: {0}', [r.message.name]);
-								if (price_list) {
-									msg += __(' with price list: {0}', [price_list]);
-								} else {
-									frappe.msgprint(__('Warning: No price list found for distributor {0} in Tender Price List table. Please set prices manually.', [values.distributor]), __('Price List Missing'));
-								}
-								frappe.show_alert({ message: msg, indicator: 'green' });
+				frappe.call({
+					method: 'frappe.client.insert',
+					args: { doc: cpo_doc },
+					callback: function (r) {
+						if (r.message) {
+							frappe.set_route('Form', 'Customer Purchase Order', r.message.name);
+							let msg = __('Customer Purchase Order created: {0}', [r.message.name]);
+							if (price_list) {
+								msg += __(' with price list: {0}', [price_list]);
+							} else {
+								frappe.msgprint(__('Warning: No price list found for distributor {0} in Tender Price List table. Please set prices manually.', [values.distributor]), __('Price List Missing'));
 							}
+							frappe.show_alert({ message: msg, indicator: 'green' });
 						}
-					});
+					}
 				});
-			} else {
-				frappe.msgprint(__('Customer group not found for distributor {0}.', [values.distributor]));
 			}
-		});
-	}, __('Create Customer Purchase Order'), __('Create'));
-}
 
 
 function upload_fmd_data(frm) {
