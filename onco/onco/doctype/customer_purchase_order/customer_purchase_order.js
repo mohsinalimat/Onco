@@ -238,7 +238,6 @@ function populate_from_tender(frm) {
                     frm.set_value("implemented_by", "Onco");
                     frm.set_value("customer_type", "Distributor");
                     frm.set_value("delivery_date", values.delivery_date);
-                    frm.set_value("price_list", price_list_row ? price_list_row.price_list : "");
 
                     dialog.hide();
 
@@ -258,6 +257,7 @@ function populate_from_tender(frm) {
                             frm.set_value("customer_group", customer_group);
                             frm.set_value("customer_main_group", customer_main_group);
                             frm.set_value("tax_id", customer_tax_id);
+                            frm.set_value("price_list", price_list_row ? price_list_row.price_list : "");
 
                             frm.clear_table("customer_po_items");
                             allocations.forEach(a => {
