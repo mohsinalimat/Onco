@@ -209,11 +209,10 @@ frappe.ui.form.on("Tenders", {
 
 		frm.set_query("distributor", "distributors_price_offer", get_valid_distributors);
 
-		// Filter item_code in item_tender to Local Finished Pharmaceutical Products only
 		frm.set_query("item_code", "item_tender", function () {
 			return {
 				filters: {
-					"item_group": "Local Finished Pharmaceutical Products Item"
+					"item_group": "Finished Pharmaceutical Products Item"
 				}
 			};
 		});

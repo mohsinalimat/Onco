@@ -27,7 +27,7 @@
         },
         {
             "columns": 2,
-            "default": "Local Finished Pharmaceutical Products Item",
+            "default": "Finished Pharmaceutical Products Item",
             "fieldname": "item_group",
             "fieldtype": "Link",
             "in_list_view": 1,
