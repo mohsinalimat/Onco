@@ -396,7 +396,7 @@ def create_accepted_from_submission(source_name):
 	for row in source_doc.tender_supplier or []:
 		if row.supplier:
 			target_doc.append("tender_price_list", {
-				"supplier": row.supplier,
+				"distributor": row.supplier,
 				"price_list": ""
 			})
 	
