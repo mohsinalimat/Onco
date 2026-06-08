@@ -9,6 +9,11 @@ frappe.ui.form.on("Customer Purchase Order", {
         set_customer_main_group_query(frm);
     },
 
+    tender(frm) {
+        if (!frm.doc.tender || frm.doc.customer_po_items.length > 0) return;
+        populate_from_tender(frm);
+    },
+
     customer_main_group(frm) {
         frm.set_value("customer_group", "");
         frm.set_value("customer", "");
@@ -169,6 +174,106 @@ function calculate_totals(frm) {
     });
     frm.set_value("total_qty", total_qty);
     frm.set_value("total_amount", total_amount);
+}
+
+// ========== Populate from Tender ==========
+
+function populate_from_tender(frm) {
+    frappe.call({
+        method: "frappe.client.get",
+        args: {
+            doctype: "Tenders",
+            name: frm.doc.tender
+        },
+        callback(r) {
+            let tender = r.message;
+            if (!tender) return;
+
+            let distributors = (tender.tender_supplier || [])
+                .filter(row => row.supplier)
+                .map(row => row.supplier);
+
+            if (distributors.length === 0) {
+                frappe.msgprint(__('No distributors found in the selected tender.'));
+                return;
+            }
+
+            let dialog = new frappe.ui.Dialog({
+                title: __('Select Distributor'),
+                fields: [
+                    {
+                        fieldname: 'distributor',
+                        fieldtype: 'Link',
+                        label: 'Distributor',
+                        options: 'Customer',
+                        reqd: 1,
+                        get_query: function() {
+                            return { filters: [['name', 'in', distributors]] };
+                        }
+                    },
+                    {
+                        fieldname: 'delivery_date',
+                        fieldtype: 'Date',
+                        label: __('Delivery Date'),
+                        reqd: 1,
+                        default: tender.tender_end_date
+                    }
+                ],
+                primary_action_label: __('Populate'),
+                primary_action(values) {
+                    let allocations = (tender.tender_supplier_allocations || [])
+                        .filter(row => row.distributor === values.distributor);
+
+                    if (allocations.length === 0) {
+                        frappe.msgprint(__('No item allocations found for distributor {0}. Please allocate items first.', [values.distributor]));
+                        return;
+                    }
+
+                    let price_list_row = (tender.tender_price_list || [])
+                        .find(row => row.distributor === values.distributor);
+
+                    dialog.hide();
+
+                    frappe.db.get_value('Customer', values.distributor, ['customer_group', 'tax_id'], function(cust) {
+                        let customer_group = cust ? cust.customer_group : '';
+                        let customer_tax_id = cust ? cust.tax_id : '';
+
+                        if (!customer_group) {
+                            frappe.msgprint(__('Customer group not found for distributor {0}.', [values.distributor]));
+                            return;
+                        }
+
+                        frappe.db.get_value('Customer Group', customer_group, 'parent_customer_group', function(parent) {
+                            let customer_main_group = parent ? parent.parent_customer_group : '';
+
+                            frm.set_value("order_type", tender.category === "Private Tender" ? "Private Tenders Order" : "UPA Tender Order");
+                            frm.set_value("customer", values.distributor);
+                            frm.set_value("customer_group", customer_group);
+                            frm.set_value("customer_main_group", customer_main_group);
+                            frm.set_value("tax_id", customer_tax_id);
+                            frm.set_value("delivery_date", values.delivery_date);
+                            frm.set_value("price_list", price_list_row ? price_list_row.price_list : "");
+
+                            frm.clear_table("customer_po_items");
+                            allocations.forEach(a => {
+                                let row = frm.add_child("customer_po_items");
+                                row.item = a.item;
+                                row.item_name = a.item_name;
+                                row.quantity = a.supply_qty;
+                                row.price = 0;
+                                row.amount = 0;
+                                row.ordered_qty = 0;
+                            });
+                            frm.refresh_field("customer_po_items");
+                            frm.dirty();
+                            frappe.show_alert({ message: __("Customer Purchase Order populated from tender"), indicator: "green" });
+                        });
+                    });
+                }
+            });
+            dialog.show();
+        }
+    });
 }
 
 // ========== Create Sales Order ==========

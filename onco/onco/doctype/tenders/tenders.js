@@ -1078,7 +1078,7 @@ function create_customer_purchase_order_from_tender(frm) {
 		}
 
 		let price_list_row = (frm.doc.tender_price_list || [])
-			.find(row => row.supplier === values.distributor);
+			.find(row => row.distributor === values.distributor);
 
 		let price_list = price_list_row ? price_list_row.price_list : null;
 
