@@ -27,12 +27,13 @@
         },
         {
             "columns": 2,
-            "default": "Finished Pharmaceutical Products Item",
             "fieldname": "item_group",
             "fieldtype": "Link",
             "in_list_view": 1,
             "label": "Item Group",
-            "options": "Item Group"
+            "options": "Item Group",
+            "fetch_from": "item_code.item_group",
+            "read_only": 1
         },
         {
             "columns": 2,

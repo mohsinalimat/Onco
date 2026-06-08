@@ -212,7 +212,7 @@ frappe.ui.form.on("Tenders", {
 		frm.set_query("item_code", "item_tender", function () {
 			return {
 				filters: {
-					"item_group": "Finished Pharmaceutical Products Item"
+					"custom_pharmaceutical_item": 1
 				}
 			};
 		});
