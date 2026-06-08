@@ -184,9 +184,3 @@ function add_onco_technical_offer(frm, offer_data) {
     frm.refresh_field('onco_technical_offer');
 }
 
-// Add Distributor technical offer
-function add_distributor_technical_offer(frm, offer_data) {
-    let new_row = frm.add_child('distributors_technical_offer');
-    Object.assign(new_row, offer_data);
-    frm.refresh_field('distributors_technical_offer');
-}

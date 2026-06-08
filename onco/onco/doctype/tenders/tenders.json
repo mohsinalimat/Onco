@@ -54,8 +54,7 @@
         "onco_technical_offer",
         "distributors_offers_section",
         "distributors_offers_view",
-        "distributors_price_offer",
-        "distributors_technical_offer"
+        "distributors_price_offer"
     ],
     "fields": [
         {
@@ -380,14 +379,6 @@
             "fieldtype": "Table",
             "label": "Distributors Price Offer",
             "options": "Distributors Price Offer"
-        },
-        {
-            "allow_on_submit": 1,
-            "depends_on": "eval:doc.tender_type == 'Accepted Tenders'",
-            "fieldname": "distributors_technical_offer",
-            "fieldtype": "Table",
-            "label": "Distributors Technical Offer",
-            "options": "Distributors Technical Offer"
         },
         {
             "fieldname": "onco_offers_view",

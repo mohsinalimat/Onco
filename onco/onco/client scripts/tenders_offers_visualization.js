@@ -188,9 +188,6 @@ function generate_distributors_offers_html(frm) {
     // Price Offers Section
     html += generate_distributors_price_offers_section(frm);
     
-    // Technical Offers Section
-    html += generate_distributors_technical_offers_section(frm);
-
     html += '</div>';
     return html;
 }
@@ -280,77 +277,6 @@ function generate_distributors_price_offers_section(frm) {
     return html;
 }
 
-// Generate Distributors technical offers section
-function generate_distributors_technical_offers_section(frm) {
-    let html = `
-        <div class="technical-offers-section">
-            <h5 style="color: #8e44ad; margin-bottom: 15px;">
-                <i class="fa fa-file-text" style="margin-right: 5px;"></i>Technical Offers
-            </h5>
-    `;
-
-    if (frm.doc.distributors_technical_offer && frm.doc.distributors_technical_offer.length > 0) {
-        // Group technical offers by distributor
-        let technical_offers_by_distributor = {};
-        frm.doc.distributors_technical_offer.forEach(function(offer) {
-            let distributor = offer.distributor || 'Unknown';
-            if (!technical_offers_by_distributor[distributor]) {
-                technical_offers_by_distributor[distributor] = [];
-            }
-            technical_offers_by_distributor[distributor].push(offer);
-        });
-
-        // Create separate section for each distributor's technical offers
-        Object.keys(technical_offers_by_distributor).forEach(function(distributor) {
-            let distributor_offers = technical_offers_by_distributor[distributor];
-
-            html += `
-                <div class="distributor-technical-section" style="margin-bottom: 25px;">
-                    <h6 style="color: #8e44ad; margin-bottom: 10px; padding: 8px 12px; background: #f8f9fa; border-left: 4px solid #8e44ad; border-radius: 4px;">
-                        <i class="fa fa-user"></i> ${distributor}
-                    </h6>
-                    <div class="technical-offers-grid">
-            `;
-
-            distributor_offers.forEach(function(offer, index) {
-                html += `
-                    <div class="technical-offer-card" style="border: 1px solid #8e44ad; border-radius: 6px; padding: 15px; margin-bottom: 10px; background: white;">
-                        <div class="row">
-                            <div class="col-md-3">
-                                <strong style="color: #8e44ad;">Date of Submission:</strong><br>
-                                <span class="text-primary">${format_date(offer.date_of_submission)}</span>
-                            </div>
-                            <div class="col-md-6">
-                                <strong style="color: #8e44ad;">Subject:</strong><br>
-                                <span>${offer.subject || ''}</span>
-                            </div>
-                            <div class="col-md-3">
-                                <strong style="color: #8e44ad;">Attachment:</strong><br>
-                                ${offer.attachment ? 
-                                    `<a href="${offer.attachment}" target="_blank" class="btn btn-sm btn-primary">
-                                        <i class="fa fa-download"></i> Download
-                                    </a>` : 
-                                    '<span class="text-muted">No attachment</span>'
-                                }
-                            </div>
-                        </div>
-                    </div>
-                `;
-            });
-
-            html += `
-                    </div>
-                </div>
-            `;
-        });
-    } else {
-        html += '<p class="text-muted" style="font-style: italic;">No distributor technical offers available</p>';
-    }
-
-    html += '</div>';
-    return html;
-}
-
 // Utility function to format currency
 function format_currency(amount) {
     if (!amount) return '0.00';
@@ -403,11 +329,4 @@ frappe.ui.form.on('Distributors Price Offer', {
     }
 });
 
-frappe.ui.form.on('Distributors Technical Offer', {
-    distributors_technical_offer_add: function(frm) {
-        setTimeout(() => update_distributors_offers_view(frm), 100);
-    },
-    distributors_technical_offer_remove: function(frm) {
-        setTimeout(() => update_distributors_offers_view(frm), 100);
-    }
-});
+

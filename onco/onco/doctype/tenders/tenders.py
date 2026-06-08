@@ -382,8 +382,6 @@ def create_accepted_from_submission(source_name):
 		target_doc.append("onco_technical_offer", row.as_dict())
 	for row in source_doc.distributors_price_offer or []:
 		target_doc.append("distributors_price_offer", row.as_dict())
-	for row in source_doc.distributors_technical_offer or []:
-		target_doc.append("distributors_technical_offer", row.as_dict())
 	
 	# Copy tender rules
 	target_doc.applying_rules = source_doc.applying_rules

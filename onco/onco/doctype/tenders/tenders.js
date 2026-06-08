@@ -208,7 +208,6 @@ frappe.ui.form.on("Tenders", {
 		};
 
 		frm.set_query("distributor", "distributors_price_offer", get_valid_distributors);
-		frm.set_query("distributor", "distributors_technical_offer", get_valid_distributors);
 
 		// Filter item_code in item_tender to Local Finished Pharmaceutical Products only
 		frm.set_query("item_code", "item_tender", function () {
@@ -531,7 +530,6 @@ function toggle_offer_sections(frm) {
 
 	frm.toggle_display("distributors_offers_section", is_distributor);
 	frm.set_df_property("distributors_price_offer", "hidden", !is_distributor);
-	frm.set_df_property("distributors_technical_offer", "hidden", !is_distributor);
 }
 
 function set_naming_series_options(frm) {
@@ -852,9 +850,6 @@ function open_add_technical_offer_dialog(frm) {
 		primary_action(values) {
 			if (values.offer_for === 'Oncopharm') {
 				let row = frm.add_child('onco_technical_offer');
-				Object.assign(row, values);
-			} else {
-				let row = frm.add_child('distributors_technical_offer');
 				Object.assign(row, values);
 			}
 			frm.refresh_fields();
