@@ -180,6 +180,25 @@ def create_sales_order(cpo_name, items_data):
 	if not so_items:
 		frappe.throw(_("No items with valid quantities provided"))
 
+	pl_name = cpo.price_list
+	if not pl_name and cpo.customer:
+		customer_pl = frappe.db.get_value(
+			"Item Price",
+			{"selling": 1, "customer": cpo.customer},
+			"price_list",
+			order_by="creation desc"
+		)
+		if not customer_pl:
+			customer_pl = frappe.db.get_value(
+				"Item Price",
+				{"selling": 1},
+				"price_list",
+				order_by="creation desc"
+			)
+		pl_name = customer_pl or "Standard Selling"
+
+	pl_currency = frappe.db.get_value("Price List", pl_name, "currency") or ""
+
 	so = frappe.get_doc({
 		"doctype": "Sales Order",
 		"customer": cpo.customer,
@@ -192,7 +211,9 @@ def create_sales_order(cpo_name, items_data):
 		"implemented_by": cpo.implemented_by,
 		"customer_type": cpo.customer_type,
 		"requested_to_": cpo.requested_to,
-		"selling_price_list": cpo.price_list,
+		"selling_price_list": pl_name,
+		"price_list_currency": pl_currency,
+		"plc_conversion_rate": 1.0,
 		"custom_customer_po": cpo.name,
 		"custom_tender": cpo.tender if cpo.tender else None
 	})
