@@ -253,10 +253,10 @@ function populate_from_tender(frm) {
                         frappe.db.get_value('Customer Group', customer_group, 'parent_customer_group', function(parent) {
                             let customer_main_group = parent ? parent.parent_customer_group : '';
 
-                            frm.set_value("customer", values.distributor);
-                            frm.set_value("customer_group", customer_group);
                             frm.set_value("customer_main_group", customer_main_group);
+                            frm.set_value("customer_group", customer_group);
                             frm.set_value("tax_id", customer_tax_id);
+                            frm.set_value("customer", values.distributor);
                             frm.set_value("price_list", price_list_row ? price_list_row.price_list : "");
 
                             frm.clear_table("customer_po_items");
