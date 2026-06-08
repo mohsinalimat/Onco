@@ -22,17 +22,6 @@
         "tender_end_date",
         "supplying_by",
         "number_of_distributors",
-        "tender_rules_section",
-        "apply_extra_quantities",
-        "extra_quantities_column",
-        "extra_qty_type",
-        "extra_qty_value",
-        "apply_extended_time",
-        "extended_time_column",
-        "extended_start_date",
-        "extended_end_date",
-        "applying_rules_column",
-        "applying_rules",
         "items_section",
         "items_fmd",
         "item_tender",
@@ -167,81 +156,6 @@
             "fieldname": "number_of_distributors",
             "fieldtype": "Int",
             "label": "Number of Distributors"
-        },
-        {
-            "fieldname": "tender_rules_section",
-            "fieldtype": "Section Break",
-            "hidden": 1,
-            "label": "Tender Rules"
-        },
-        {
-            "allow_on_submit": 1,
-            "default": 0,
-            "fieldname": "apply_extra_quantities",
-            "fieldtype": "Check",
-            "hidden": 1,
-            "label": "Apply Extra Quantities"
-        },
-        {
-            "fieldname": "extra_quantities_column",
-            "fieldtype": "Column Break",
-            "hidden": 1
-        },
-        {
-            "allow_on_submit": 1,
-            "fieldname": "extra_qty_type",
-            "fieldtype": "Select",
-            "hidden": 1,
-            "label": "Extra Quantity Type",
-            "options": "\nPercent\nQuantity"
-        },
-        {
-            "allow_on_submit": 1,
-            "fieldname": "extra_qty_value",
-            "fieldtype": "Float",
-            "hidden": 1,
-            "label": "Extra Quantity Value"
-        },
-        {
-            "allow_on_submit": 1,
-            "default": 0,
-            "fieldname": "apply_extended_time",
-            "fieldtype": "Check",
-            "hidden": 1,
-            "label": "Apply Extended Time"
-        },
-        {
-            "fieldname": "extended_time_column",
-            "fieldtype": "Column Break",
-            "hidden": 1
-        },
-        {
-            "allow_on_submit": 1,
-            "fieldname": "extended_start_date",
-            "fieldtype": "Date",
-            "hidden": 1,
-            "label": "Extended Start Date"
-        },
-        {
-            "allow_on_submit": 1,
-            "fieldname": "extended_end_date",
-            "fieldtype": "Date",
-            "hidden": 1,
-            "label": "Extended End Date"
-        },
-        {
-            "fieldname": "applying_rules_column",
-            "fieldtype": "Column Break",
-            "hidden": 1
-        },
-        {
-            "allow_on_submit": 1,
-            "default": 0,
-            "description": "If checked, the extra quantities and/or extended time rules apply from day one of the tender. If unchecked, only the original quantities and dates apply.",
-            "fieldname": "applying_rules",
-            "fieldtype": "Check",
-            "hidden": 1,
-            "label": "Apply Rules (Activate)"
         },
         {
             "fieldname": "items_section",

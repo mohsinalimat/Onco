@@ -110,7 +110,6 @@ frappe.ui.form.on("Tenders", {
 		}
 
 		// Set conditional field visibility
-		toggle_tender_rules_fields(frm);
 		toggle_item_tables(frm);
 		toggle_offer_sections(frm);
 		set_naming_series_options(frm);
@@ -231,11 +230,6 @@ frappe.ui.form.on("Tenders", {
 	},
 
 	tender_type(frm) {
-		// Reset rules if switching to market data tenders
-		if (frm.doc.tender_type === "Tenders for market data") {
-			frm.set_value("apply_extended_time", 0);
-			frm.set_value("apply_extra_quantities", 0);
-		}
 		toggle_item_tables(frm);
 		toggle_offer_sections(frm);
 		set_naming_series_options(frm);
@@ -291,53 +285,6 @@ frappe.ui.form.on("Tenders", {
 		}
 	},
 
-	apply_extra_quantities(frm) {
-		toggle_tender_rules_fields(frm);
-		frm.refresh_field("extra_quantities_column");
-	},
-
-	apply_extended_time(frm) {
-		toggle_tender_rules_fields(frm);
-		frm.refresh_field("extended_time_column");
-	},
-
-	// applying_rules is the master switch that triggers per-item extension
-	// Because the parent doc may be submitted (docstatus=1), we cannot do a normal save.
-	// We instead call a whitelisted server method that writes the child rows directly.
-	applying_rules(frm) {
-		if (!frm.doc.applying_rules) {
-			// User unchecked — nothing to do, server will skip logic on next save
-			return;
-		}
-
-		let has_qty_rule = frm.doc.apply_extra_quantities && frm.doc.extra_qty_type && frm.doc.extra_qty_value;
-		let has_time_rule = frm.doc.apply_extended_time && frm.doc.extended_start_date && frm.doc.extended_end_date;
-
-		if (!has_qty_rule && !has_time_rule) {
-			frappe.msgprint(__("Please configure the extension rules (quantity type/value or extended dates) before activating."));
-			frm.set_value("applying_rules", 0);
-			return;
-		}
-
-		if (!frm.doc.item_tender || frm.doc.item_tender.length === 0) {
-			frappe.msgprint(__("No items found in the tender to configure extensions for."));
-			frm.set_value("applying_rules", 0);
-			return;
-		}
-
-		open_item_extension_dialog(frm);
-	},
-
-	extra_qty_type(frm) {
-		if (frm.doc.apply_extra_quantities && frm.doc.extra_qty_type) {
-			if (frm.doc.extra_qty_type === "Percent") {
-				frm.set_df_property("extra_qty_value", "label", "Extra Quantity Percent (%)");
-			} else if (frm.doc.extra_qty_type === "Quantity") {
-				frm.set_df_property("extra_qty_value", "label", "Extra Quantity Value");
-			}
-		}
-	},
-
 	tender_status_onchange(frm) {
 		// Auto-calculate remaining quantity and fulfillment percent
 		frm.doc.tender_status.forEach(row => {
@@ -347,7 +294,6 @@ frappe.ui.form.on("Tenders", {
 			}
 		});
 		frm.refresh_field("tender_status");
-		toggle_tender_rules_fields(frm);
 	}
 });
 
@@ -571,126 +517,6 @@ function set_naming_series_options(frm) {
 			message: __('Please select a Category (UPA Tender or Private Tender) to set the correct naming series.')
 		});
 	}
-}
-
-function toggle_tender_rules_fields(frm) {
-	// Only show tender rules in Accepted Tenders
-	if (frm.doc.tender_type !== 'Accepted Tenders') return;
-
-	// Check fulfillment percentage - only allow changes when >80% supplied
-	if (frm.doc.tender_status && frm.doc.tender_status.length > 0) {
-		let total_tender_qty = 0;
-		let total_supplied_qty = 0;
-		frm.doc.tender_status.forEach(row => {
-			total_tender_qty += row.tender_quantity || 0;
-			total_supplied_qty += row.supplied_quantity || 0;
-		});
-		let fulfillment_pct = total_tender_qty > 0 ? (total_supplied_qty / total_tender_qty) * 100 : 0;
-		let can_edit = fulfillment_pct >= 80;
-
-		[
-			"apply_extra_quantities",
-			"extra_qty_type",
-			"extra_qty_value",
-			"apply_extended_time",
-			"extended_start_date",
-			"extended_end_date",
-			"applying_rules"
-		].forEach(field => {
-			frm.set_df_property(field, "read_only", !can_edit);
-		});
-	}
-}
-
-function open_item_extension_dialog(frm) {
-	let items = frm.doc.item_tender || [];
-	if (items.length === 0) {
-		frappe.msgprint(__("No items found in the tender."));
-		return;
-	}
-
-	let has_qty_rule = frm.doc.apply_extra_quantities && frm.doc.extra_qty_type && frm.doc.extra_qty_value;
-	let has_time_rule = frm.doc.apply_extended_time && frm.doc.extended_start_date && frm.doc.extended_end_date;
-
-	// Build description lines for context
-	let desc_lines = [];
-	if (has_qty_rule) {
-		desc_lines.push(`Quantity extension: <b>${frm.doc.extra_qty_type === 'Percent' ? frm.doc.extra_qty_value + '%' : frm.doc.extra_qty_value + ' units'}</b> extra`);
-	}
-	if (has_time_rule) {
-		desc_lines.push(`Time extension: <b>${frm.doc.extended_start_date}</b> &rarr; <b>${frm.doc.extended_end_date}</b>`);
-	}
-
-	// Build one row per item with qty and time checkboxes
-	let dialog_fields = [
-		{
-			fieldtype: 'HTML',
-			fieldname: 'description_html',
-			options: `<div class="alert alert-info" style="margin-bottom:12px;">
-				<b>Extension Rules Configured:</b><br>${desc_lines.join('<br>')}
-				<br><small>Select which items to extend. Unchecked items keep their original quantities and dates.</small>
-			</div>`
-		}
-	];
-
-	items.forEach((item, idx) => {
-		if (!item.item_code) return;
-		dialog_fields.push({ fieldtype: 'Section Break', label: item.item_name || item.item_code });
-		dialog_fields.push({
-			fieldname: `ext_qty_${idx}`,
-			fieldtype: 'Check',
-			label: __('Extend Quantity?'),
-			default: item.extend_qty || 0,
-			hidden: has_qty_rule ? 0 : 1
-		});
-		dialog_fields.push({
-			fieldname: `ext_time_${idx}`,
-			fieldtype: 'Check',
-			label: __('Extend Time?'),
-			default: item.extend_time || 0,
-			hidden: has_time_rule ? 0 : 1
-		});
-	});
-
-	let dialog = new frappe.ui.Dialog({
-		title: __('Select Items to Extend'),
-		fields: dialog_fields,
-		primary_action_label: __('Apply Extension Selections'),
-		primary_action(values) {
-			// Build list of {name, extend_qty, extend_time} for each item row
-			let selections = [];
-			items.forEach((item, idx) => {
-				if (!item.item_code) return;
-				selections.push({
-					name: item.name,
-					extend_qty: values[`ext_qty_${idx}`] ? 1 : 0,
-					extend_time: values[`ext_time_${idx}`] ? 1 : 0
-				});
-			});
-
-			frappe.call({
-				method: 'onco.onco.doctype.tenders.tenders.save_item_extension_flags',
-				args: {
-					tender_name: frm.doc.name,
-					selections: selections
-				},
-				freeze: true,
-				freeze_message: __('Saving extension selections...'),
-				callback: function(r) {
-					if (!r.exc) {
-						dialog.hide();
-						frm.reload_doc();
-						frappe.show_alert({
-							message: __('Extension selections saved. Rules will apply on next validation.'),
-							indicator: 'green'
-						});
-					}
-				}
-			});
-		}
-	});
-
-	dialog.show();
 }
 
 function open_mid_tender_extension_dialog(frm) {

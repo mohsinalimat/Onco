@@ -53,62 +53,6 @@ class TestTenders(FrappeTestCase):
 		self.assertIsNotNone(self.tender_doc.name)
 		self.assertEqual(self.tender_doc.tender_type, "Awarded Tenders")
 
-	def test_apply_extra_quantities_percent(self):
-		"""Test applying extra quantities as percent"""
-		self.tender_doc = self.create_test_tender()
-		# Add a test item tender
-		self.tender_doc.append("item_tender", {
-			"item_code": self._get_or_create_item("TEST-ITEM-001").name,
-			"item_name": "Test Item",
-			"tender_qty": 100
-		})
-
-		# Apply extra quantities
-		self.tender_doc.apply_extra_quantities = 1
-		self.tender_doc.extra_qty_type = "Percent"
-		self.tender_doc.extra_qty_value = 10
-		self.tender_doc.apply_tender_rules()
-
-		# Check if quantity increased
-		self.assertGreater(self.tender_doc.item_tender[0].tender_qty, 100)
-
-	def test_apply_extra_quantities_fixed(self):
-		"""Test applying extra quantities as fixed amount"""
-		self.tender_doc = self.create_test_tender()
-		# Add a test item tender
-		self.tender_doc.append("item_tender", {
-			"item_code": self._get_or_create_item("TEST-ITEM-002").name,
-			"item_name": "Test Item",
-			"tender_qty": 100
-		})
-
-		# Apply extra quantities
-		self.tender_doc.apply_extra_quantities = 1
-		self.tender_doc.extra_qty_type = "Quantity"
-		self.tender_doc.extra_qty_value = 25
-		self.tender_doc.apply_tender_rules()
-
-		# Check if quantity increased by 25
-		self.assertEqual(self.tender_doc.item_tender[0].tender_qty, 125)
-
-	def test_apply_extended_time(self):
-		"""Test applying extended time to tender"""
-		original_end = (datetime.now() + timedelta(days=30)).date()
-		extended_end = (datetime.now() + timedelta(days=60)).date()
-
-		self.tender_doc = self.create_test_tender(
-			tender_end_date=original_end
-		)
-
-		# Apply extended time
-		self.tender_doc.apply_extended_time = 1
-		self.tender_doc.extended_start_date = datetime.now().date()
-		self.tender_doc.extended_end_date = extended_end
-		self.tender_doc.apply_tender_rules()
-
-		# Check if dates were updated
-		self.assertEqual(self.tender_doc.tender_end_date, extended_end)
-
 	def test_tender_date_validation(self):
 		"""Test that start date must be before end date"""
 		same_date = datetime.now().date()
