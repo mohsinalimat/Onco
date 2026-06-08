@@ -232,6 +232,14 @@ function populate_from_tender(frm) {
                     let price_list_row = (tender.tender_price_list || [])
                         .find(row => row.distributor === values.distributor);
 
+                    frm.set_value("sales_type", "Sales");
+                    frm.set_value("order_type", tender.category === "Private Tender" ? "Private Tenders Order" : "UPA Tender Order");
+                    frm.set_value("requested_to", "ONCO");
+                    frm.set_value("implemented_by", "Onco");
+                    frm.set_value("customer_type", "Distributor");
+                    frm.set_value("delivery_date", values.delivery_date);
+                    frm.set_value("price_list", price_list_row ? price_list_row.price_list : "");
+
                     dialog.hide();
 
                     frappe.db.get_value('Customer', values.distributor, ['customer_group', 'tax_id'], function(cust) {
@@ -246,13 +254,10 @@ function populate_from_tender(frm) {
                         frappe.db.get_value('Customer Group', customer_group, 'parent_customer_group', function(parent) {
                             let customer_main_group = parent ? parent.parent_customer_group : '';
 
-                            frm.set_value("order_type", tender.category === "Private Tender" ? "Private Tenders Order" : "UPA Tender Order");
                             frm.set_value("customer", values.distributor);
                             frm.set_value("customer_group", customer_group);
                             frm.set_value("customer_main_group", customer_main_group);
                             frm.set_value("tax_id", customer_tax_id);
-                            frm.set_value("delivery_date", values.delivery_date);
-                            frm.set_value("price_list", price_list_row ? price_list_row.price_list : "");
 
                             frm.clear_table("customer_po_items");
                             allocations.forEach(a => {
