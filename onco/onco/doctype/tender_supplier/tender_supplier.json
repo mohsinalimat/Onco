@@ -25,7 +25,7 @@
             "in_list_view": 1,
             "label": "Distributor Name",
             "options": "Customer",
-            "reqd": 1,
+            "mandatory_depends_on": "eval:doc.supplying_by != 'By Oncopharm Only'",
             "read_only_depends_on": "eval:doc.supplying_by == 'By Oncopharm Only'"
         },
   {
