@@ -685,117 +685,151 @@ function open_item_extension_dialog(frm) {
 }
 
 function open_mid_tender_extension_dialog(frm) {
-	let has_qty_rule = frm.doc.apply_extra_quantities && frm.doc.extra_qty_type && frm.doc.extra_qty_value;
-	let has_time_rule = frm.doc.apply_extended_time && frm.doc.extended_start_date && frm.doc.extended_end_date;
-
-	if (!has_qty_rule && !has_time_rule) {
-		frappe.msgprint(__("Please configure extension rules (Apply Extra Quantities and/or Apply Extended Time) first."));
-		return;
-	}
-
 	let items = frm.doc.item_tender || [];
 	if (items.length === 0) {
 		frappe.msgprint(__("No items found in the tender."));
 		return;
 	}
 
-	let desc_lines = [];
-	if (has_qty_rule) {
-		desc_lines.push(`Extra Quantity: <b>${frm.doc.extra_qty_type === 'Percent' ? frm.doc.extra_qty_value + '%' : frm.doc.extra_qty_value + ' units'}</b>`);
-	}
-	if (has_time_rule) {
-		desc_lines.push(`Extended Time: <b>${frm.doc.extended_start_date}</b> &rarr; <b>${frm.doc.extended_end_date}</b>`);
-	}
+	function build_preview_html(dialog) {
+		let apply_qty = dialog.get_value('apply_qty');
+		let qty_type = dialog.get_value('qty_type');
+		let qty_value = dialog.get_value('qty_value');
+		let apply_time = dialog.get_value('apply_time');
+		let ext_start_date = dialog.get_value('ext_start_date');
+		let ext_end_date = dialog.get_value('ext_end_date');
 
-	let table_html = `
-		<div class="alert alert-info" style="margin-bottom:12px;">
-			<b>Current Extension Rules:</b><br>${desc_lines.join(' | ')}
-		</div>
-		<div style="max-height:400px; overflow-y:auto;">
-		<table class="table table-bordered" style="margin-bottom:0;">
-			<thead>
-				<tr>
-					<th style="width:50px;">Apply</th>
-					<th>Item Code</th>
-					<th>Item Name</th>
-					<th style="width:110px;">Current Qty</th>
-					${has_qty_rule ? '<th style="width:110px; background:#d4edda;">New Qty</th>' : ''}
-					<th style="width:120px;">Current End Date</th>
-					${has_time_rule ? '<th style="width:120px; background:#d4edda;">New End Date</th>' : ''}
-				</tr>
-			</thead>
-			<tbody>
-	`;
+		let has_qty = apply_qty && qty_type && qty_value;
+		let has_time = apply_time && ext_start_date && ext_end_date;
 
-	let selections = [];
-	items.forEach((item, idx) => {
-		if (!item.item_code) return;
+		let desc_lines = [];
+		if (has_qty) {
+			desc_lines.push(`Extra Quantity: <b>${qty_type === 'Percent' ? qty_value + '%' : qty_value + ' units'}</b>`);
+		}
+		if (has_time) {
+			desc_lines.push(`Extended Time: <b>${ext_start_date}</b> &rarr; <b>${ext_end_date}</b>`);
+		}
 
-		let new_qty = item.tender_qty || 0;
-		if (has_qty_rule) {
-			if (frm.doc.extra_qty_type === 'Percent') {
-				new_qty = (item.tender_qty || 0) + ((item.tender_qty || 0) * (frm.doc.extra_qty_value / 100));
-			} else {
-				new_qty = (item.tender_qty || 0) + frm.doc.extra_qty_value;
+		let html = '';
+		if (has_qty || has_time) {
+			html += `<div class="alert alert-info" style="margin-bottom:12px;"><b>Extension Rules:</b><br>${desc_lines.join(' | ')}</div>`;
+		}
+
+		html += `<div style="max-height:350px; overflow-y:auto;"><table class="table table-bordered" style="margin-bottom:0;"><thead><tr>
+			<th style="width:50px;">Apply</th>
+			<th>Item Code</th>
+			<th>Item Name</th>
+			<th style="width:110px;">Current Qty</th>
+			${has_qty ? '<th style="width:110px; background:#d4edda;">New Qty</th>' : ''}
+			<th style="width:120px;">Current End Date</th>
+			${has_time ? '<th style="width:120px; background:#d4edda;">New End Date</th>' : ''}
+		</tr></thead><tbody>`;
+
+		items.forEach((item, idx) => {
+			if (!item.item_code) return;
+
+			let new_qty = item.tender_qty || 0;
+			if (has_qty) {
+				new_qty = qty_type === 'Percent'
+					? (item.tender_qty || 0) + ((item.tender_qty || 0) * (qty_value / 100))
+					: (item.tender_qty || 0) + qty_value;
 			}
-		}
 
-		let new_end_date = item.tender_end_date || '';
-		if (has_time_rule) {
-			new_end_date = frm.doc.extended_end_date;
-		}
+			let new_end_date = item.tender_end_date || '';
+			if (has_time) {
+				new_end_date = ext_end_date;
+			}
 
-		selections.push({
-			idx: idx,
-			name: item.name,
-			item_code: item.item_code,
-			item_name: item.item_name,
-			new_qty: has_qty_rule ? new_qty : null,
-			new_end_date: has_time_rule ? new_end_date : null
-		});
+			let qty_cell = `<td>${item.tender_qty || 0}</td>`;
+			if (has_qty) {
+				let diff = new_qty - (item.tender_qty || 0);
+				qty_cell += `<td style="background:#d4edda;"><b>${new_qty.toFixed(2)}</b> <span class="text-muted" style="font-size:10px;">(+${diff.toFixed(2)})</span></td>`;
+			}
 
-		let qty_cell = `<td>${item.tender_qty || 0}</td>`;
-		if (has_qty_rule) {
-			qty_cell += `<td style="background:#d4edda;"><b>${new_qty.toFixed(2)}</b> <span class="text-muted" style="font-size:10px;">(+${(new_qty - (item.tender_qty || 0)).toFixed(2)})</span></td>`;
-		}
+			let date_cell = `<td>${item.tender_end_date || ''}</td>`;
+			if (has_time) {
+				date_cell += `<td style="background:#d4edda;"><b>${new_end_date}</b></td>`;
+			}
 
-		let date_cell = `<td>${item.tender_end_date || ''}</td>`;
-		if (has_time_rule) {
-			date_cell += `<td style="background:#d4edda;"><b>${new_end_date}</b></td>`;
-		}
-
-		table_html += `
-			<tr>
+			html += `<tr>
 				<td style="text-align:center;"><input type="checkbox" class="mid-extend-chk" data-idx="${idx}" checked></td>
 				<td>${item.item_code}</td>
 				<td>${item.item_name || ''}</td>
 				${qty_cell}
 				${date_cell}
-			</tr>
-		`;
-	});
+			</tr>`;
+		});
 
-	table_html += `
-			</tbody>
-		</table>
-		</div>
-	`;
+		html += '</tbody></table></div>';
+		return html;
+	}
 
 	let dialog = new frappe.ui.Dialog({
 		title: __('Mid-Tender Extension'),
 		fields: [
+			{ fieldtype: 'Section Break', label: 'Quantity Extension' },
 			{
-				fieldtype: 'HTML',
-				fieldname: 'extension_preview',
-				options: table_html
+				fieldname: 'apply_qty', fieldtype: 'Check', label: 'Apply Extra Quantity', default: 0,
+				change: () => refresh_preview()
+			},
+			{
+				fieldname: 'qty_type', fieldtype: 'Select', label: 'Type',
+				options: '\nPercent\nQuantity', default: 'Percent',
+				change: () => refresh_preview()
+			},
+			{
+				fieldname: 'qty_value', fieldtype: 'Float', label: 'Value',
+				change: () => refresh_preview()
+			},
+			{ fieldtype: 'Section Break', label: 'Time Extension' },
+			{
+				fieldname: 'apply_time', fieldtype: 'Check', label: 'Apply Extended Time', default: 0,
+				change: () => refresh_preview()
+			},
+			{
+				fieldname: 'ext_start_date', fieldtype: 'Date', label: 'Extended Start Date',
+				change: () => refresh_preview()
+			},
+			{
+				fieldname: 'ext_end_date', fieldtype: 'Date', label: 'Extended End Date',
+				change: () => refresh_preview()
+			},
+			{ fieldtype: 'Section Break', label: 'Preview' },
+			{
+				fieldname: 'preview_html', fieldtype: 'HTML',
+				options: '<p class="text-muted">Configure extension options above to see before/after preview.</p>'
 			}
 		],
 		primary_action_label: __('Apply Extensions'),
 		primary_action(values) {
+			let has_qty = values.apply_qty && values.qty_type && values.qty_value;
+			let has_time = values.apply_time && values.ext_start_date && values.ext_end_date;
+
+			if (!has_qty && !has_time) {
+				frappe.msgprint(__("Please configure at least one extension (quantity and/or time)."));
+				return;
+			}
+
 			let selected = [];
 			dialog.$wrapper.find('.mid-extend-chk:checked').each(function() {
 				let idx = parseInt($(this).data('idx'));
-				selected.push(selections[idx]);
+				let item = items[idx];
+				if (!item) return;
+
+				let new_qty = item.tender_qty || 0;
+				if (has_qty) {
+					new_qty = values.qty_type === 'Percent'
+						? (item.tender_qty || 0) + ((item.tender_qty || 0) * (values.qty_value / 100))
+						: (item.tender_qty || 0) + values.qty_value;
+				}
+
+				selected.push({
+					name: item.name,
+					item_code: item.item_code,
+					item_name: item.item_name,
+					new_qty: has_qty ? new_qty : null,
+					new_end_date: has_time ? values.ext_end_date : null
+				});
 			});
 
 			if (selected.length === 0) {
@@ -824,6 +858,11 @@ function open_mid_tender_extension_dialog(frm) {
 			});
 		}
 	});
+
+	function refresh_preview() {
+		let wrapper = dialog.fields_dict.preview_html.$wrapper;
+		wrapper.html(build_preview_html(dialog));
+	}
 
 	dialog.show();
 }
