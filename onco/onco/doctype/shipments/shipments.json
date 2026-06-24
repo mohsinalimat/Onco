@@ -39,6 +39,7 @@
   "4_restricted_release_statu_section",
   "restricted_release_status",
   "date_of_submission_restricted",
+  "restricted_release_no",
   "restricted_release_date",
   "5_customs_release_status_section",
   "customs_release_status",
@@ -294,6 +295,12 @@
    "fieldname": "date_of_submission_restricted",
    "fieldtype": "Date",
    "label": "Date Of Submission (Restricted)"
+  },
+  {
+   "depends_on": "eval:doc.restricted_release_status==1",
+   "fieldname": "restricted_release_no",
+   "fieldtype": "Data",
+   "label": "Restricted Release No"
   },
   {
    "depends_on": "eval:doc.restricted_release_status==1",
