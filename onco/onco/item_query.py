@@ -16,7 +16,7 @@ def filter_pharma_items_by_supplier(doctype, txt, searchfield, start, page_len, 
         WHERE i.custom_pharmaceutical_item = 1
         AND i.disabled = 0
         AND (i.default_supplier = %(supplier)s OR s.supplier = %(supplier)s)
-        AND i.name LIKE %(txt)s
+        AND (i.name LIKE %(txt)s OR i.item_name LIKE %(txt)s)
         ORDER BY i.name
         LIMIT %(page_len)s
     """, {
@@ -38,7 +38,7 @@ def filter_items_by_supplier(doctype, txt, searchfield, start, page_len, filters
         LEFT JOIN `tabItem Supplier` s ON s.parent = i.name AND s.parenttype = 'Item'
         WHERE i.disabled = 0
         AND (i.default_supplier = %(supplier)s OR s.supplier = %(supplier)s)
-        AND i.name LIKE %(txt)s
+        AND (i.name LIKE %(txt)s OR i.item_name LIKE %(txt)s)
         ORDER BY i.name
         LIMIT %(page_len)s
     """, {
