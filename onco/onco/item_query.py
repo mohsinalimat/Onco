@@ -1,7 +1,12 @@
+import json
+
 import frappe
+
 
 @frappe.whitelist()
 def filter_pharma_items_by_supplier(doctype, txt, searchfield, start, page_len, filters):
+    if isinstance(filters, str):
+        filters = json.loads(filters)
     supplier = filters.get("supplier")
 
     return frappe.db.sql("""
@@ -10,7 +15,6 @@ def filter_pharma_items_by_supplier(doctype, txt, searchfield, start, page_len, 
         LEFT JOIN `tabItem Supplier` s ON s.parent = i.name AND s.parenttype = 'Item'
         WHERE i.custom_pharmaceutical_item = 1
         AND i.disabled = 0
-        AND i.has_variants = 0
         AND (i.default_supplier = %(supplier)s OR s.supplier = %(supplier)s)
         AND i.name LIKE %(txt)s
         ORDER BY i.name
@@ -21,8 +25,11 @@ def filter_pharma_items_by_supplier(doctype, txt, searchfield, start, page_len, 
         "page_len": int(page_len)
     })
 
+
 @frappe.whitelist()
 def filter_items_by_supplier(doctype, txt, searchfield, start, page_len, filters):
+    if isinstance(filters, str):
+        filters = json.loads(filters)
     supplier = filters.get("supplier")
 
     return frappe.db.sql("""
@@ -30,7 +37,6 @@ def filter_items_by_supplier(doctype, txt, searchfield, start, page_len, filters
         FROM `tabItem` i
         LEFT JOIN `tabItem Supplier` s ON s.parent = i.name AND s.parenttype = 'Item'
         WHERE i.disabled = 0
-        AND i.has_variants = 0
         AND (i.default_supplier = %(supplier)s OR s.supplier = %(supplier)s)
         AND i.name LIKE %(txt)s
         ORDER BY i.name
