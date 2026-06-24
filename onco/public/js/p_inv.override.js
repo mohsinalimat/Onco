@@ -120,6 +120,7 @@ frappe.ui.form.on('Purchase Invoice', {
                 return {
                     filters: [
                         ['Item', 'default_supplier', '=', frm.doc.supplier],
+                        'OR',
                         ['Item Supplier', 'supplier', '=', frm.doc.supplier]
                     ]
                 };
@@ -133,6 +134,7 @@ frappe.ui.form.on('Purchase Invoice', {
                 return {
                     filters: [
                         ['Item', 'default_supplier', '=', frm.doc.supplier],
+                        'OR',
                         ['Item Supplier', 'supplier', '=', frm.doc.supplier]
                     ]
                 };
