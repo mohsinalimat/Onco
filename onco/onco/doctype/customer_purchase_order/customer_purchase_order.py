@@ -93,12 +93,12 @@ class CustomerPurchaseOrder(Document):
 			# Extract counter from name (format: PREFIX-YYYY-XXXXX or PREFIX-YYYY-XXXXX-PONUM)
 			# Counter is after the year part
 			parts = existing[0].name.split("-")
-			if len(parts) >= 4:
+			if len(parts) >= 5:
 				try:
-					# The counter should be the 4th part (index 3)
+					# Counter is at index 4 (after 3 prefix segments + year)
 					# Example: CPO-PRV-DIR-2020-00001-PO123
 					#          [0] [1] [2] [3]  [4]   [5]
-					last_counter = int(parts[3])
+					last_counter = int(parts[4])
 					return last_counter + 1
 				except (ValueError, IndexError):
 					# If counter is not a valid integer, start from 1

@@ -87,10 +87,10 @@ class CustomPurchaseInvoice(PurchaseInvoice):
 					if po.custom_importation_approval:
 						return "imported_pharma"
 					
-					# Check PO naming pattern (PO-IMP or PO-LOC)
-					if item.purchase_order.startswith("PO-IMP"):
+					# Check PO naming pattern (PO-IMP/IMP or PO-LOC/LOC)
+					if item.purchase_order.startswith("PO-IMP") or item.purchase_order.startswith("IMP"):
 						return "imported_pharma"
-					elif item.purchase_order.startswith("PO-LOC"):
+					elif item.purchase_order.startswith("PO-LOC") or item.purchase_order.startswith("LOC"):
 						# Check if items are pharmaceutical
 						if self.has_pharmaceutical_items():
 							return "local_pharma"
