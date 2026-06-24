@@ -283,7 +283,10 @@ fixtures = [
 					"Landed Cost Taxes and Charges-custom_posting_date",
 					"Landed Cost Taxes and Charges-custom_allocated_to_shipment",
 					"Landed Cost Taxes and Charges-custom_already_used",
-					"Landed Cost Taxes and Charges-custom_remaining"
+					"Landed Cost Taxes and Charges-custom_remaining",
+					"Price List-custom_price_list_type",
+					"Price List-custom_apply_for_customers",
+					"Price List-custom_apply_for_customer_groups"
 				]
 			]
 		]
