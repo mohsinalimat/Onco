@@ -56,29 +56,27 @@ frappe.ui.form.on('Purchase Order', {
         }
 
         // Filter item_code in child table to only pharmaceutical items matching PO supplier
-        if (frm.doc.supplier && frm.fields_dict.items && frm.fields_dict.items.grid) {
-            frm.fields_dict.items.grid.get_field('item_code').get_query = function () {
-                return {
-                    query: "onco.onco.item_query.filter_pharma_items_by_supplier",
-                    filters: {
-                        supplier: frm.doc.supplier
-                    }
-                };
+        frm.set_query("item_code", "items", function () {
+            if (!frm.doc.supplier) return { filters: [] };
+            return {
+                query: "onco.onco.item_query.filter_pharma_items_by_supplier",
+                filters: {
+                    supplier: frm.doc.supplier
+                }
             };
-        }
+        });
     },
 
     supplier: function (frm) {
-        if (frm.doc.supplier && frm.fields_dict.items && frm.fields_dict.items.grid) {
-            frm.fields_dict.items.grid.get_field('item_code').get_query = function () {
-                return {
-                    query: "onco.onco.item_query.filter_pharma_items_by_supplier",
-                    filters: {
-                        supplier: frm.doc.supplier
-                    }
-                };
+        frm.set_query("item_code", "items", function () {
+            if (!frm.doc.supplier) return { filters: [] };
+            return {
+                query: "onco.onco.item_query.filter_pharma_items_by_supplier",
+                filters: {
+                    supplier: frm.doc.supplier
+                }
             };
-        }
+        });
     },
 
     custom_importation_approval: function (frm) {

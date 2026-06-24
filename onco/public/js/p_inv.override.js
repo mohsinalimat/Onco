@@ -115,29 +115,27 @@ frappe.ui.form.on('Purchase Invoice', {
         if (frm.is_new() && frm.doc.update_stock !== 1) {
             frm.set_value('update_stock', 1);
         }
-        if (frm.doc.supplier && frm.fields_dict.items && frm.fields_dict.items.grid) {
-            frm.fields_dict.items.grid.get_field('item_code').get_query = function () {
-                return {
-                    query: "onco.onco.item_query.filter_items_by_supplier",
-                    filters: {
-                        supplier: frm.doc.supplier
-                    }
-                };
+        frm.set_query("item_code", "items", function () {
+            if (!frm.doc.supplier) return { filters: [] };
+            return {
+                query: "onco.onco.item_query.filter_items_by_supplier",
+                filters: {
+                    supplier: frm.doc.supplier
+                }
             };
-        }
+        });
     },
 
     supplier: function (frm) {
-        if (frm.doc.supplier && frm.fields_dict.items && frm.fields_dict.items.grid) {
-            frm.fields_dict.items.grid.get_field('item_code').get_query = function () {
-                return {
-                    query: "onco.onco.item_query.filter_items_by_supplier",
-                    filters: {
-                        supplier: frm.doc.supplier
-                    }
-                };
+        frm.set_query("item_code", "items", function () {
+            if (!frm.doc.supplier) return { filters: [] };
+            return {
+                query: "onco.onco.item_query.filter_items_by_supplier",
+                filters: {
+                    supplier: frm.doc.supplier
+                }
             };
-        }
+        });
     },
 
     update_stock: function(frm) {
