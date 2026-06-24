@@ -59,15 +59,10 @@ frappe.ui.form.on('Purchase Order', {
         if (frm.doc.supplier && frm.fields_dict.items && frm.fields_dict.items.grid) {
             frm.fields_dict.items.grid.get_field('item_code').get_query = function () {
                 return {
-                    filters: [
-                        ['Item', 'custom_pharmaceutical_item', '=', 1],
-                        ['Item', 'disabled', '=', 0],
-                        [
-                            ['Item', 'default_supplier', '=', frm.doc.supplier],
-                            'OR',
-                            ['Item Supplier', 'supplier', '=', frm.doc.supplier]
-                        ]
-                    ]
+                    query: "onco.onco.item_query.filter_pharma_items_by_supplier",
+                    filters: {
+                        supplier: frm.doc.supplier
+                    }
                 };
             };
         }
@@ -77,15 +72,10 @@ frappe.ui.form.on('Purchase Order', {
         if (frm.doc.supplier && frm.fields_dict.items && frm.fields_dict.items.grid) {
             frm.fields_dict.items.grid.get_field('item_code').get_query = function () {
                 return {
-                    filters: [
-                        ['Item', 'custom_pharmaceutical_item', '=', 1],
-                        ['Item', 'disabled', '=', 0],
-                        [
-                            ['Item', 'default_supplier', '=', frm.doc.supplier],
-                            'OR',
-                            ['Item Supplier', 'supplier', '=', frm.doc.supplier]
-                        ]
-                    ]
+                    query: "onco.onco.item_query.filter_pharma_items_by_supplier",
+                    filters: {
+                        supplier: frm.doc.supplier
+                    }
                 };
             };
         }
