@@ -5,7 +5,7 @@ def filter_pharma_items_by_supplier(doctype, txt, searchfield, start, page_len, 
     supplier = filters.get("supplier")
 
     return frappe.db.sql("""
-        SELECT DISTINCT i.name
+        SELECT DISTINCT i.name, i.item_name
         FROM `tabItem` i
         LEFT JOIN `tabItem Supplier` s ON s.parent = i.name AND s.parenttype = 'Item'
         WHERE i.custom_pharmaceutical_item = 1
@@ -26,7 +26,7 @@ def filter_items_by_supplier(doctype, txt, searchfield, start, page_len, filters
     supplier = filters.get("supplier")
 
     return frappe.db.sql("""
-        SELECT DISTINCT i.name
+        SELECT DISTINCT i.name, i.item_name
         FROM `tabItem` i
         LEFT JOIN `tabItem Supplier` s ON s.parent = i.name AND s.parenttype = 'Item'
         WHERE i.disabled = 0
