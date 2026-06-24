@@ -106,8 +106,9 @@
         {
             "fieldname": "importation_approval",
             "fieldtype": "Link",
-            "label": "Importation Approval",
+            "label": "Importation Approval Reference",
             "options": "Importation Approvals",
+            "fetch_from": "purchase_invoice.custom_importation_approval",
             "read_only": 1
         },
         {

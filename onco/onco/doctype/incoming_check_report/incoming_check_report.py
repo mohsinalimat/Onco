@@ -5,6 +5,13 @@ import frappe
 from frappe.model.document import Document
 from frappe import _
 
+
+def _find_warehouse(pattern):
+    name = frappe.db.get_value("Warehouse", {"name": ["like", pattern]})
+    if not name:
+        frappe.throw(_("Could not find a warehouse matching '{0}'. Please create it in your Warehouse list.").format(pattern))
+    return name
+
 class IncomingCheckReport(Document):
     def validate(self):
         self.fetch_reference_data()
@@ -30,23 +37,22 @@ class IncomingCheckReport(Document):
             if set_warehouse:
                 self.inspection_warehouse = set_warehouse
             else:
-                # Fallback to default with correct spacing (2 spaces before dash)
-                self.inspection_warehouse = "Imported Finished Phr Receipt and Inspection Warehouse  - Onco"
+                self.inspection_warehouse = _find_warehouse("%Imported Finished Phr Receipt and Inspection Warehouse%")
+        
         elif self.stock_entry and not self.inspection_warehouse:
             to_warehouse = frappe.db.get_value("Stock Entry", self.stock_entry, "to_warehouse")
             if to_warehouse:
                 self.inspection_warehouse = to_warehouse
             else:
-                # Fallback to default with correct spacing (2 spaces before dash)
-                self.inspection_warehouse = "Imported Finished Phr Receipt and Inspection Warehouse  - Onco"
+                self.inspection_warehouse = _find_warehouse("%Imported Finished Phr Receipt and Inspection Warehouse%")
         
         # Auto-populate accepted_warehouse if not set
         if not self.accepted_warehouse:
-            self.accepted_warehouse = "Imported Finished Phr Unrelease Warehouse (Oncopharm)  - Onco"
+            self.accepted_warehouse = _find_warehouse("%Imported Finished Phr Unrelease Warehouse (Oncopharm)%")
         
         # Auto-populate rejected_warehouse if not set
         if not self.rejected_warehouse:
-            self.rejected_warehouse = "Imported Finished Phr (Damage & Losses) warehouse - Onco"
+            self.rejected_warehouse = _find_warehouse("%Imported Finished Phr (Damage & Losses)%")
     
     def fetch_reference_data(self):
         """Fetch all reference data from Purchase Receipt chain"""
@@ -506,21 +512,13 @@ def make_incoming_check_report_from_pr(source_name, target_doc=None):
     def set_missing_values(source, target):
         target.purchase_receipt = source.name
         target.inspection_date = frappe.utils.today()
-        # Explicitly set inspection_warehouse from Purchase Receipt's set_warehouse
-        # Ensure we use the exact warehouse name with correct spacing (2 spaces before dash)
         if source.set_warehouse:
             target.inspection_warehouse = source.set_warehouse
         else:
-            # Fallback to default with correct spacing
-            target.inspection_warehouse = "Imported Finished Phr Receipt and Inspection Warehouse  - Onco"
+            target.inspection_warehouse = _find_warehouse("%Imported Finished Phr Receipt and Inspection Warehouse%")
         
-        # Set accepted_warehouse (where goods go after passing inspection)
-        # 2 spaces before dash - matches database
-        target.accepted_warehouse = "Imported Finished Phr Unrelease Warehouse (Oncopharm)  - Onco"
-        
-        # Set rejected_warehouse (where damaged/rejected goods go)
-        # 1 space before dash - matches database
-        target.rejected_warehouse = "Imported Finished Phr (Damage & Losses) warehouse - Onco"
+        target.accepted_warehouse = _find_warehouse("%Imported Finished Phr Unrelease Warehouse (Oncopharm)%")
+        target.rejected_warehouse = _find_warehouse("%Imported Finished Phr (Damage & Losses)%")
         
         # Get Shipment reference
         if source.get("shipment"):
@@ -705,26 +703,20 @@ def make_authority_good_release(source_name, target_doc=None):
     from frappe.model.mapper import get_mapped_doc
     
     def set_missing_values(source, target):
-        # Set incoming_check_report reference
         target.incoming_check_report = source.name
         
-        # Set shipment reference
         if source.shipment:
             target.shipment_no = source.shipment
         
-        # Set source warehouse from accepted_warehouse (where goods currently are)
         if source.accepted_warehouse:
             target.source_warehouse = source.accepted_warehouse
         else:
-            # Fallback to default with correct spacing (2 spaces before dash)
-            target.source_warehouse = "Imported Finished Phr Unrelease Warehouse (Oncopharm)  - Onco"
+            target.source_warehouse = _find_warehouse("%Imported Finished Phr Unrelease Warehouse (Oncopharm)%")
         
-        # Set released goods warehouse (where goods will go after release)
         if not target.released_goods_warehouse:
-            target.released_goods_warehouse = "Imported Finished Phr Released Warehouse (Oncopharm) - Onco"
+            target.released_goods_warehouse = _find_warehouse("%Imported Finished Phr Released Warehouse (Oncopharm)%")
         
-        # Set sample warehouse to default
-        target.sample_warehouse = "Imported Finished Phr Sample warehouse - Onco"
+        target.sample_warehouse = _find_warehouse("%Imported Finished Phr Sample warehouse%")
     
     def update_item(source, target, source_parent):
         # Set requested_qty from actual_quantity
