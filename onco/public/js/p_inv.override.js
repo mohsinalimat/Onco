@@ -119,9 +119,11 @@ frappe.ui.form.on('Purchase Invoice', {
             frm.fields_dict.items.grid.get_field('item_code').get_query = function () {
                 return {
                     filters: [
-                        ['Item', 'default_supplier', '=', frm.doc.supplier],
-                        'OR',
-                        ['Item Supplier', 'supplier', '=', frm.doc.supplier]
+                        [
+                            ['Item', 'default_supplier', '=', frm.doc.supplier],
+                            'OR',
+                            ['Item Supplier', 'supplier', '=', frm.doc.supplier]
+                        ]
                     ]
                 };
             };
@@ -133,9 +135,11 @@ frappe.ui.form.on('Purchase Invoice', {
             frm.fields_dict.items.grid.get_field('item_code').get_query = function () {
                 return {
                     filters: [
-                        ['Item', 'default_supplier', '=', frm.doc.supplier],
-                        'OR',
-                        ['Item Supplier', 'supplier', '=', frm.doc.supplier]
+                        [
+                            ['Item', 'default_supplier', '=', frm.doc.supplier],
+                            'OR',
+                            ['Item Supplier', 'supplier', '=', frm.doc.supplier]
+                        ]
                     ]
                 };
             };

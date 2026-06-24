@@ -62,9 +62,11 @@ frappe.ui.form.on('Purchase Order', {
                     filters: [
                         ['Item', 'custom_pharmaceutical_item', '=', 1],
                         ['Item', 'disabled', '=', 0],
-                        ['Item', 'default_supplier', '=', frm.doc.supplier],
-                        'OR',
-                        ['Item Supplier', 'supplier', '=', frm.doc.supplier]
+                        [
+                            ['Item', 'default_supplier', '=', frm.doc.supplier],
+                            'OR',
+                            ['Item Supplier', 'supplier', '=', frm.doc.supplier]
+                        ]
                     ]
                 };
             };
@@ -78,9 +80,11 @@ frappe.ui.form.on('Purchase Order', {
                     filters: [
                         ['Item', 'custom_pharmaceutical_item', '=', 1],
                         ['Item', 'disabled', '=', 0],
-                        ['Item', 'default_supplier', '=', frm.doc.supplier],
-                        'OR',
-                        ['Item Supplier', 'supplier', '=', frm.doc.supplier]
+                        [
+                            ['Item', 'default_supplier', '=', frm.doc.supplier],
+                            'OR',
+                            ['Item Supplier', 'supplier', '=', frm.doc.supplier]
+                        ]
                     ]
                 };
             };
