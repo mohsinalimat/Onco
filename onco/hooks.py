@@ -285,7 +285,9 @@ fixtures = [
 					"Landed Cost Taxes and Charges-custom_already_used",
 					"Landed Cost Taxes and Charges-custom_remaining",
 					"Price List-custom_price_list_type",
+					"Price List-custom_apply_on",
 					"Price List-custom_apply_for_customers",
+					"Price List-custom_column_break_apply",
 					"Price List-custom_apply_for_customer_groups"
 				]
 			]
