@@ -49,6 +49,7 @@ doctype_js = {
     "Purchase Order": "public/js/purchase_order.js",
     "Stock Entry": "public/js/stock_entry_incoming_check.js",
     "Purchase Receipt": "public/js/purchase_receipt_incoming_check.js",
+    "Sales Order": "public/js/sales_order.js",
     "Sales Invoice": "public/js/sales_invoice.js",
     "Landed Cost Voucher": "public/js/landed_cost_voucher.js"
 }

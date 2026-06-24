@@ -56,31 +56,31 @@ frappe.ui.form.on('Purchase Order', {
         }
 
         // Filter item_code in child table to only pharmaceutical items matching PO supplier
-        if (frm.fields_dict.items && frm.fields_dict.items.grid) {
+        if (frm.doc.supplier && frm.fields_dict.items && frm.fields_dict.items.grid) {
             frm.fields_dict.items.grid.get_field('item_code').get_query = function () {
-                let filters = {
-                    custom_pharmaceutical_item: 1,
-                    disabled: 0
+                return {
+                    filters: [
+                        ['Item', 'custom_pharmaceutical_item', '=', 1],
+                        ['Item', 'disabled', '=', 0],
+                        ['Item', 'default_supplier', '=', frm.doc.supplier],
+                        ['Item Supplier', 'supplier', '=', frm.doc.supplier]
+                    ]
                 };
-                if (frm.doc.supplier) {
-                    filters['default_supplier'] = frm.doc.supplier;
-                }
-                return { filters: filters };
             };
         }
     },
 
     supplier: function (frm) {
-        if (frm.fields_dict.items && frm.fields_dict.items.grid) {
+        if (frm.doc.supplier && frm.fields_dict.items && frm.fields_dict.items.grid) {
             frm.fields_dict.items.grid.get_field('item_code').get_query = function () {
-                let filters = {
-                    custom_pharmaceutical_item: 1,
-                    disabled: 0
+                return {
+                    filters: [
+                        ['Item', 'custom_pharmaceutical_item', '=', 1],
+                        ['Item', 'disabled', '=', 0],
+                        ['Item', 'default_supplier', '=', frm.doc.supplier],
+                        ['Item Supplier', 'supplier', '=', frm.doc.supplier]
+                    ]
                 };
-                if (frm.doc.supplier) {
-                    filters['default_supplier'] = frm.doc.supplier;
-                }
-                return { filters: filters };
             };
         }
     },
