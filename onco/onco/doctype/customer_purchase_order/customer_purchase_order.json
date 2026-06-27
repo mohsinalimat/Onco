@@ -19,8 +19,9 @@
   "customer_type",
   "column_break_oumx",
   "date",
-  "delivery_date",
-  "customer_main_group",
+   "delivery_date",
+   "item_group",
+   "customer_main_group",
   "customer_group",
   "customer",
   "tax_id",
@@ -117,6 +118,13 @@
    "fieldname": "delivery_date",
    "fieldtype": "Date",
    "label": "Delivery Date"
+  },
+  {
+   "fieldname": "item_group",
+   "fieldtype": "Link",
+   "label": "Item Group",
+   "link_filters": "[[\"Item Group\", \"name\", \"in\", [\"Imported Finished Pharmaceutical Products Item\", \"Local Finished Pharmaceutical Products Item\"]]]",
+   "options": "Item Group"
   },
   {
    "fieldname": "customer_main_group",

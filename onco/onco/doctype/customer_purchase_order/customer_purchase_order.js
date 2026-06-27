@@ -1,16 +1,23 @@
+function set_cpo_item_query(frm) {
+    var filters = { custom_pharmaceutical_item: 1, disabled: 0 };
+    if (frm.doc.item_group) {
+        filters.item_group = frm.doc.item_group;
+    }
+    frm.set_query("item", "customer_po_items", function () {
+        return { filters: filters };
+    });
+}
+
 frappe.ui.form.on("Customer Purchase Order", {
     refresh(frm) {
         set_customer_main_group_query(frm);
         apply_price_list_filter(frm);
         show_create_sales_order_button(frm);
-        frm.set_query("item", "customer_po_items", function () {
-            return {
-                filters: {
-                    custom_pharmaceutical_item: 1,
-                    disabled: 0
-                }
-            };
-        });
+        set_cpo_item_query(frm);
+    },
+
+    item_group(frm) {
+        set_cpo_item_query(frm);
     },
 
     onload(frm) {

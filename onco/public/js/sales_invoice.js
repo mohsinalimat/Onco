@@ -1,15 +1,21 @@
+function set_si_item_query(frm) {
+    if (!frm.fields_dict.items || !frm.fields_dict.items.grid) return;
+    var filters = { custom_pharmaceutical_item: 1, disabled: 0 };
+    if (frm.doc.custom_item_group) {
+        filters.item_group = frm.doc.custom_item_group;
+    }
+    frm.fields_dict.items.grid.get_field('item_code').get_query = function () {
+        return { filters: filters };
+    };
+}
+
 frappe.ui.form.on("Sales Invoice", {
     refresh: function (frm) {
-        if (frm.fields_dict.items && frm.fields_dict.items.grid) {
-            frm.fields_dict.items.grid.get_field('item_code').get_query = function () {
-                return {
-                    filters: {
-                        custom_pharmaceutical_item: 1,
-                        disabled: 0
-                    }
-                };
-            };
-        }
+        set_si_item_query(frm);
+    },
+
+    custom_item_group: function (frm) {
+        set_si_item_query(frm);
     },
 
     before_submit: function (frm) {
