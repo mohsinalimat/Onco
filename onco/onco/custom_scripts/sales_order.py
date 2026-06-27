@@ -6,7 +6,10 @@ from erpnext.selling.doctype.sales_order.sales_order import SalesOrder
 
 class CustomSalesOrder(SalesOrder):
     def autoname(self):
-        super().autoname()
+        from frappe.model.naming import make_autoname
+
+        if self.naming_series:
+            self.name = make_autoname(self.naming_series, self)
         cpo_name = self.get("custom_customer_po")
         if not cpo_name or not self.name:
             return
