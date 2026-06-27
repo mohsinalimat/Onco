@@ -7,9 +7,7 @@ def validate(doc, method):
     Validate Purchase Invoice before save
     Ensure batch numbers are provided for items that require them
     """
-    # Bypass strict stock and batch validation during historical Data Imports
-    if frappe.flags.in_import:
-        return
+    frappe.throw(_("TEST: purchase_invoice.validate is firing!"))
 
     # Set use_serial_batch_fields for all items when update_stock is enabled
     if doc.update_stock:
@@ -38,6 +36,7 @@ def validate(doc, method):
     if doc.get("custom_shipment_allocation"):
         total_allocated = sum(flt(row.amount) for row in doc.custom_shipment_allocation)
         total_items = sum(flt(item.amount) for item in doc.items)
+        frappe.log_error(f"DEBUG allocation: total_allocated={total_allocated}, total_items={total_items}", "PI Validation Debug")
         if total_allocated > total_items:
             frappe.throw(_(
                 "Total Shipment Allocation amount ({0}) cannot exceed "
