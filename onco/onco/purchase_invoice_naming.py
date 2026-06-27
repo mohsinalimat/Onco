@@ -32,6 +32,10 @@ class CustomPurchaseInvoice(PurchaseInvoice):
 					frappe.format_value(total_allocated, "Currency"),
 					frappe.format_value(total_items, "Currency")
 				))
+
+	def save(self, *args, **kwargs):
+		self.validate_shipment_allocation()
+		super().save(*args, **kwargs)
 	
 	def autoname(self):
 		"""
