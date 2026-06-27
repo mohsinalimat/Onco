@@ -48,31 +48,56 @@ function fetch_vendor_invoices(frm, shipment_id) {
         callback: function(r) {
             if (r && r.message && r.message.length > 0) {
                 frm.clear_table('vendor_invoices');
-                let added_count = 0;
+
+                if (frm.doc.taxes && frm.doc.taxes.length > 0) {
+                    let first_row = frm.doc.taxes[0];
+                    if (!first_row.expense_account && !first_row.description && !first_row.amount) {
+                        frm.clear_table('taxes');
+                    }
+                }
+
+                let current_taxes = frm.doc.taxes || [];
+                let existing_invoices = current_taxes.map(t => t.custom_vendor_invoice);
+                let added_to_taxes = 0;
+                let added_to_vi = 0;
 
                 r.message.forEach(invoice => {
                     if (invoice.remaining > 0) {
-                        let row = frm.add_child('vendor_invoices');
-                        row.vendor_invoice = invoice.name;
-                        row.amount = invoice.remaining;
-                        added_count++;
+                        let vi_row = frm.add_child('vendor_invoices');
+                        vi_row.vendor_invoice = invoice.name;
+                        vi_row.amount = invoice.remaining;
+                        added_to_vi++;
+                    }
+
+                    if (!existing_invoices.includes(invoice.name)) {
+                        let child = frm.add_child('taxes');
+                        child.description = invoice.description;
+                        child.expense_account = invoice.expense_account;
+                        child.amount = invoice.remaining;
+                        child.custom_vendor_invoice = invoice.name;
+                        child.custom_supplier_invoice_no = invoice.bill_no;
+                        child.custom_posting_date = invoice.posting_date;
+                        child.custom_allocated_to_shipment = invoice.allocated_to_shipment;
+                        child.custom_already_used = invoice.already_used;
+                        child.custom_remaining = invoice.remaining;
+                        added_to_taxes++;
                     }
                 });
 
-                if (added_count > 0) {
-                    frm.refresh_field('vendor_invoices');
-                    frappe.show_alert({message: `Added ${added_count} vendor invoice(s) with remaining allocation.`, indicator: 'green'});
+                frm.refresh_field('vendor_invoices');
+                frm.refresh_field('taxes');
 
-                    let exhausted = r.message.filter(inv => inv.remaining <= 0);
-                    if (exhausted.length > 0) {
-                        frappe.msgprint({
-                            title: 'Notice',
-                            indicator: 'orange',
-                            message: `${exhausted.length} invoice(s) have no remaining balance to allocate. They were skipped.`
-                        });
-                    }
-                } else {
-                    frappe.msgprint(`All vendor invoices for Shipment ID ${shipment_id} have been fully consumed.`);
+                if (added_to_vi > 0) {
+                    frappe.show_alert({message: `Added ${added_to_vi} vendor invoice(s) and ${added_to_taxes} tax row(s).`, indicator: 'green'});
+                }
+
+                let exhausted = r.message.filter(inv => inv.remaining <= 0);
+                if (exhausted.length > 0) {
+                    frappe.msgprint({
+                        title: 'Notice',
+                        indicator: 'orange',
+                        message: `${exhausted.length} invoice(s) have no remaining balance to allocate. They were skipped.`
+                    });
                 }
 
                 if (frm.doc.purchase_receipts && frm.doc.purchase_receipts.length > 0) {
