@@ -30,6 +30,7 @@ frappe.ui.form.on('Landed Cost Purchase Receipt', {
                 callback: function(r) {
                     if (r && r.message) {
                         frm.set_value('custom_shipment_id', r.message);
+                        fetch_vendor_invoices(frm, r.message);
                     }
                 }
             });
@@ -46,36 +47,21 @@ function fetch_vendor_invoices(frm, shipment_id) {
         },
         callback: function(r) {
             if (r && r.message && r.message.length > 0) {
-                if (frm.doc.taxes && frm.doc.taxes.length > 0) {
-                    let first_row = frm.doc.taxes[0];
-                    if (!first_row.expense_account && !first_row.description && !first_row.amount) {
-                        frm.clear_table('taxes');
-                    }
-                }
-
-                let current_taxes = frm.doc.taxes || [];
-                let existing_invoices = current_taxes.map(t => t.custom_vendor_invoice);
+                frm.clear_table('vendor_invoices');
                 let added_count = 0;
 
                 r.message.forEach(invoice => {
-                    if (!existing_invoices.includes(invoice.name)) {
-                        let child = frm.add_child('taxes');
-                        child.description = invoice.description;
-                        child.expense_account = invoice.expense_account;
-                        child.amount = invoice.remaining;
-                        child.custom_vendor_invoice = invoice.name;
-                        child.custom_supplier_invoice_no = invoice.bill_no;
-                        child.custom_posting_date = invoice.posting_date;
-                        child.custom_allocated_to_shipment = invoice.allocated_to_shipment;
-                        child.custom_already_used = invoice.already_used;
-                        child.custom_remaining = invoice.remaining;
+                    if (invoice.remaining > 0) {
+                        let row = frm.add_child('vendor_invoices');
+                        row.vendor_invoice = invoice.name;
+                        row.amount = invoice.remaining;
                         added_count++;
                     }
                 });
 
                 if (added_count > 0) {
-                    frm.refresh_field('taxes');
-                    frappe.show_alert({message: `Added ${added_count} vendor invoices to Taxes and Charges.`, indicator: 'green'});
+                    frm.refresh_field('vendor_invoices');
+                    frappe.show_alert({message: `Added ${added_count} vendor invoice(s) with remaining allocation.`, indicator: 'green'});
 
                     let exhausted = r.message.filter(inv => inv.remaining <= 0);
                     if (exhausted.length > 0) {
@@ -86,7 +72,7 @@ function fetch_vendor_invoices(frm, shipment_id) {
                         });
                     }
                 } else {
-                    frappe.show_alert({message: `Vendor invoices for Shipment ID ${shipment_id} are already in the table.`, indicator: 'orange'});
+                    frappe.msgprint(`All vendor invoices for Shipment ID ${shipment_id} have been fully consumed.`);
                 }
 
                 if (frm.doc.purchase_receipts && frm.doc.purchase_receipts.length > 0) {
