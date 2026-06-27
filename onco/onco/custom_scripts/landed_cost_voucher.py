@@ -28,7 +28,7 @@ def get_vendor_invoices_for_shipment(shipment_id, company):
         frappe.throw(_("Shipment ID is required"))
 
     vendor_invoices = frappe.db.sql("""
-        SELECT DISTINCT
+        SELECT
             pi.name,
             pi.supplier,
             pi.supplier_name,
@@ -37,7 +37,8 @@ def get_vendor_invoices_for_shipment(shipment_id, company):
             pi.currency,
             pi.bill_no,
             pi.remarks,
-            sar.amount as allocated_to_shipment
+            sar.amount as allocated_to_shipment,
+            sar.shipment_id as reference_shipment
         FROM
             `tabPurchase Invoice` pi
         INNER JOIN
@@ -46,11 +47,17 @@ def get_vendor_invoices_for_shipment(shipment_id, company):
             AND sar.parenttype = 'Purchase Invoice'
             AND sar.parentfield = 'custom_shipment_allocation'
         WHERE
-            sar.shipment_id = %(shipment_id)s
+            pi.name IN (
+                SELECT DISTINCT sar2.parent
+                FROM `tabShipment Allocation Reference` sar2
+                WHERE sar2.shipment_id = %(shipment_id)s
+                    AND sar2.parenttype = 'Purchase Invoice'
+                    AND sar2.parentfield = 'custom_shipment_allocation'
+            )
             AND pi.docstatus = 1
             AND pi.company = %(company)s
         ORDER BY
-            pi.posting_date ASC
+            pi.name, sar.shipment_id, sar.idx
     """, {
         'shipment_id': shipment_id,
         'company': company
@@ -63,7 +70,7 @@ def get_vendor_invoices_for_shipment(shipment_id, company):
     for invoice in vendor_invoices:
         expense_account = get_primary_expense_account(invoice.name)
 
-        already_used = get_already_used_in_lcv(invoice.name, shipment_id)
+        already_used = get_already_used_in_lcv(invoice.name, invoice.reference_shipment)
         remaining = invoice.allocated_to_shipment - already_used
         if remaining < 0:
             remaining = 0
@@ -76,6 +83,7 @@ def get_vendor_invoices_for_shipment(shipment_id, company):
             'grand_total': invoice.grand_total,
             'currency': invoice.currency,
             'bill_no': invoice.bill_no or '',
+            'reference_shipment': invoice.reference_shipment,
             'expense_account': expense_account,
             'allocated_to_shipment': invoice.allocated_to_shipment,
             'already_used': already_used,
