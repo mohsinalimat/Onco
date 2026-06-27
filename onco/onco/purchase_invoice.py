@@ -7,7 +7,6 @@ def validate(doc, method):
     Validate Purchase Invoice before save
     Ensure batch numbers are provided for items that require them
     """
-    frappe.throw(_("HOOK IS FIRING"))
     # Bypass strict stock and batch validation during historical Data Imports
     if frappe.flags.in_import:
         return

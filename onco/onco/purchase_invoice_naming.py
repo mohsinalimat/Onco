@@ -3,7 +3,7 @@
 
 import frappe
 from frappe import _
-from frappe.utils import getdate
+from frappe.utils import flt, getdate
 from erpnext.accounts.doctype.purchase_invoice.purchase_invoice import PurchaseInvoice
 
 
@@ -15,6 +15,23 @@ class CustomPurchaseInvoice(PurchaseInvoice):
 	- Imported Pharma: PHR-IMP-PINV-YYYY-#####-{supplier_invoice_no}
 	- General Purchase: GEN-PINV-YYYY-#####-{supplier_invoice_no}
 	"""
+
+	def validate(self):
+		super().validate()
+		self.validate_shipment_allocation()
+
+	def validate_shipment_allocation(self):
+		if self.get("custom_shipment_allocation"):
+			total_allocated = sum(flt(row.amount) for row in self.custom_shipment_allocation)
+			total_items = sum(flt(item.amount) for item in self.items)
+			if total_allocated > total_items:
+				frappe.throw(_(
+					"Total Shipment Allocation amount ({0}) cannot exceed "
+					"the total Items amount ({1})"
+				).format(
+					frappe.format_value(total_allocated, "Currency"),
+					frappe.format_value(total_items, "Currency")
+				))
 	
 	def autoname(self):
 		"""
