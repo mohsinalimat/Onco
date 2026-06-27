@@ -11,6 +11,16 @@ frappe.ui.form.on("Sales Order", {
             };
             frm.fields_dict.items.grid.toggle_reqd("delivery_date", false);
         }
+
+        if (!frm.doc.delivery_date && frm.doc.docstatus == 1) {
+            setTimeout(function () {
+                frm.page.set_indicator(__("Set Delivery Date"), "orange");
+                frm.dashboard.set_headline_alert(
+                    __("Please set Delivery Date to proceed with delivery."),
+                    "alert-warning"
+                );
+            }, 500);
+        }
     },
 
     order_type: function(frm) {
