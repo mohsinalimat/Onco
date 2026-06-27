@@ -1,11 +1,6 @@
 import frappe
 from frappe import _
 
-def ensure_item_delivery_date(doc, method):
-    for item in doc.items:
-        if not item.delivery_date:
-            item.delivery_date = doc.delivery_date or frappe.utils.today()
-
 def validate_sales_order_tender_price(doc, method):
     """
     Validate Sales Order against Tender prices.
