@@ -1,5 +1,6 @@
 import frappe
 from frappe import _
+from frappe.utils import flt
 
 def validate(doc, method):
     """
@@ -32,6 +33,19 @@ def validate(doc, method):
                             item.idx, item.item_code
                         )
                     )
+
+    # Validate custom_shipment_allocation doesn't exceed items total
+    if doc.get("custom_shipment_allocation"):
+        total_allocated = sum(flt(row.amount) for row in doc.custom_shipment_allocation)
+        total_items = sum(flt(item.amount) for item in doc.items)
+        if total_allocated > total_items:
+            frappe.throw(_(
+                "Total Shipment Allocation amount ({0}) cannot exceed "
+                "the total Items amount ({1})"
+            ).format(
+                frappe.format_value(total_allocated, "Currency"),
+                frappe.format_value(total_items, "Currency")
+            ))
 
 def on_submit(doc, method):
     """

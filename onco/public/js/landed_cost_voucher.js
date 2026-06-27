@@ -66,6 +66,7 @@ function fetch_vendor_invoices(frm, shipment_id) {
                         let vi_row = frm.add_child('vendor_invoices');
                         vi_row.vendor_invoice = invoice.name;
                         vi_row.amount = invoice.remaining;
+                        vi_row.custom_reference_shipment = shipment_id;
                         added_to_vi++;
                     }
 
