@@ -9,9 +9,19 @@ function set_so_item_query(frm) {
     };
 }
 
+function set_price_list_query(frm) {
+    frm.set_query('selling_price_list', function () {
+        return {
+            query: 'onco.onco.item_query.filter_apply_price_lists',
+            filters: { customer: frm.doc.customer || '' }
+        };
+    });
+}
+
 frappe.ui.form.on("Sales Order", {
     refresh: function (frm) {
         set_so_item_query(frm);
+        set_price_list_query(frm);
         if (frm.fields_dict.items && frm.fields_dict.items.grid) {
             frm.fields_dict.items.grid.toggle_reqd("delivery_date", false);
         }
@@ -25,6 +35,10 @@ frappe.ui.form.on("Sales Order", {
                 );
             }, 500);
         }
+    },
+
+    customer: function (frm) {
+        set_price_list_query(frm);
     },
 
     item_group: function (frm) {

@@ -9,9 +9,23 @@ function set_si_item_query(frm) {
     };
 }
 
+function set_price_list_query(frm) {
+    frm.set_query('selling_price_list', function () {
+        return {
+            query: 'onco.onco.item_query.filter_apply_price_lists',
+            filters: { customer: frm.doc.customer || '' }
+        };
+    });
+}
+
 frappe.ui.form.on("Sales Invoice", {
     refresh: function (frm) {
         set_si_item_query(frm);
+        set_price_list_query(frm);
+    },
+
+    customer: function (frm) {
+        set_price_list_query(frm);
     },
 
     custom_item_group: function (frm) {
