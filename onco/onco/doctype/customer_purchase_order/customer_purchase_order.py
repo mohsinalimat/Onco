@@ -174,7 +174,7 @@ def create_sales_order(cpo_name, items_data):
 			"item_code": d["item_code"],
 			"qty": qty,
 			"rate": flt(cpo_row.price),
-			"delivery_date": cpo.delivery_date
+			"delivery_date": cpo.delivery_date or cpo.date
 		})
 
 	if not so_items:
@@ -203,7 +203,7 @@ def create_sales_order(cpo_name, items_data):
 		"doctype": "Sales Order",
 		"customer": cpo.customer,
 		"transaction_date": cpo.date,
-		"delivery_date": cpo.delivery_date,
+		"delivery_date": cpo.delivery_date or cpo.date,
 		"po_no": cpo.customer_purchase_order_number,
 		"po_date": cpo.date,
 		"items": so_items,
