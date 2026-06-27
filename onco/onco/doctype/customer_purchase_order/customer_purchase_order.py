@@ -1,7 +1,8 @@
 # Copyright (c) 2025, ds and contributors
 # For license information, please see license.txt
-
 import json
+import re
+
 import frappe
 from frappe.model.document import Document
 from frappe import _
@@ -199,6 +200,14 @@ def create_sales_order(cpo_name, items_data):
 
 	pl_currency = frappe.db.get_value("Price List", pl_name, "currency") or ""
 
+	series_map = {
+		"Private Direct Order": "SAL-ORD-PRV-DIR-.YYYY.-.#####",
+		"Private Tenders Order": "SAL-ORD-PRV-TEN-.YYYY.-.#####",
+		"UPA Tender Order": "SAL-ORD-UPA-TEN-.YYYY.-.#####",
+		"UPA Direct Order": "SAL-ORD-UPA-DIR-.YYYY.-.#####",
+		"UPA Distributor Order": "SAL-ORD-UPA-DIS-.YYYY.-.#####",
+	}
+
 	so = frappe.get_doc({
 		"doctype": "Sales Order",
 		"customer": cpo.customer,
@@ -207,6 +216,7 @@ def create_sales_order(cpo_name, items_data):
 		"po_no": cpo.customer_purchase_order_number,
 		"po_date": cpo.date,
 		"items": so_items,
+		"naming_series": series_map.get(cpo.order_type, ""),
 		"custom_order_type_1": cpo.order_type,
 		"implemented_by": cpo.implemented_by,
 		"customer_type": cpo.customer_type,
@@ -217,6 +227,7 @@ def create_sales_order(cpo_name, items_data):
 		"custom_customer_po": cpo.name,
 		"custom_tender": cpo.tender if cpo.tender else None
 	})
+
 	so.insert(ignore_permissions=True)
 	so.submit()
 

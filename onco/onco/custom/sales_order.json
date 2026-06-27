@@ -1359,7 +1359,7 @@
    "property": "options",
    "property_type": "Text",
    "row_name": null,
-   "value": "\nSAL-ORD-UPA-DIS-.#####.-.FY.\nSAL-ORD-PRV-DIR-.#####.-.FY.\nSAL-ORD-UPA-TEN-.#####.-.FY.\nSAL-ORD-PRV-TEN-.#####.-.FY.\nSAL-ORD-UPA-DIR-.#####.-.FY."
+    "value": "\nSAL-ORD-UPA-DIS-.YYYY.-.#####\nSAL-ORD-PRV-DIR-.YYYY.-.#####\nSAL-ORD-UPA-TEN-.YYYY.-.#####\nSAL-ORD-PRV-TEN-.YYYY.-.#####\nSAL-ORD-UPA-DIR-.YYYY.-.#####"
   },
   {
    "_assign": null,
